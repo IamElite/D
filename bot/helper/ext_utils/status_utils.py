@@ -307,7 +307,6 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         else:
             msg = f"No Active {status} Tasks!\n\n"
 
-    msg += "⌬ <b><i>𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗦</i></b>"
     buttons = ButtonMaker()
     if not is_user:
         buttons.data_button("☲", f"status {sid} ov", position="header")
@@ -324,6 +323,8 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 buttons.data_button(label, f"status {sid} st {status_value}")
     buttons.data_button("♻️", f"status {sid} ref", position="header")
     button = buttons.build_menu(8)
+    msg += "\n"
+    msg += "⌬ <b><i>𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗦</i></b>"
     msg += f"\n<blockquote>╭ <code>CPU  :</code> {cpu_percent()}%"
     msg += f"\n┊ <code>RAM  :</code> {virtual_memory().percent}%"
     msg += (
