@@ -12,7 +12,7 @@ class Config:
     BOT_MAX_TASKS = 0
     BOT_PM = False
     CMD_SUFFIX = ""
-    CUSTOM_BOT_HEADER = "Dzone"
+    CUSTOM_BOT_HEADER = "Downloader Zone"
     CUSTOM_BOT_HEADER_LINK = "https://t.me/DownloaderZoneGateway"
     DEFAULT_LANG = "en"
     DATABASE_URL = ""
@@ -235,8 +235,8 @@ class Config:
 
 
 class BinConfig:
-    ARIA2_NAME = "speeddemon"
-    QBIT_NAME = "torrentgod"
-    FFMPEG_NAME = "vidwarlock"
-    RCLONE_NAME = "cloudphantom"
-    SABNZBD_NAME = "newsslayer"
+    ARIA2_NAME = "fastfetcher"
+    QBIT_NAME = "torrentmaster"
+    FFMPEG_NAME = "videomancer"
+    RCLONE_NAME = "cloudsweep"
+    SABNZBD_NAME = "newsgator"
