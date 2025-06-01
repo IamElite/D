@@ -55,20 +55,20 @@ async def speedtest(_, message):
 
     string_speed = f"""
 ➲ <b><i>SPEEDTEST INFO</i></b>
-╭ <b>Upload:</b> <code>{upload_speed}</code>
-├ <b>Download:</b>  <code>{download_speed}</code>
-├ <b>Ping:</b> <code>{ping} ms</code>
-├ <b>Time:</b> <code>{timestamp}</code>
-├ <b>Data Sent:</b> <code>{bytes_sent}</code>
-╰ <b>Data Received:</b> <code>{bytes_received}</code>
+╭ <b>Upload:</b> <code>{get_readable_file_size(result["upload"] / 8)}/s</code>
+┊ <b>Download:</b>  <code>{get_readable_file_size(result["download"] / 8)}/s</code>
+┊ <b>Ping:</b> <code>{result["ping"]} ms</code>
+┊ <b>Time:</b> <code>{result["timestamp"]}</code>
+┊ <b>Data Sent:</b> <code>{get_readable_file_size(int(result["bytes_sent"]))}</code>
+╰ <b>Data Received:</b> <code>{get_readable_file_size(int(result["bytes_received"]))}</code>
 
 ➲ <b><i>SPEEDTEST SERVER</i></b>
-╭ <b>Name:</b> <code>{server.get('name', 'N/A')}</code>
-├ <b>Country:</b> <code>{server.get('country', 'N/A')}, {server.get('cc', 'N/A')}</code>
-├ <b>Sponsor:</b> <code>{server.get('sponsor', 'N/A')}</code>
-├ <b>Latency:</b> <code>{server.get('latency', 'N/A')}</code>
-├ <b>Latitude:</b> <code>{server.get('lat', 'N/A')}</code>
-╰ <b>Longitude:</b> <code>{server.get('lon', 'N/A')}</code>
+╭ <b>Name:</b> <code>{result["server"]["name"]}</code>
+┊ <b>Country:</b> <code>{result["server"]["country"]}, {result["server"]["cc"]}</code>
+┊ <b>Sponsor:</b> <code>{result["server"]["sponsor"]}</code>
+┊ <b>Latency:</b> <code>{result["server"]["latency"]}</code>
+┊ <b>Latitude:</b> <code>{result["server"]["lat"]}</code>
+╰ <b>Longitude:</b> <code>{result["server"]["lon"]}</code>
 """
 
     try:

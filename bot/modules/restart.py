@@ -83,8 +83,8 @@ async def restart_notification():
             for cid, data in notifier_dict.items():
                 msg = f"""⌬ <b><i>{"Restarted Successfully!" if cid == chat_id else "Bot Restarted!"}</i></b>
 ╭ <b>Date:</b> {now.strftime("%d/%m/%y")}
-├ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
-├ <b>TimeZone:</b> Asia/Kolkata
+┊ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
+┊ <b>TimeZone:</b> Asia/Kolkata
 ╰ <b>Version:</b> {get_version()}"""
                 for tag, links in data.items():
                     msg += f"\n\n{tag}: "
@@ -103,8 +103,8 @@ async def restart_notification():
                 message_id=msg_id,
                 text=f"""⌬ <b><i>Restarted Successfully!</i></b>
 ╭ <b>Date:</b> {now.strftime("%d/%m/%y")}
-├ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
-├ <b>TimeZone:</b> Asia/Kolkata
+┊ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
+┊ <b>TimeZone:</b> Asia/Kolkata
 ╰ <b>Version:</b> {get_version()}""",
             )
         except Exception as e:

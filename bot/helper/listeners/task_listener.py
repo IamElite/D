@@ -99,7 +99,7 @@ class TaskListener(TaskConfig):
                 f"""➲  <b><u>{mode_name} Started:</u></b>
  
  ╭ <b>User :</b> {self.tag} ( #ID{self.user_id} )
- ├ <b>Message Link :</b> <a href='{self.message.link}'>Click Here</a>
+ ┊ <b>Message Link :</b> <a href='{self.message.link}'>Click Here</a>
  ╰ <b>Link:</b> <a href='{self.source_url}'>Click Here</a>
  """,
             )
@@ -348,15 +348,15 @@ class TaskListener(TaskConfig):
         msg = (
             f"<b><i>{escape(self.name)}</i></b>\n"
             f"\n╭ <b>Task Size</b> → {get_readable_file_size(self.size)}"
-            f"\n├ <b>Time Taken</b> → {get_readable_time(time() - self.message.date.timestamp())}"
-            f"\n├ <b>In Mode</b> → {self.mode[0]}"
-            f"\n├ <b>Out Mode</b> → {self.mode[1]}"
+            f"\n┊ <b>Time Taken</b> → {get_readable_time(time() - self.message.date.timestamp())}"
+            f"\n┊ <b>In Mode</b> → {self.mode[0]}"
+            f"\n┊ <b>Out Mode</b> → {self.mode[1]}"
         )
         LOGGER.info(f"Task Done: {self.name}")
         if self.is_leech:
-            msg += f"\n├ <b>Total Files</b> → {folders}"
+            msg += f"\n┊ <b>Total Files</b> → {folders}"
             if mime_type != 0:
-                msg += f"\n├ <b>Corrupted Files</b> → {mime_type}"
+                msg += f"\n┊ <b>Corrupted Files</b> → {mime_type}"
             msg += f"\n╰ <b>Task By</b> → {self.tag}\n\n"
 
             if self.bot_pm:
@@ -378,7 +378,7 @@ class TaskListener(TaskConfig):
                         self.is_super_chat or Config.LEECH_DUMP_CHAT
                     ):
                         if chat_id.isdigit():
-                            chat_id = f"-100{chat_id}"
+                            chat_id = int(f"-100{chat_id}")
                         flink = f"https://t.me/{TgClient.BNAME}?start={encode_slink('file' + chat_id + '&&' + msg_id)}"
                         fmsg += f"\n╰ <b>Get Media</b> → <a href='{flink}'>Store Link</a> | <a href='https://t.me/share/url?url={flink}'>Share Link</a>"
                     fmsg += "\n"
@@ -400,7 +400,7 @@ class TaskListener(TaskConfig):
                 and not self.private_link
             ):
                 buttons = ButtonMaker()
-                if (link and Config.SHOW_CLOUD_LINK):
+                if link and Config.SHOW_CLOUD_LINK:
                     buttons.url_button("☁️ Cloud Link", link)
                 else:
                     msg += f"\n\nPath: <code>{rclone_path}</code>"
@@ -425,7 +425,7 @@ class TaskListener(TaskConfig):
                             buttons.url_button("🌐 View Link", share_urls)
                 button = buttons.build_menu(2)
             else:
-                msg += f"\n├ Path: <code>{rclone_path}</code>"
+                msg += f"\n┊ Path: <code>{rclone_path}</code>"
                 button = None
 
             complete_msg = f"{msg}\n\n➾ <b>Task By</b> → {self.tag}\n\n"
@@ -436,7 +436,7 @@ class TaskListener(TaskConfig):
 
             chat_type = self.message.chat.type
             chat_type_str = str(chat_type)
-            if hasattr(chat_type, 'value'):
+            if hasattr(chat_type, "value"):
                 chat_type_str = chat_type.value
             chat_type_str = chat_type_str.lower()
             is_private_chat = chat_type_str == "private"
@@ -458,7 +458,9 @@ class TaskListener(TaskConfig):
                 try:
                     await send_message(mirror_log_id, complete_msg, button)
                 except Exception as e:
-                    LOGGER.error(f"[TaskListener] Failed to send to MIRROR_LOG_ID: {mirror_log_id} - {e}")
+                    LOGGER.error(
+                        f"[TaskListener] Failed to send to MIRROR_LOG_ID: {mirror_log_id} - {e}"
+                    )
 
         if self.seed:
             await clean_target(self.up_dir)
@@ -497,17 +499,17 @@ class TaskListener(TaskConfig):
             f"""〶 <b><i><u>Limit Breached:</u></i></b>
 
 ╭ <b>Task Size</b> → {get_readable_file_size(self.size)}
-├ <b>In Mode</b> → {self.mode[0]}
-├ <b>Out Mode</b> → {self.mode[1]}
+┊ <b>In Mode</b> → {self.mode[0]}
+┊ <b>Out Mode</b> → {self.mode[1]}
 {error}"""
             if is_limit
             else f"""<i><b>〶 Download Stopped!</b></i>
 
 ╭ <b>Due To</b> → {escape(str(error))}
-├ <b>Task Size</b> → {get_readable_file_size(self.size)}
-├ <b>Time Taken</b> → {get_readable_time(time() - self.message.date.timestamp())}
-├ <b>In Mode</b> → {self.mode[0]}
-├ <b>Out Mode</b> → {self.mode[1]}
+┊ <b>Task Size</b> → {get_readable_file_size(self.size)}
+┊ <b>Time Taken</b> → {get_readable_time(time() - self.message.date.timestamp())}
+┊ <b>In Mode</b> → {self.mode[0]}
+┊ <b>Out Mode</b> → {self.mode[1]}
 ╰ <b>Task By</b> → {self.tag}"""
         )
 

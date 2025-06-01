@@ -31,10 +31,8 @@ async def start(_, message):
     userid = message.from_user.id
     lang = Language()
     buttons = ButtonMaker()
-    buttons.url_button(
-        lang.START_BUTTON1, "https://t.me/DownloaderZoneGateway"
-    )
-    buttons.url_button(lang.START_BUTTON2, "https://t.me/DOWNLOADERZONEUPDATES")
+    buttons.url_button(lang.START_BUTTON1, "https://t.me/FastMirrorsGroup")
+    buttons.url_button(lang.START_BUTTON2, "https://t.me/FastGateways")
     reply_markup = buttons.build_menu(2)
 
     if len(message.command) > 1 and message.command[1] == "beast":
@@ -78,7 +76,7 @@ async def start(_, message):
             reply_markup = buttons.build_menu(2)
             msg = f"""⌬ Access Login Token : 
     ╭ <b>Status</b> → <code>Generated Successfully</code>
-    ├ <b>Access Token</b> → <code>{input_token}</code>
+    ┊ <b>Access Token</b> → <code>{input_token}</code>
     |
     ╰ <b>Validity:</b> {get_readable_time(int(Config.VERIFY_TIMEOUT))}"""
             return await send_message(message, msg, reply_markup)
@@ -97,7 +95,7 @@ async def start(_, message):
     else:
         await send_message(
             message,
-            "<i>Bot can mirror/leech from links|tgfiles|torrents|nzb|rclone-cloud to any rclone cloud, Google Drive or to telegram.\n\n⚠️ You Are not authorized user! Use it in @MirrorBeastGroup</i>",
+            "<i>Bot can mirror/leech from links|tgfiles|torrents|nzb|rclone-cloud to any rclone cloud, Google Drive or to telegram.\n\n⚠️ You Are not authorized user! Use it in @FastMirrorsGroup</i>",
             reply_markup,
         )
     await database.set_pm_users(userid)
@@ -123,7 +121,7 @@ async def start_cb(_, query):
     kb = query.message.reply_markup.inline_keyboard[1:]
     kb.insert(
         0,
-        [InlineKeyboardButton("✅️ Activated ✅", callback_data="start pass activated")],
+        [InlineKeyboardButton("✅️ Activated", callback_data="start pass activated")],
     )
     await edit_reply_markup(query.message, InlineKeyboardMarkup(kb))
 
@@ -164,7 +162,8 @@ async def ping(_, message):
     reply = await send_message(message, "<i>Starting Ping..</i>")
     end_time = monotonic()
     await edit_message(
-        reply, f"<i>Get a life!, ping is 👇</i>\n <code>{int((end_time - start_time) * 1000)} ms</code>"
+        reply,
+        f"<i>Get a life!, ping is 👇</i>\n <code>{int((end_time - start_time) * 1000)} ms</code>",
     )
 
 
