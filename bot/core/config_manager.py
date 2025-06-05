@@ -34,6 +34,7 @@ class Config:
     GD_DESP = "Uploaded by Dzone"
     AUTHOR_NAME = "Dzone"
     AUTHOR_URL = "https://t.me/DownloaderZoneGateway"
+    DEBRID_LINK_API = ""
     INSTADL_API = ""
     IMDB_TEMPLATE = ""
     INCOMPLETE_TASK_NOTIFIER = False
