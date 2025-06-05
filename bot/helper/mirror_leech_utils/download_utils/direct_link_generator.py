@@ -449,6 +449,8 @@ def direct_link_generator(link):
         return krakenfiles(link)
     elif "upload.ee" in domain:
         return uploadee(link)
+    elif "uploadhaven" in domain:
+        return uploadhaven(link)
     elif "gofile.io" in domain:
         return gofile(link)
     elif "send.cm" in domain:
@@ -987,6 +989,28 @@ def racaty(url):
         return direct_link[0]
     else:
         raise DirectDownloadLinkException("ERROR: Direct link not found")
+
+def uploadhaven(url):Add commentMore actions
+    """
+    Generate a direct download link for uploadhaven.com URLs.
+    @param url: URL from uploadhaven.com
+    @return: Direct download link
+    """
+    try:
+        res = get(url,headers={'Referer':'http://steamunlocked.net/'})
+        html = HTML(res.text)
+        if not html.xpath('//form[@method="POST"]//input'):
+            raise DirectDownloadLinkException("ERROR: Unable to find link data")        
+        data = {i.get("name"): i.get("value") for i in html.xpath('//form[@method="POST"]//input')}
+        sleep(15)
+        res = post(url, data=data, headers={'Referer': url}, cookies=res.cookies)
+        html = HTML(res.text)
+        if not html.xpath('//div[@class="alert alert-success mb-0"]//a'):
+            raise DirectDownloadLinkException("ERROR: Unable to find link data")
+        a = html.xpath('//div[@class="alert alert-success mb-0"]//a')[0]
+        return a.get('href')
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
 
 
 def fichier(link):
