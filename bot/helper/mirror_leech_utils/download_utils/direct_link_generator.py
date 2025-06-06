@@ -990,7 +990,7 @@ def racaty(url):
     else:
         raise DirectDownloadLinkException("ERROR: Direct link not found")
 
-def uploadhaven(url):Add commentMore actions
+def uploadhaven(url):
     """
     Generate a direct download link for uploadhaven.com URLs.
     @param url: URL from uploadhaven.com
