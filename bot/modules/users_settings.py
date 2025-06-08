@@ -51,6 +51,7 @@ advanced_options = [
     "NAME_SWAP",
     "YT_DLP_OPTIONS",
     "UPLOAD_PATHS",
+    "USER_COOKIE_FILE",
 ]
 
 user_settings_text = {
@@ -176,6 +177,11 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 ╰ <b>Time Left :</b> <code>60 sec</code>
 """,
     ),
+    "USER_COOKIE_FILE": (
+        "",
+        "User Cookie File to authenticate access to websites.",
+        "<i>Send your cookie file (e.g., cookies.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 
@@ -185,6 +191,7 @@ async def get_user_settings(from_user, stype="main"):
     buttons = ButtonMaker()
     rclone_conf = f"rclone/{user_id}.conf"
     token_pickle = f"tokens/{user_id}.pickle"
+    user_cookie_path = f"cookies/{user_id}.txt"
     user_dict = user_data.get(user_id, {})
 
     if stype == "main":
@@ -248,12 +255,20 @@ async def get_user_settings(from_user, stype="main"):
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
+
+        use_user_cookie = user_dict.get("USE_USER_COOKIE", False)
+        cookie_mode = "USER's" if use_user_cookie else "OWNER's"
+        buttons.data_button(
+            f"Swap to {'OWNER' if use_user_cookie else 'USER'}'s Cookie",
+            f"userset {user_id} tog USE_USER_COOKIE {'f' if use_user_cookie else 't'}",
+        )
         btns = buttons.build_menu(1)
 
         text = f"""⌬ <b>General Settings :</b>
 ╭ <b>Name</b> → {user_name}
 ┊ <b>Default Upload Package</b> → <b>{du}</b>
-╰ <b>Default Usage Mode</b> → <b>{tr}'s</b> token/config
+┊ <b>Default Usage Mode</b> → <b>{tr}'s</b> token/config
+╰ <b>Cookie Mode</b> → <b>{cookie_mode}</b>
 """
 
     elif stype == "leech":
@@ -580,6 +595,10 @@ async def get_user_settings(from_user, stype="main"):
             upload_paths = "None"
         buttons.data_button("Upload Paths", f"userset {user_id} menu UPLOAD_PATHS")
 
+        user_cookie_path = f"cookies/{user_id}.txt"
+        user_cookie_msg = "Exists" if await aiopath.exists(user_cookie_path) else "Not Exists"
+        buttons.data_button("User Cookie File", f"userset {user_id} menu USER_COOKIE_FILE")
+
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
@@ -589,7 +608,8 @@ async def get_user_settings(from_user, stype="main"):
 ┊ <b>Name Swaps</b> → {ns_msg}
 ┊ <b>Excluded Extensions</b> → <code>{ex_ex}</code>
 ┊ <b>Upload Paths</b> → <b>{upload_paths}</b>
-╰ <b>YT-DLP Options</b> → <code>{ytopt}</code>"""
+┊ <b>YT-DLP Options</b> → <code>{ytopt}</code>
+╰ <b>User Cookie File</b> → <b>{user_cookie_msg}</b>"""
 
     return text, btns
 
@@ -623,6 +643,11 @@ async def add_file(_, message, ftype, rfunc):
         tpath = f"{getcwd()}/tokens/"
         await makedirs(tpath, exist_ok=True)
         des_dir = f"{tpath}{user_id}.pickle"
+        await message.download(file_name=des_dir)
+    elif ftype == "USER_COOKIE_FILE":
+        cpath = f"{getcwd()}/cookies/"
+        await makedirs(cpath, exist_ok=True)
+        des_dir = f"{cpath}{user_id}.txt"
         await message.download(file_name=des_dir)
     await delete_message(message)
     update_user_ldata(user_id, ftype, des_dir)
@@ -708,10 +733,11 @@ async def get_menu(option, message, user_id):
         "THUMBNAIL": f"thumbnails/{user_id}.jpg",
         "RCLONE_CONFIG": f"rclone/{user_id}.conf",
         "TOKEN_PICKLE": f"tokens/{user_id}.pickle",
+        "USER_COOKIE_FILE": f"cookies/{user_id}.txt",
     }
 
     buttons = ButtonMaker()
-    if option in ["THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE"]:
+    if option in ["THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE"]:
         key = "file"
     else:
         key = "set"
@@ -839,7 +865,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, data[3], data[4] == "t")
         if data[3] == "STOP_DUPLICATE":
             back_to = "gdrive"
-        elif data[3] == "USER_TOKENS":
+        elif data[3] in ["USER_TOKENS", "USE_USER_COOKIE"]:
             back_to = "general"
         else:
             back_to = "leech"
@@ -888,11 +914,13 @@ async def edit_user_settings(client, query):
         await event_handler(client, query, pfunc, rfunc)
     elif data[2] == "remove":
         await query.answer("Removed!", show_alert=True)
-        if data[3] in ["THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE"]:
+        if data[3] in ["THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE"]:
             if data[3] == "THUMBNAIL":
                 fpath = thumb_path
             elif data[3] == "RCLONE_CONFIG":
                 fpath = rclone_conf
+            elif data[3] == "USER_COOKIE_FILE":
+                fpath = user_cookie_path
             else:
                 fpath = token_pickle
             if await aiopath.exists(fpath):
@@ -912,7 +940,7 @@ async def edit_user_settings(client, query):
             for k in list(user_dict.keys()):
                 if k not in ("SUDO", "AUTH", "VERIFY_TOKEN", "VERIFY_TIME"):
                     del user_dict[k]
-            for fpath in [thumb_path, rclone_conf, token_pickle]:
+            for fpath in [thumb_path, rclone_conf, token_pickle, user_cookie_path]:
                 if await aiopath.exists(fpath):
                     await remove(fpath)
             await update_user_settings(query)
