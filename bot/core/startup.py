@@ -169,7 +169,7 @@ async def load_settings():
                     dir_path = ospath.dirname(file_path)
                     if not await aiopath.exists(dir_path):
                         await makedirs(dir_path)
-                    if file_path.startswith("cookies/") and file_path.endswith(".txt"):Add commentMore actions
+                    if file_path.startswith("cookies/") and file_path.endswith(".txt"):
                         async with aiopen(file_path, "wb") as f:
                             if isinstance(content, str):
                                 content = content.encode("utf-8")
