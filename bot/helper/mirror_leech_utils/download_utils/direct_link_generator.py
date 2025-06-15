@@ -392,22 +392,6 @@ debrid_link_sites = [
     "sports.yahoo.com",
     "video.yahoo.com",
     "youporn.com",
-    "terabox.com",
-    "nephobox.com",
-    "4funbox.com",
-    "mirrobox.com",
-    "momerybox.com",
-    "teraboxapp.com",
-    "1024tera.com",
-    "terabox.app",
-    "gibibox.com",
-    "goaibox.com",
-    "terasharelink.com",
-    "teraboxlink.com",
-    "freeterabox.com",
-    "1024terabox.com",
-    "teraboxshare.com",
-    "terafileshare.com",
 ]
 
 def direct_link_generator(link):
