@@ -443,6 +443,8 @@ def direct_link_generator(link):
         return tmpsend(link)
     elif "easyupload.io" in domain:
         return easyupload(link)
+    elif "mediafile.cc" in domain:
+        return mediafile(link)
     elif "streamvid.net" in domain:
         return streamvid(link)
     elif "shrdsk.me" in domain:
@@ -748,6 +750,30 @@ def devuploads(url):
     direct_link = html.xpath("//input[@name='orilink']/@value")
     session.close()
     return direct_link[0]
+
+def mediafile(url):
+    """
+    Generate a direct download link for mediafile.cc URLs.
+    @param url: URL from mediafile.cc
+    @return: Direct download link
+    """
+    try:
+        res = get(url, allow_redirects=True)
+        match = re.search(r"href='([^']+)'", res.text)
+        if not match:
+            raise DirectDownloadLinkException("ERROR: Unable to find link data")        
+        download_url = match.group(1)
+        sleep(60)
+        res = get(download_url, headers={'Referer': url}, cookies=res.cookies)
+        postvalue = re.search(r'showFileInformation(.*);', res.text)
+        if not postvalue:
+            raise DirectDownloadLinkException("ERROR: Unable to find post value")       
+        postid = postvalue.group(1).replace('(','').replace(')','')
+        response = post('https://mediafile.cc/account/ajax/file_details',data={"u": postid}, headers={"X-Requested-With": "XMLHttpRequest"})
+        html = response.json()['html']
+        return [i for i in re.findall(r'https://[^\s"\']+', html) if 'download_token' in i][1]
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
 
 
 def lulacloud(url):
