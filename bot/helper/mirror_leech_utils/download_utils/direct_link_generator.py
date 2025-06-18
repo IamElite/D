@@ -67,6 +67,8 @@ debrid_link_sites = [
     "nelion.me",
     "pixeldrain.com",
     "prefiles.com",
+    "rapidgator.net",
+    "rg.to",
     "scribd.com",
     "silkfiles.com",
     "soundcloud.com",
@@ -88,6 +90,7 @@ debrid_link_sites = [
     "world-files.com",
     "wupfile.com"
 ]
+
 
 def direct_link_generator(link):
     """direct links generator"""
