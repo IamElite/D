@@ -10,12 +10,10 @@ class BotCommands:
         "QbMirror": ["qbmirror", "qm"],
         "JdMirror": ["jdmirror", "jm"],
         "Ytdl": ["ytdl", "y"],
-        "NzbMirror": ["nzbmirror", "nm"],
         "Leech": ["leech", "l"],
         "QbLeech": ["qbleech", "ql"],
         "JdLeech": ["jdleech", "jl"],
         "YtdlLeech": ["ytdlleech", "yl"],
-        "NzbLeech": ["nzbleech", "nl"],
         "Clone": ["clone", "cl"],
         "Count": "count",
         "Delete": "del",
@@ -48,7 +46,6 @@ class BotCommands:
         "BotSet": ["bsetting", "bs"],
         "UserSet": ["usetting", "us"],
         "Select": ["select", "sel"],
-        "NzbSearch": "nzbsearch",
     }
 
     for key, cmds in commands.items():

@@ -6,8 +6,6 @@ from aiofiles import open as aiopen
 from aiofiles.os import makedirs, remove, path as aiopath
 from aioshutil import rmtree
 
-from sabnzbdapi.exception import APIResponseError
-
 from .. import (
     LOGGER,
     aria2_options,
@@ -19,10 +17,8 @@ from .. import (
     var_list,
     user_data,
     excluded_extensions,
-    nzb_options,
     qbit_options,
     rss_dict,
-    sabnzbd_client,
     sudo_users,
 )
 from ..helper.ext_utils.db_handler import database
@@ -58,15 +54,6 @@ async def update_aria2_options():
         aria2_options.update(op)
     else:
         await TorrentManager.aria2.changeGlobalOption(aria2_options)
-
-
-async def update_nzb_options():
-    if Config.USENET_SERVERS:
-        try:
-            no = (await sabnzbd_client.get_config())["config"]["misc"]
-            nzb_options.update(no)
-        except (APIResponseError, Exception) as e:
-            LOGGER.error(f"Error in NZB Options: {e}")
 
 
 async def load_settings():
@@ -142,17 +129,6 @@ async def load_settings():
             ):
                 qbit_options.update(qbit_opt)
 
-        if nzb_opt := await database.db.settings.nzb.find_one(
-            {"_id": BOT_ID}, {"_id": 0}
-        ):
-            if await aiopath.exists("sabnzbd/SABnzbd.ini.bak"):
-                await remove("sabnzbd/SABnzbd.ini.bak")
-            ((key, value),) = nzb_opt.items()
-            file_ = key.replace("__", ".")
-            async with aiopen(f"sabnzbd/{file_}", "wb+") as f:
-                await f.write(value)
-            LOGGER.info("Loaded.. Sabnzbd Data from MongoDB")
-
         if await database.db.users[BOT_ID].find_one():
             rows = database.db.users[BOT_ID].find({})
             async for row in rows:
@@ -209,12 +185,6 @@ async def save_settings():
         )
     if await database.db.settings.qbittorrent.find_one({"_id": TgClient.ID}) is None:
         await database.save_qbit_settings()
-    if await database.db.settings.nzb.find_one({"_id": TgClient.ID}) is None:
-        async with aiopen("sabnzbd/SABnzbd.ini", "rb+") as pf:
-            nzb_conf = await pf.read()
-        await database.db.settings.nzb.update_one(
-            {"_id": TgClient.ID}, {"$set": {"SABnzbd__ini": nzb_conf}}, upsert=True
-        )
 
 
 async def update_variables():
@@ -300,7 +270,7 @@ async def load_configurations():
 
     await (
         await create_subprocess_shell(
-            f"chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x setpkgs.sh && ./setpkgs.sh {BinConfig.ARIA2_NAME} {BinConfig.SABNZBD_NAME}"
+            f"chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x setpkgs.sh && ./setpkgs.sh {BinConfig.ARIA2_NAME}"
         )
     ).wait()
 

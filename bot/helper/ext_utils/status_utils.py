@@ -49,7 +49,6 @@ class EngineStatus:
         self.STATUS_FFMPEG = f"ffmpeg v{bot_cache['eng_versions']['ffmpeg']}"
         self.STATUS_7Z = f"7z v{bot_cache['eng_versions']['7z']}"
         self.STATUS_RCLONE = f"RClone v{bot_cache['eng_versions']['rclone']}"
-        self.STATUS_SABNZBD = f"SABnzbd+ v{bot_cache['eng_versions']['SABnzbd+']}"
         self.STATUS_QUEUE = "QSystem v2"
         self.STATUS_JD = "JDownloader v2"
 

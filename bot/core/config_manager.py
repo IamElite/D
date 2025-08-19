@@ -51,7 +51,6 @@ class Config:
     RC_DL_LIMIT = 0
     CLONE_LIMIT = 0
     JD_LIMIT = 0
-    NZB_LIMIT = 0
     YTDLP_LIMIT = 0
     PLAYLIST_LIMIT = 0
     LEECH_LIMIT = 0
@@ -70,8 +69,6 @@ class Config:
     MEDIA_GROUP = False
     HYBRID_LEECH = True
     HYPER_THREADS = 0
-    HYDRA_IP = ""
-    HYDRA_API_KEY = ""
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0
@@ -110,7 +107,6 @@ class Config:
     UPSTREAM_REPO = ""
     UPSTREAM_BRANCH = "master"
     UPDATE_PKGS = True
-    USENET_SERVERS = []
     USER_SESSION_STRING = ""
     USER_TRANSMISSION = True
     USE_SERVICE_ACCOUNTS = False
@@ -164,12 +160,6 @@ class Config:
                 ]:
                     if value:
                         value = value.strip("/")
-                elif attr == "USENET_SERVERS":
-                    try:
-                        if not value[0].get("host"):
-                            continue
-                    except Exception:
-                        continue
                 setattr(cls, attr, value)
         for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
             value = getattr(cls, key)
@@ -220,12 +210,6 @@ class Config:
                 ]:
                     if value:
                         value = value.strip("/")
-                elif key == "USENET_SERVERS":
-                    try:
-                        if not value[0].get("host"):
-                            value = []
-                    except Exception:
-                        value = []
                 setattr(cls, key, value)
         for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
             value = getattr(cls, key)
@@ -240,4 +224,3 @@ class BinConfig:
     QBIT_NAME = "torrentgod"
     FFMPEG_NAME = "vidwarlock"
     RCLONE_NAME = "cloudphantom"
-    SABNZBD_NAME = "newsslayer"

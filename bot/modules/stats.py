@@ -37,10 +37,6 @@ from ..version import get_version
 commands = {
     "aria2": ([BinConfig.ARIA2_NAME, "--version"], r"aria2 version ([\d.]+)"),
     "qBittorrent": ([BinConfig.QBIT_NAME, "--version"], r"qBittorrent v([\d.]+)"),
-    "SABnzbd+": (
-        [BinConfig.SABNZBD_NAME, "--version"],
-        rf"{BinConfig.SABNZBD_NAME}-([\d.]+)",
-    ),
     "python": (["python3", "--version"], r"Python ([\d.]+)"),
     "rclone": ([BinConfig.RCLONE_NAME, "--version"], r"rclone v([\d.]+)"),
     "yt-dlp": (["yt-dlp", "--version"], r"([\d.]+)"),
@@ -147,7 +143,6 @@ async def get_stats(event, key="home"):
 ╭ <b>python:</b> {bot_cache["eng_versions"]["python"]}
 ┊ <b>aria2:</b> {bot_cache["eng_versions"]["aria2"]}
 ┊ <b>qBittorrent:</b> {bot_cache["eng_versions"]["qBittorrent"]}
-┊ <b>SABnzbd+:</b> {bot_cache["eng_versions"]["SABnzbd+"]}
 ┊ <b>rclone:</b> {bot_cache["eng_versions"]["rclone"]}
 ┊ <b>yt-dlp:</b> {bot_cache["eng_versions"]["yt-dlp"]}
 ┊ <b>ffmpeg:</b> {bot_cache["eng_versions"]["ffmpeg"]}
@@ -166,7 +161,6 @@ async def get_stats(event, key="home"):
 ┊ <b>RCloneDL Limit :</b> {Config.RC_DL_LIMIT or "∞"} GB
 ┊ <b>Clone Limit :</b> {Config.CLONE_LIMIT or "∞"} GB
 ┊ <b>JDown Limit :</b> {Config.JD_LIMIT or "∞"} GB
-┊ <b>NZB Limit :</b> {Config.NZB_LIMIT or "∞"} GB
 ┊ <b>YT-DLP Limit :</b> {Config.YTDLP_LIMIT or "∞"} GB
 ┊ <b>Playlist Limit :</b> {Config.PLAYLIST_LIMIT or "∞"}
 ┊ <b>Mega Limit :</b> {Config.MEGA_LIMIT or "∞"} GB

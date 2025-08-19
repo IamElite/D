@@ -85,7 +85,6 @@ class TaskConfig:
         self.is_leech = False
         self.is_qbit = False
         self.is_mega = False
-        self.is_nzb = False
         self.is_jd = False
         self.is_clone = False
         self.is_gdrive = False
@@ -147,7 +146,7 @@ class TaskConfig:
         self.is_gdrive = is_gdrive_link(self.source_url) if self.source_url else False
         self.is_mega = is_mega_link(self.link) if self.source_url else False
 
-        in_mode = f"#{'Mega' if self.is_mega else 'qBit' if self.is_qbit else 'SABnzbd' if self.is_nzb else 'JDown' if self.is_jd else 'RCloneDL' if self.is_rclone else 'ytdlp' if self.is_ytdlp else 'GDrive' if (self.is_clone or self.is_gdrive) else 'Aria2' if (self.source_url and self.source_url != self.message.link) else 'TgMedia'}"
+        in_mode = f"#{'Mega' if self.is_mega else 'qBit' if self.is_qbit else 'JDown' if self.is_jd else 'RCloneDL' if self.is_rclone else 'ytdlp' if self.is_ytdlp else 'GDrive' if (self.is_clone or self.is_gdrive) else 'Aria2' if (self.source_url and self.source_url != self.message.link) else 'TgMedia'}"
 
         self.mode = (in_mode, out_mode)
 
@@ -552,7 +551,6 @@ class TaskConfig:
             self.is_qbit,
             self.is_leech,
             self.is_jd,
-            self.is_nzb,
             self.same_dir,
             self.bulk,
             self.multi_tag,
@@ -594,7 +592,6 @@ class TaskConfig:
                 self.is_qbit,
                 self.is_leech,
                 self.is_jd,
-                self.is_nzb,
                 self.same_dir,
                 self.bulk,
                 self.multi_tag,

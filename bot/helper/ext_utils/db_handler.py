@@ -96,15 +96,6 @@ class DbManager:
                 {"_id": TgClient.ID}, {"$unset": {db_path: ""}}, upsert=True
             )
 
-    async def update_nzb_config(self):
-        if self._return:
-            return
-        async with aiopen("sabnzbd/SABnzbd.ini", "rb+") as pf:
-            nzb_conf = await pf.read()
-        await self.db.settings.nzb.replace_one(
-            {"_id": TgClient.ID}, {"SABnzbd__ini": nzb_conf}, upsert=True
-        )
-
     async def update_user_data(self, user_id):
         if self._return:
             return

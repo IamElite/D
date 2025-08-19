@@ -58,7 +58,6 @@ GD_DL_LIMIT = 0
 RC_DL_LIMIT = 0
 CLONE_LIMIT = 0
 JD_LIMIT = 0
-NZB_LIMIT = 0
 YTDLP_LIMIT = 0
 PLAYLIST_LIMIT = 0
 LEECH_LIMIT = 0
@@ -68,10 +67,6 @@ STORAGE_LIMIT = 0
 
 # Insta video downloader api
 INSTADL_API = ""
-
-# Nzb search
-HYDRA_IP = ""
-HYDRA_API_KEY = ""
 
 # Media Search
 IMDB_TEMPLATE = """<b>🎬 Title:</b> <a href="{url}">{title}</a> <b>({year})</b>
@@ -124,28 +119,6 @@ SHOW_CLOUD_LINK = False
 # JDownloader
 JD_EMAIL = ""
 JD_PASS = ""
-
-# Sabnzbd
-USENET_SERVERS = [
-    {
-        "name": "main",
-        "host": "",
-        "port": 563,
-        "timeout": 60,
-        "username": "",
-        "password": "",
-        "connections": 8,
-        "ssl": 1,
-        "ssl_verify": 2,
-        "ssl_ciphers": "",
-        "enable": 1,
-        "required": 0,
-        "optional": 0,
-        "retention": 0,
-        "send_group": 0,
-        "priority": 0,
-    }
-]
 
 # Update
 UPSTREAM_REPO = ""
