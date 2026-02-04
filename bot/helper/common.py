@@ -799,7 +799,8 @@ class TaskConfig:
             return dl_path
 
         checked = False
-        cmd = [
+        checked = False
+        base_cmd = [
             BinConfig.FFMPEG_NAME,
             "-hide_banner",
             "-loglevel",
@@ -845,24 +846,18 @@ class TaskConfig:
                     self.progress = True
                 
                 LOGGER.info(f"Running metadata cmd for: {file_path}")
+                cmd = base_cmd[:]
                 index_i = cmd.index("-i")
                 index_o = cmd.index("output_file")
                 cmd[index_i + 1] = file_path
-                cmd[index_o] = dl_path # Output back to original path (essentially) - Wait, can't overwrite same file with ffmpeg usually? 
-                # Need to output to different file then move.
-                # My logic above moves original to `file_path` (inside new_folder) and output to `dl_path`.
-                # Wait, `cmd[index_o]` is the last argument.
                 cmd[index_o] = dl_path
                 
                 self.subsize = self.size
                 res = await ffmpeg.ffmpeg_cmds(cmd, file_path)
                 if res:
-                   # res contains output files.
-                   # If success, delete temp folder.
                    await rmtree(new_folder)
                 else:
-                   # Failed, move back
-                   await remove(dl_path) # Remove partial output if any
+                   await remove(dl_path)
                    await move(file_path, dl_path)
                    await rmtree(new_folder)
 
@@ -888,9 +883,11 @@ class TaskConfig:
                         
                         LOGGER.info(f"Running metadata cmd for: {f_path}")
                         self.subsize = await get_path_size(f_path)
-                        # For directory, we need to output to temp file then replace
-                        temp_out = f_path + ".temp"
                         
+                        name, ext = ospath.splitext(f_path)
+                        temp_out = f"{name}_temp{ext}"
+                        
+                        cmd = base_cmd[:]
                         index_i = cmd.index("-i")
                         index_o = cmd.index("output_file")
                         cmd[index_i + 1] = f_path
@@ -898,6 +895,7 @@ class TaskConfig:
                         
                         res = await ffmpeg.ffmpeg_cmds(cmd, f_path)
                         if res:
+                            await move(temp_out, f_path)
                             await move(temp_out, f_path)
                         
         finally:
