@@ -270,6 +270,7 @@ class YtSelection:
         bot_loop.create_task(YtDlpClass(
            self.listener.client,
            self.listener.message,
+           is_leech=self.listener.is_leech,
            options=new_task_opts,
            pre_extracted_info=info, 
            pre_determined_name=current_name
