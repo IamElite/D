@@ -683,6 +683,7 @@ class TaskConfig:
                 if self.is_leech and Config.METADATA_KEY:
                     metadata = Config.METADATA_KEY
                     meta_cmd = [
+                        "-map", "0",
                         "-map_metadata", "0",
                         "-metadata", f"title={metadata}",
                         "-metadata:s:v", f"title={metadata}",
