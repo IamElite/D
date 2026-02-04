@@ -809,6 +809,8 @@ class TaskConfig:
             "pipe:1",
             "-i",
             "input_file",
+            "-map",
+            "0",
             "-c",
             "copy",
             "-metadata",
@@ -860,7 +862,7 @@ class TaskConfig:
                 
                 self.subsize = self.size
                 res = await ffmpeg.ffmpeg_cmds(cmd, file_path)
-                if res and await aiopath.exists(temp_output):
+                if res is not False and await aiopath.exists(temp_output):
                    await move(temp_output, dl_path)
                    await rmtree(new_folder)
                 else:
@@ -904,7 +906,7 @@ class TaskConfig:
                         cmd[index_o] = temp_out
                         
                         res = await ffmpeg.ffmpeg_cmds(cmd, f_path)
-                        if res and await aiopath.exists(temp_out):
+                        if res is not False and await aiopath.exists(temp_out):
                             await move(temp_out, f_path)
                         
         finally:
