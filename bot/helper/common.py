@@ -849,12 +849,19 @@ class TaskConfig:
                 cmd = base_cmd[:]
                 index_i = cmd.index("-i")
                 index_o = cmd.index("output_file")
+                
+                name, ext = ospath.splitext(dl_path)
+                if not ext:
+                    ext = ".mkv" if is_video else ".mka"
+                temp_output = f"{new_folder}/temp_output{ext}"
+                
                 cmd[index_i + 1] = file_path
-                cmd[index_o] = dl_path
+                cmd[index_o] = temp_output
                 
                 self.subsize = self.size
                 res = await ffmpeg.ffmpeg_cmds(cmd, file_path)
-                if res:
+                if res and await aiopath.exists(temp_output):
+                   await move(temp_output, dl_path)
                    await rmtree(new_folder)
                 else:
                    await remove(dl_path)
@@ -885,6 +892,8 @@ class TaskConfig:
                         self.subsize = await get_path_size(f_path)
                         
                         name, ext = ospath.splitext(f_path)
+                        if not ext:
+                            ext = ".mkv" if is_video else ".mka"
                         temp_out = f"{name}_temp{ext}"
                         
                         cmd = base_cmd[:]
@@ -894,8 +903,7 @@ class TaskConfig:
                         cmd[index_o] = temp_out
                         
                         res = await ffmpeg.ffmpeg_cmds(cmd, f_path)
-                        if res:
-                            await move(temp_out, f_path)
+                        if res and await aiopath.exists(temp_out):
                             await move(temp_out, f_path)
                         
         finally:
