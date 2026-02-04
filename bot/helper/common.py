@@ -679,6 +679,17 @@ class TaskConfig:
                     delete_files = True
                 else:
                     delete_files = False
+
+                if self.is_leech and Config.METADATA_KEY:
+                    metadata = Config.METADATA_KEY
+                    meta_cmd = [
+                        "-map_metadata", "0",
+                        "-metadata", f"title={metadata}",
+                        "-metadata:s:v", f"title={metadata}",
+                        "-metadata:s:a", f"title={metadata}",
+                        "-metadata:s:s", f"title={metadata}"
+                    ]
+                    cmd.extend(meta_cmd)
                 index = cmd.index("-i")
                 input_file = cmd[index + 1]
                 if input_file.strip().endswith(".video"):
