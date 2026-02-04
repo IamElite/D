@@ -91,7 +91,7 @@ class Config:
     SHOW_CLOUD_LINK = False
     STATUS_LIMIT = 10
     STATUS_UPDATE_INTERVAL = 3
-    STOP_DUPLICATE = True
+    STOP_DUPLICATE = False
     STREAMWISH_API = ""
     SUDO_USERS = ""
     TELEGRAM_API = 0
