@@ -55,6 +55,8 @@ async def select_format(_, query, obj):
         obj.qual = None
         obj.listener.is_cancelled = True
         obj.event.set()
+    elif data[1] == "master":
+        await obj.handle_master_input(data)
     else:
         if data[1] == "sub":
             obj.qual = obj.formats[data[2]][data[3]][1]
@@ -96,9 +98,12 @@ class YtSelection:
         finally:
             self.listener.client.remove_handler(*handler)
 
+
     async def get_quality(self, result):
+        self.result = result
         buttons = ButtonMaker()
         if "entries" in result:
+
             self._is_playlist = True
             for i in ["144", "240", "360", "480", "720", "1080", "1440", "2160"]:
                 video_format = f"bv*[height<=?{i}][ext=mp4]+ba[ext=m4a]/b[height<=?{i}]"
@@ -117,6 +122,8 @@ class YtSelection:
             self._main_buttons = buttons.build_menu(3)
             msg = f"Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
         else:
+            if not self.listener.name:
+                self.listener.name = result.get("title", "")
             format_dict = result.get("formats")
             if format_dict is not None:
                 for item in format_dict:
@@ -155,13 +162,9 @@ class YtSelection:
                             v_format,
                         ]
 
-                for b_name, tbr_dict in self.formats.items():
-                    if len(tbr_dict) == 1:
-                        tbr, v_list = next(iter(tbr_dict.items()))
-                        buttonName = f"{b_name} ({get_readable_file_size(v_list[0])})"
-                        buttons.data_button(buttonName, f"ytq sub {b_name} {tbr}")
-                    else:
-                        buttons.data_button(b_name, f"ytq dict {b_name}")
+                for b_name in self.formats:
+                    buttons.data_button(b_name, f"ytq master add {b_name}")
+            buttons.data_button("✅ Get All", "ytq master all")
             buttons.data_button("MP3", "ytq mp3")
             buttons.data_button("Audio Formats", "ytq audio")
             buttons.data_button("Best Video", "ytq bv*+ba/b")
@@ -233,6 +236,45 @@ class YtSelection:
         msg = f"Choose Audio{i} Qaulity:\n0 is best and 10 is worst\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
         await edit_message(self._reply_to, msg, subbuttons)
 
+    async def handle_master_input(self, data):
+        action = data[2]
+        if action == "add":
+            b_name = data[3]
+            tbr_dict = self.formats[b_name]
+            best_tbr = max(tbr_dict.keys(), key=lambda k: float(k) if k else 0)
+            v_format = tbr_dict[best_tbr][1]
+            await self.add_child_task(v_format)
+            await edit_message(self._reply_to, f"<b>Added:</b> {b_name}\n\n" + (self._reply_to.text.split("\n", 1)[1] if "\n" in self._reply_to.text else self._reply_to.text), self._main_buttons)
+            
+        elif action == "all":
+            for b_name in self.formats:
+                 tbr_dict = self.formats[b_name]
+                 best_tbr = max(tbr_dict.keys(), key=lambda k: float(k) if k else 0)
+                 v_format = tbr_dict[best_tbr][1]
+                 await self.add_child_task(v_format)
+            await edit_message(self._reply_to, "All qualities added to queue.")
+            self.qual = None
+            self.listener.is_cancelled = True
+            self.event.set()
+
+    async def add_child_task(self, qual):
+        YtDlpClass = self.listener.__class__
+        new_task_opts = self.listener.user_dict.get("YT_DLP_OPTIONS", {}).copy()
+        new_task_opts.update(Config.YT_DLP_OPTIONS)
+        new_task_opts["format"] = qual
+        
+        current_name = self.listener.name
+        
+        info = getattr(self, "result", None)
+        
+        bot_loop.create_task(YtDlpClass(
+           self.listener.client,
+           self.listener.message,
+           options=new_task_opts,
+           pre_extracted_info=info, 
+           pre_determined_name=current_name
+        ).new_event())
+
 
 def extract_info(link, options):
     with YoutubeDL(options) as ydl:
@@ -269,6 +311,8 @@ class YtDlp(TaskListener):
         bulk=None,
         multi_tag=None,
         options="",
+        pre_extracted_info=None,
+        pre_determined_name=None,
     ):
         if same_dir is None:
             same_dir = {}
@@ -280,6 +324,8 @@ class YtDlp(TaskListener):
         self.options = options
         self.same_dir = same_dir
         self.bulk = bulk
+        self.pre_extracted_info = pre_extracted_info
+        self.pre_determined_name = pre_determined_name
         super().__init__()
         self.is_ytdlp = True
         self.is_leech = is_leech
@@ -353,6 +399,9 @@ class YtDlp(TaskListener):
         except Exception as e:
             LOGGER.error(e)
             opt = {}
+
+        if self.options and isinstance(self.options, dict):
+            opt.update(self.options)
 
         self.select = args["-s"]
         self.name = args["-n"]
@@ -443,6 +492,9 @@ class YtDlp(TaskListener):
             await delete_links(self.message)
             return
 
+        if self.pre_determined_name and not self.name:
+            self.name = self.pre_determined_name
+
         if "mdisk.me" in self.link:
             self.name, self.link = await _mdisk(self.link, self.name)
 
@@ -469,8 +521,12 @@ class YtDlp(TaskListener):
                         qual = value
                 options[key] = value
         options["playlist_items"] = "0"
+
         try:
-            result = await sync_to_async(extract_info, self.link, options)
+            if self.pre_extracted_info:
+                result = self.pre_extracted_info
+            else:
+                result = await sync_to_async(extract_info, self.link, options)
         except Exception as e:
             msg = str(e).replace("<", " ").replace(">", " ")
             await send_message(self.message, f"{self.tag} {msg}")
