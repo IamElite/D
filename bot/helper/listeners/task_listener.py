@@ -108,9 +108,13 @@ class TaskListener(TaskConfig):
             and Config.INCOMPLETE_TASK_NOTIFIER
             and Config.DATABASE_URL
         ):
-            await database.add_incomplete_task(
-                self.message.chat.id, self.message.link, self.tag
-            )
+            try:
+                await database.add_incomplete_task(
+                    self.message.chat.id, self.message.link, self.tag
+                )
+            except Exception as e:
+                # Ignore duplicate key error for child tasks
+                pass
 
     async def on_download_complete(self):
         await sleep(2)

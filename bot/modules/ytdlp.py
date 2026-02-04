@@ -127,8 +127,7 @@ class YtSelection:
             format_dict = result.get("formats")
             if format_dict is not None:
                 for item in format_dict:
-                    if item.get("tbr"):
-                        format_id = item["format_id"]
+                    format_id = item["format_id"]
 
                         if item.get("filesize"):
                             size = item["filesize"]
@@ -156,8 +155,10 @@ class YtSelection:
                             v_format = f"{format_id}+ba{ba_ext}/b[height=?{height}]"
                         else:
                             continue
+                        
+                        tbr = f"{item.get('tbr')}" if item.get("tbr") else f"{len(self.formats.get(b_name, {}))}" # Fallback to index if no tbr
 
-                        self.formats.setdefault(b_name, {})[f"{item['tbr']}"] = [
+                        self.formats.setdefault(b_name, {})[tbr] = [
                             size,
                             v_format,
                         ]
