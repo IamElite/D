@@ -31,8 +31,8 @@ async def start(_, message):
     userid = message.from_user.id
     lang = Language()
     buttons = ButtonMaker()
-    buttons.url_button(lang.START_BUTTON1, "https://t.me/DownloaderZoneGateway")
-    buttons.url_button(lang.START_BUTTON2, "https://t.me/DOWNLOADERZONEUPDATES")
+    buttons.url_button(lang.START_BUTTON1, "https://t.me/SyntaxRealm")
+    buttons.url_button(lang.START_BUTTON2, "https://t.me/syntax_realm")
     reply_markup = buttons.build_menu(2)
 
     if len(message.command) > 1 and message.command[1] == "beast":
@@ -205,7 +205,7 @@ async def log_cb(_, query):
                 if total > 3500:
                     break
 
-            text = f"<b>Showing Last {len(res)} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n<blockquote expandable>{escape('\n'.join(reversed(res)))}</blockquote>\n----------<b>END LOG</b>----------"
+            text = f"<pre><b>Showing Last {len(res)} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n{escape('\n'.join(reversed(res)))}\n----------<b>END LOG</b>----------</pre>"
 
             btn = ButtonMaker()
             btn.data_button("Close", f"log {user_id} close")

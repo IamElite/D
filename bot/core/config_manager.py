@@ -12,8 +12,8 @@ class Config:
     BOT_MAX_TASKS = 20
     BOT_PM = False
     CMD_SUFFIX = ""
-    CUSTOM_BOT_HEADER = "TellY Mirror"
-    CUSTOM_BOT_HEADER_LINK = "https://t.me/TellY_Mirror"
+    CUSTOM_BOT_HEADER = "Syntax Realm"
+    CUSTOM_BOT_HEADER_LINK = "https://t.me/SyntaxRealm"
     DEFAULT_LANG = "en"
     DATABASE_URL = ""
     DEFAULT_UPLOAD = "rc"
@@ -31,9 +31,9 @@ class Config:
     MEDIA_STORE = True
     FORCE_SUB_IDS = ""
     GDRIVE_ID = ""
-    GD_DESP = "Uploaded by TellY Mirror"
-    AUTHOR_NAME = "TellYMirror"
-    AUTHOR_URL = "https://t.me/TellY_Mirror"
+    GD_DESP = "Uploaded by Syntax Realm"
+    AUTHOR_NAME = "SyntaxRealm"
+    AUTHOR_URL = "https://t.me/SyntaxRealm"
     DEBRID_LINK_API = ""
     INSTADL_API = ""
     IMDB_TEMPLATE = ""
