@@ -261,6 +261,13 @@ class YtSelection:
             self.event.set()
 
     async def add_child_task(self, qual):
+        class FakeMessage:
+            def __init__(self, original_message):
+                self._msg = original_message
+                self.id = original_message.id + int(time() * 1000) + int(time() / 10000) # Simple unique offset
+            def __getattr__(self, name):
+                return getattr(self._msg, name)
+
         YtDlpClass = self.listener.__class__
         new_task_opts = self.listener.user_dict.get("YT_DLP_OPTIONS", {}).copy()
         new_task_opts.update(Config.YT_DLP_OPTIONS)
@@ -270,9 +277,11 @@ class YtSelection:
         
         info = getattr(self, "result", None)
         
+        fake_message = FakeMessage(self.listener.message)
+
         bot_loop.create_task(YtDlpClass(
            self.listener.client,
-           self.listener.message,
+           fake_message,
            is_leech=self.listener.is_leech,
            options=new_task_opts,
            pre_extracted_info=info, 
