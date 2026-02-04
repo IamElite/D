@@ -127,41 +127,43 @@ class YtSelection:
             format_dict = result.get("formats")
             if format_dict is not None:
                 for item in format_dict:
+                    if not item.get("tbr") and not item.get("height"):
+                        continue
+
                     format_id = item["format_id"]
 
-                        if item.get("filesize"):
-                            size = item["filesize"]
-                        elif item.get("filesize_approx"):
-                            size = item["filesize_approx"]
-                        else:
-                            size = 0
+                    if item.get("filesize"):
+                        size = item["filesize"]
+                    elif item.get("filesize_approx"):
+                        size = item["filesize_approx"]
+                    else:
+                        size = 0
 
-                        if item.get("video_ext") == "none" and (
-                            item.get("resolution") == "audio only"
-                            or item.get("acodec") != "none"
-                        ):
-                            if item.get("audio_ext") == "m4a":
-                                self._is_m4a = True
-                            b_name = f"{item.get('acodec') or format_id}-{item['ext']}"
-                            v_format = format_id
-                        elif item.get("height"):
-                            height = item["height"]
-                            ext = item["ext"]
-                            fps = item["fps"] if item.get("fps") else ""
-                            b_name = f"{height}p{fps}-{ext}"
-                            ba_ext = (
-                                "[ext=m4a]" if self._is_m4a and ext == "mp4" else ""
-                            )
-                            v_format = f"{format_id}+ba{ba_ext}/b[height=?{height}]"
-                        else:
-                            continue
-                        
-                        tbr = f"{item.get('tbr')}" if item.get("tbr") else f"{len(self.formats.get(b_name, {}))}" # Fallback to index if no tbr
+                    if item.get("video_ext") == "none" and (
+                        item.get("resolution") == "audio only"
+                        or item.get("acodec") != "none"
+                    ):
+                        if item.get("audio_ext") == "m4a":
+                            self._is_m4a = True
+                        b_name = f"{item.get('acodec') or format_id}-{item['ext']}"
+                        v_format = format_id
+                    elif item.get("height"):
+                        height = item["height"]
+                        ext = item["ext"]
+                        fps = item["fps"] if item.get("fps") else ""
+                        b_name = f"{height}p{fps}-{ext}"
+                        ba_ext = (
+                            "[ext=m4a]" if self._is_m4a and ext == "mp4" else ""
+                        )
+                        v_format = f"{format_id}+ba{ba_ext}/b[height=?{height}]"
+                    else:
+                        continue
 
-                        self.formats.setdefault(b_name, {})[tbr] = [
-                            size,
-                            v_format,
-                        ]
+                    tbr = item.get("tbr") or 0
+                    self.formats.setdefault(b_name, {})[f"{tbr}"] = [
+                        size,
+                        v_format,
+                    ]
 
                 for b_name in self.formats:
                     buttons.data_button(b_name, f"ytq master add {b_name}")
