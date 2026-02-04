@@ -26,26 +26,59 @@ from ..helper.telegram_helper.message_utils import (
 
 @new_task
 async def restart_bot(_, message):
-    buttons = button_build.ButtonMaker()
-    buttons.data_button("Yes!", "botrestart confirm")
-    buttons.data_button("No!", "botrestart cancel")
-    button = buttons.build_menu(2)
-    await send_message(
-        message, "<i>Are you really sure you want to restart the bot ?</i>", button
+    intervals["stopAll"] = True
+    restart_message = await send_message(message, "<i>Restarting...</i>")
+    await TgClient.stop()
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+    if qb := intervals["qb"]:
+        qb.cancel()
+    if jd := intervals["jd"]:
+        jd.cancel()
+    if st := intervals["status"]:
+        for intvl in list(st.values()):
+            intvl.cancel()
+    await clean_all()
+    await TorrentManager.close_all()
+    if jdownloader.is_connected:
+        await gather(
+            jdownloader.device.downloadcontroller.stop_downloads(),
+            jdownloader.device.linkgrabber.clear_list(),
+            jdownloader.device.downloads.cleanup(
+                "DELETE_ALL",
+                "REMOVE_LINKS_AND_DELETE_FILES",
+                "ALL",
+            ),
+        )
+        await jdownloader.close()
+    proc1 = await create_subprocess_exec(
+        "pkill",
+        "-9",
+        "-f",
+        f"gunicorn|{BinConfig.ARIA2_NAME}|{BinConfig.QBIT_NAME}|{BinConfig.FFMPEG_NAME}|{BinConfig.RCLONE_NAME}|java|7z|split",
     )
+    proc2 = await create_subprocess_exec("python3", "update.py")
+    await gather(proc1.wait(), proc2.wait())
+    async with aiopen(".restartmsg", "w") as f:
+        await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
+    osexecl(executable, executable, "-m", "bot")
+
 
 
 @new_task
 async def restart_sessions(_, message):
-    buttons = button_build.ButtonMaker()
-    buttons.data_button("Yes!", "sessionrestart confirm")
-    buttons.data_button("No!", "sessionrestart cancel")
-    button = buttons.build_menu(2)
-    await send_message(
-        message,
-        "<i>Are you really sure you want to restart the session(s) ?!</>",
-        button,
-    )
+    from ..core.handlers import add_handlers
+    from pyrogram.handlers import CallbackQueryHandler
+    from pyrogram.filters import regex
+    from ..helper.telegram_helper.filters import CustomFilters
+    from .. import bot_loop
+
+    restart_message = await send_message(message, "Restarting Session(s)...")
+    await TgClient.reload()
+    add_handlers()
+    # Re-adding the restart_sessions_confirm handler might not be needed if we remove the button logic entirely from main too
+    # But since the original logic was in main, we replicate the effect of a successful restart
+    await edit_message(restart_message, "Session(s) Restarted Successfully!")
 
 
 async def send_incomplete_task_message(cid, msg_id, msg):

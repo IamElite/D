@@ -292,11 +292,6 @@ def add_handlers():
         )
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(
-            confirm_restart, filters=regex("^botrestart") & CustomFilters.sudo
-        )
-    )
-    TgClient.bot.add_handler(
         MessageHandler(
             restart_sessions,
             filters=command(BotCommands.RestartSessionsCommand, case_sensitive=True)

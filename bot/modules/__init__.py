@@ -23,7 +23,6 @@ from .mirror_leech import (
 from .restart import (
     restart_bot,
     restart_notification,
-    confirm_restart,
     restart_sessions,
 )
 from .imdb import imdb_search, imdb_callback
@@ -67,7 +66,6 @@ __all__ = [
     "jd_mirror",
     "restart_bot",
     "restart_notification",
-    "confirm_restart",
     "restart_sessions",
     "imdb_search",
     "imdb_callback",

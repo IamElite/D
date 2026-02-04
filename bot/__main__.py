@@ -89,33 +89,6 @@ from .helper.telegram_helper.message_utils import (
 )
 
 
-@new_task
-async def restart_sessions_confirm(_, query):
-    data = query.data.split()
-    message = query.message
-    if data[1] == "confirm":
-        reply_to = message.reply_to_message
-        restart_message = await send_message(reply_to, "Restarting Session(s)...")
-        await delete_message(message)
-        await TgClient.reload()
-        add_handlers()
-        TgClient.bot.add_handler(
-            CallbackQueryHandler(
-                restart_sessions_confirm,
-                filters=regex("^sessionrestart") & CustomFilters.sudo,
-            )
-        )
-        await edit_message(restart_message, "Session(s) Restarted Successfully!")
-    else:
-        await delete_message(message)
-
-
-TgClient.bot.add_handler(
-    CallbackQueryHandler(
-        restart_sessions_confirm,
-        filters=regex("^sessionrestart") & CustomFilters.sudo,
-    )
-)
 
 LOGGER.info("Beast is now running!")
 bot_loop.run_forever()
