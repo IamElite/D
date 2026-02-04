@@ -61,6 +61,7 @@ class Config:
     LINKS_LOG_ID = ""
     MIRROR_LOG_ID = ""
     CLEAN_LOG_MSG = True
+    METADATA_KEY = "[ @SyntaxRealm ]"
     LEECH_PREFIX = ""
     LEECH_CAPTION = ""
     LEECH_SUFFIX = ""
