@@ -1,21 +1,4 @@
-<p align="center">
-  <img width="220" src="https://i.postimg.cc/XvdvXTkS/photo-2024-12-27-11-46-15.jpg" alt="Downloader Zone Logo">
-</p>
 
-<p align="center">
-  <b>Modern Telegram Mirror/Leech Bot</b><br>
-  <i>Wzml-X is a powerful, modern Telegram bot for mirroring, leeching, and managing downloads to Google Drive, Telegram, or any RClone-supported cloud. Built for speed, reliability, and a beautiful user experience.</i>
-</p>
-
-<p align="center">
-  <a href="https://github.com/DownloaderZone/WZML-X"><img src="https://img.shields.io/github/stars/DownloaderZone/WZML-X?style=flat-square&color=yellow&logo=github"/></a>
-  <a href="https://github.com/DownloaderZone/WZML-X"><img src="https://img.shields.io/github/forks/DownloaderZone/WZML-X?style=flat-square&color=blue&logo=github"/></a>
-  <a href="https://t.me/DOWNLOADERZONEUPDATES"><img src="https://img.shields.io/badge/Telegram-Channel-blue?style=flat-square&logo=telegram"/></a>
-  <a href="https://t.me/DZONEDISCUSSION"><img src="https://img.shields.io/badge/Support-Group-blueviolet?style=flat-square&logo=telegram"/></a>
-  <a href="https://github.com/DownloaderZone/WZML-X/blob/main/LICENSE"><img src="https://img.shields.io/github/license/DownloaderZone/WZML-X?style=flat-square&color=success"/></a>
-</p>
-
----
 
 ## 🚀 Features
 
@@ -36,13 +19,6 @@
 - Token/Multi-Shortener Support: Support for token based usage and multi-shortener services
 - **Actively Maintained**: By Downloader Zone & Team.
 </details>
-
----
-
-## 🖥️ Live Demo & Public Mirror/Leech Group
-
-- Channel: [DOWNLOADER ZONE UPDATES](https://t.me/DOWNLOADERZONEUPDATES)
-- Group: [DOWNLOADER ZONE FREE MIRROR LEECH GROUP](https://t.me/downloaderzonefreemirrorleech)
 
 ---
 
