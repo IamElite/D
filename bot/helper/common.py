@@ -864,7 +864,8 @@ class TaskConfig:
                    await move(temp_output, dl_path)
                    await rmtree(new_folder)
                 else:
-                   await remove(dl_path)
+                   if await aiopath.exists(dl_path):
+                       await remove(dl_path)
                    await move(file_path, dl_path)
                    await rmtree(new_folder)
 
