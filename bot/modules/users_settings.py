@@ -42,6 +42,7 @@ leech_options = [
     "LEECH_SUFFIX",
     "LEECH_CAPTION",
     "THUMBNAIL_LAYOUT",
+    "METADATA_KEY",
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
@@ -182,6 +183,11 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "User's YT-DLP Cookie File to authenticate access to websites and youtube.",
         "<i>Send your cookie file (e.g., cookies.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "METADATA_KEY": (
+        "",
+        "",
+        "<i>Send your Metadata. Default: <code>[ @SyntaxRealm ]</code>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 
@@ -312,6 +318,14 @@ async def get_user_settings(from_user, stype="main"):
             lcap = Config.LEECH_CAPTION
         else:
             lcap = "Not Exists"
+
+        buttons.data_button("Metadata", f"userset {user_id} menu METADATA_KEY")
+        if user_dict.get("METADATA_KEY", False):
+            meta = user_dict["METADATA_KEY"]
+        elif "METADATA_KEY" not in user_dict and Config.METADATA_KEY:
+            meta = Config.METADATA_KEY
+        else:
+            meta = "[ @SyntaxRealm ]"
 
         if (
             user_dict.get("AS_DOCUMENT", False)

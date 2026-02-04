@@ -51,6 +51,7 @@ from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
 from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
+from .mirror_leech_utils.status_utils.metadata_status import MetadataStatus
 from .telegram_helper.bot_commands import BotCommands
 from .telegram_helper.message_utils import (
     get_tg_link_message,
@@ -787,6 +788,118 @@ class TaskConfig:
                                         newname = file_name.split(".", 1)[-1]
                                         newres = ospath.join(dirpath, newname)
                                         await move(res[0], newres)
+        finally:
+            if checked:
+                cpu_eater_lock.release()
+        return dl_path
+
+    async def proceed_metadata(self, dl_path, gid):
+        metadata = self.user_dict.get("METADATA_KEY") or (Config.METADATA_KEY if "METADATA_KEY" not in self.user_dict else "")
+        if not metadata:
+            return dl_path
+
+        checked = False
+        cmd = [
+            BinConfig.FFMPEG_NAME,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-progress",
+            "pipe:1",
+            "-i",
+            "input_file",
+            "-c",
+            "copy",
+            "-metadata",
+            f"title={metadata}",
+            "-metadata",
+            f"author={metadata}",
+            "-metadata",
+            f"artist={metadata}",
+            "output_file",
+        ]
+
+        try:
+            ffmpeg = FFMpeg(self)
+            self.proceed_count = 0
+            
+            if await aiopath.isfile(dl_path):
+                is_video, is_audio, _ = await get_document_type(dl_path)
+                if not is_video and not is_audio:
+                    return dl_path
+                
+                new_folder = ospath.splitext(dl_path)[0]
+                if new_folder == dl_path:
+                    new_folder += "_meta"
+                name = ospath.basename(dl_path)
+                await makedirs(new_folder, exist_ok=True)
+                file_path = f"{new_folder}/{name}"
+                await move(dl_path, file_path)
+                
+                if not checked:
+                    checked = True
+                    async with task_dict_lock:
+                        task_dict[self.mid] = MetadataStatus(self, ffmpeg, gid, "Metadata")
+                    self.progress = False
+                    await cpu_eater_lock.acquire()
+                    self.progress = True
+                
+                LOGGER.info(f"Running metadata cmd for: {file_path}")
+                index_i = cmd.index("-i")
+                index_o = cmd.index("output_file")
+                cmd[index_i + 1] = file_path
+                cmd[index_o] = dl_path # Output back to original path (essentially) - Wait, can't overwrite same file with ffmpeg usually? 
+                # Need to output to different file then move.
+                # My logic above moves original to `file_path` (inside new_folder) and output to `dl_path`.
+                # Wait, `cmd[index_o]` is the last argument.
+                cmd[index_o] = dl_path
+                
+                self.subsize = self.size
+                res = await ffmpeg.ffmpeg_cmds(cmd, file_path)
+                if res:
+                   # res contains output files.
+                   # If success, delete temp folder.
+                   await rmtree(new_folder)
+                else:
+                   # Failed, move back
+                   await remove(dl_path) # Remove partial output if any
+                   await move(file_path, dl_path)
+                   await rmtree(new_folder)
+
+            else:
+                for dirpath, _, files in await sync_to_async(walk, dl_path, topdown=False):
+                    for file_ in files:
+                        if self.is_cancelled:
+                            return dl_path
+                        f_path = ospath.join(dirpath, file_)
+                        is_video, is_audio, _ = await get_document_type(f_path)
+                        if not is_video and not is_audio:
+                            continue
+                        
+                        self.proceed_count += 1
+                        
+                        if not checked:
+                            checked = True
+                            async with task_dict_lock:
+                                task_dict[self.mid] = MetadataStatus(self, ffmpeg, gid, "Metadata")
+                            self.progress = False
+                            await cpu_eater_lock.acquire()
+                            self.progress = True
+                        
+                        LOGGER.info(f"Running metadata cmd for: {f_path}")
+                        self.subsize = await get_path_size(f_path)
+                        # For directory, we need to output to temp file then replace
+                        temp_out = f_path + ".temp"
+                        
+                        index_i = cmd.index("-i")
+                        index_o = cmd.index("output_file")
+                        cmd[index_i + 1] = f_path
+                        cmd[index_o] = temp_out
+                        
+                        res = await ffmpeg.ffmpeg_cmds(cmd, f_path)
+                        if res:
+                            await move(temp_out, f_path)
+                        
         finally:
             if checked:
                 cpu_eater_lock.release()

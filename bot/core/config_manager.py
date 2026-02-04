@@ -101,7 +101,7 @@ class Config:
     LOGIN_PASS = ""
     TORRENT_TIMEOUT = 0
     TIMEZONE = "Asia/Kolkata"
-    USER_MAX_TASKS = 5
+    USER_MAX_TASKS = 0
     USER_TIME_INTERVAL = 0
     UPLOAD_PATHS = {}
     UPSTREAM_REPO = ""
