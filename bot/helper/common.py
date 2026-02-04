@@ -799,7 +799,6 @@ class TaskConfig:
             return dl_path
 
         checked = False
-        checked = False
         base_cmd = [
             BinConfig.FFMPEG_NAME,
             "-hide_banner",
@@ -819,9 +818,13 @@ class TaskConfig:
             f"author={metadata}",
             "-metadata",
             f"artist={metadata}",
-            "-metadata:s",
+            "-metadata:s:v",
             f"title={metadata}",
-            "-metadata:s",
+            "-metadata:s:a",
+            f"title={metadata}",
+            "-metadata:s:s",
+            f"title={metadata}",
+            "-metadata:s:a",
             f"artist={metadata}",
             "output_file",
         ]
@@ -870,6 +873,8 @@ class TaskConfig:
                    await move(temp_output, dl_path)
                    await rmtree(new_folder)
                 else:
+                   if await aiopath.exists(temp_output):
+                       await remove(temp_output)
                    if await aiopath.exists(dl_path):
                        await remove(dl_path)
                    await move(file_path, dl_path)
@@ -912,6 +917,8 @@ class TaskConfig:
                         res = await ffmpeg.ffmpeg_cmds(cmd, f_path)
                         if res is not False and await aiopath.exists(temp_out):
                             await move(temp_out, f_path)
+                        elif await aiopath.exists(temp_out):
+                            await remove(temp_out)
                         
         finally:
             if checked:
