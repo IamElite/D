@@ -430,6 +430,7 @@ async def get_user_settings(from_user, stype="main"):
 ┊ Leech Destination → <code>{leech_dest}</code>
 ┊ Leech by <b>{leech_method}</b> session
 ┊ Mixed Leech → <b>{hybrid_leech}</b>
+┊ Metadata → <code>{escape(meta)}</code>
 ╰ Thumbnail Layout → <b>{thumb_layout}</b>
 """
 
@@ -637,8 +638,122 @@ async def update_user_settings(query, stype="main"):
     await edit_message(query.message, msg, button)
 
 
+
+async def handle_direct_update(message):
+    user_id = message.from_user.id
+    reply_to = message.reply_to_message
+    if not reply_to or not reply_to.from_user.is_bot:
+        reply_to = message
+
+    HELP_MSG = """
+㊂ <b><u>Available Flags :</u></b>
+>> Reply to the Value with appropriate arg respectively to set directly without opening USet.
+
+➲ <b>Custom Thumbnail :</b>
+    /cmd -s thumb
+
+➲ <b>Leech Filename Prefix :</b>
+    /cmd -s prefix
+
+➲ <b>Leech Filename Suffix :</b>
+    /cmd -s suffix
+
+➲ <b>Leech Caption :</b>
+    /cmd -s caption
+
+➲ <b>Leech Destination :</b>
+    /cmd -s dest
+
+➲ <b>Leech Split Size :</b>
+    /cmd -s split
+
+➲ <b>Equal Splits :</b>
+    /cmd -s equalsplit on|off
+
+➲ <b>Media Group :</b>
+    /cmd -s mediagroup on|off
+
+➲ <b>Metadata :</b>
+    /cmd -s metadata
+"""
+
+    args = message.text.split(maxsplit=2)
+    if len(args) < 3 and args[1] != "-s":
+        return
+
+    mapping = {
+        "prefix": "LEECH_PREFIX",
+        "suffix": "LEECH_SUFFIX",
+        "caption": "LEECH_CAPTION",
+        "dest": "LEECH_DUMP_CHAT",
+        "split": "LEECH_SPLIT_SIZE",
+        "equalsplit": "EQUAL_SPLITS",
+        "mediagroup": "MEDIA_GROUP",
+        "thumb": "THUMBNAIL",
+        "metadata": "METADATA_KEY",
+    }
+    
+    if len(args) < 3:
+        await send_message(message, HELP_MSG)
+        return
+
+    key_arg = args[2].lower()
+    value = args[3] if len(args) > 3 else ""
+
+    if key_arg not in mapping:
+        await send_message(message, HELP_MSG)
+        return
+
+    key = mapping[key_arg]
+
+    if key == "THUMBNAIL":
+        if not message.reply_to_message or not (message.reply_to_message.photo or message.reply_to_message.document):
+            await send_message(message, "Reply to a photo/document with this command to set custom thumbnail!")
+            return
+        await add_file(None, message.reply_to_message, "THUMBNAIL", partial(send_message, message, "Thumbnail updated!"))
+        await delete_message(message)
+        return
+
+    if not value:
+        await send_message(message, "Value cannot be empty!")
+        return
+
+    if key == "LEECH_SPLIT_SIZE":
+        try:
+            if not value.isdigit():
+                value = get_size_bytes(value)
+            value = min(int(value), TgClient.MAX_SPLIT_SIZE)
+        except:
+             await send_message(message, "Invalid size format!")
+             return
+    
+    elif key in ["EQUAL_SPLITS", "MEDIA_GROUP"]:
+        if value.lower() not in ["on", "off"]:
+            await send_message(message, "Value must be on or off!")
+            return
+        value = value.lower() == "on"
+
+    update_user_ldata(user_id, key, value)
+    await database.update_user_data(user_id)
+    
+    await delete_message(message)
+    
+    # Refresh logic
+    if reply_to and reply_to.from_user.is_self:
+         try:
+             msg, btn = await get_user_settings(message.from_user, "leech")
+             await edit_message(reply_to, msg, btn)
+         except:
+             pass
+    else:
+        await send_message(message, f"<b>{key_arg.title()}</b> updated to: <code>{value}</code>")
+
+@new_task
 @new_task
 async def send_user_settings(_, message):
+    if len(message.command) > 1 and message.command[1] == "-s":
+        return await handle_direct_update(message)
+
     from_user = message.from_user
     handler_dict[from_user.id] = False
     msg, button = await get_user_settings(from_user)
@@ -719,7 +834,7 @@ async def set_option(_, message, option, rfunc):
         if not value.isdigit():
             value = get_size_bytes(value)
         value = min(int(value), TgClient.MAX_SPLIT_SIZE)
-    # elif option == "LEECH_DUMP_CHAT": # TODO: Add
+
     elif option == "EXCLUDED_EXTENSIONS":
         fx = value.split()
         value = ["aria2", "!qB"]
@@ -775,7 +890,7 @@ async def get_menu(option, message, user_id):
                 "Remove One", f"userset {user_id} rmone {option}", "header"
             )
 
-        if key != "file":  # TODO: option default val check
+        if key != "file":
             buttons.data_button("Reset", f"userset {user_id} reset {option}")
         elif await aiopath.exists(file_dict[option]):
             buttons.data_button("Remove", f"userset {user_id} remove {option}")
