@@ -819,6 +819,10 @@ class TaskConfig:
             f"author={metadata}",
             "-metadata",
             f"artist={metadata}",
+            "-metadata:s",
+            f"title={metadata}",
+            "-metadata:s",
+            f"artist={metadata}",
             "output_file",
         ]
 
