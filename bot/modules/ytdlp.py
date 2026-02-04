@@ -1,6 +1,7 @@
 from asyncio import Event, wait_for
 from functools import partial
 from time import time
+import random
 
 from httpx import AsyncClient
 from pyrogram.filters import regex, user
@@ -264,7 +265,7 @@ class YtSelection:
         class FakeMessage:
             def __init__(self, original_message):
                 self._msg = original_message
-                self.id = original_message.id + int(time() * 1000) + int(time() / 10000) # Simple unique offset
+                self.id = original_message.id + int(time() * 1000) + random.randint(100, 10000000)
             def __getattr__(self, name):
                 return getattr(self._msg, name)
 
