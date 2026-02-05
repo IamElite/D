@@ -1,7 +1,7 @@
-from asyncio import Event, wait_for, sleep
+from asyncio import Event, wait_for
 from functools import partial
 from time import time
-import random
+
 
 from httpx import AsyncClient
 from pyrogram.filters import regex, user
@@ -69,13 +69,7 @@ async def select_format(_, query, obj):
 
 
 
-class FakeMessage:
-    def __init__(self, original_message):
-        self._msg = original_message
-        self.id = original_message.id + int(time() * 1000) + random.randint(100, 10000000)
 
-    def __getattr__(self, name):
-        return getattr(self._msg, name)
 
 
 class YtSelection:
@@ -266,7 +260,7 @@ class YtSelection:
                  best_tbr = max(tbr_dict.keys(), key=lambda k: float(k) if k else 0)
                  v_format = tbr_dict[best_tbr][1]
                  await self.add_child_task(v_format)
-                 await sleep(0.5)
+
             await edit_message(self._reply_to, "All qualities added to queue.")
             self.qual = None
             self.listener.is_cancelled = True
@@ -284,11 +278,9 @@ class YtSelection:
         
         info = getattr(self, "result", None)
         
-        fake_message = FakeMessage(self.listener.message)
-
         bot_loop.create_task(YtDlpClass(
            self.listener.client,
-           fake_message,
+           self.listener.message,
            is_leech=self.listener.is_leech,
            options=new_task_opts,
            pre_extracted_info=info, 
