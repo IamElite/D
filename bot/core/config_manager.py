@@ -73,7 +73,7 @@ class Config:
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0
-    QUEUE_DOWNLOAD = 5
+    QUEUE_DOWNLOAD = 0
     QUEUE_UPLOAD = 0
     RCLONE_FLAGS = ""
     RCLONE_PATH = ""
