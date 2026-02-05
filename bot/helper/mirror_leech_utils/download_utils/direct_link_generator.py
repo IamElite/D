@@ -139,8 +139,6 @@ debrid_link_sites = [
     "zippyshare.com"
 ]
 
-    "zippyshare.com"
-]
 
 def gdflix(url):
     """
@@ -152,12 +150,6 @@ def gdflix(url):
     try:
         response = scraper.get(url)
         html = response.text
-        
-        # Regex to find links with specific text
-        # Looking for <a href="..."> ... Instant DL ... </a>
-        # or <a href="..."> ... CLOUD DOWNLOAD ... </a>
-        
-        # Pattern captures content inside href="..."
         pattern = r'<a\s+[^>]*href=["\'](https?://[^"\']+)["\'][^>]*>(?:(?!(?:</a>)).)*?(?:Instant DL|CLOUD DOWNLOAD)(?:(?!(?:</a>)).)*?</a>'
         
         match = search(pattern, html)
