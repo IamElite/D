@@ -136,7 +136,7 @@ debrid_link_sites = [
     "worldbytez.com",
     "world-files.com",
     "wupfile.com",
-    "zippyshare.com"
+    "zippyshare.com",
 ]
 
 
