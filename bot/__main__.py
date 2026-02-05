@@ -34,7 +34,6 @@ async def main():
         try:
             return datetime.now(timezone(Config.TIMEZONE)).timetuple()
         except (ImportError, TypeError):
-             # Handle sys.meta_path is None during shutdown
             if sys.meta_path is None:
                 return localtime()
             raise
