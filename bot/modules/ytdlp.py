@@ -1,12 +1,12 @@
-from asyncio import Event, wait_for
+from asyncio import Event, wait_for, sleep
 from functools import partial
 from time import time
-
+import random
 
 from httpx import AsyncClient
 from pyrogram.filters import regex, user
-from pyrogram.handlers import CallbackQueryHandler
-from yt_dlp import YoutubeDL
+from pyrogram.handlers import CallbackQueryHandler, MessageHandler
+from pyrogram.types import CallbackQuery
 
 from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
 from ..core.config_manager import Config
@@ -29,6 +29,16 @@ from ..helper.telegram_helper.message_utils import (
     edit_message,
     send_message,
 )
+from ..helper.telegram_helper.filters import CustomFilters
+
+
+class FakeMessage:
+    def __init__(self, original_message):
+        self._msg = original_message
+        self.id = original_message.id + int(time() * 1000) + random.randint(100, 10000000)
+
+    def __getattr__(self, name):
+        return getattr(self._msg, name)
 
 
 @new_task
