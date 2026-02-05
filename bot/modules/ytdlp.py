@@ -7,6 +7,7 @@ from httpx import AsyncClient
 from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from pyrogram.types import CallbackQuery
+from yt_dlp import YoutubeDL
 
 from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
 from ..core.config_manager import Config
