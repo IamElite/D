@@ -260,7 +260,7 @@ class YtSelection:
                  best_tbr = max(tbr_dict.keys(), key=lambda k: float(k) if k else 0)
                  v_format = tbr_dict[best_tbr][1]
                  await self.add_child_task(v_format)
-
+                 await sleep(0.5)
             await edit_message(self._reply_to, "All qualities added to queue.")
             self.qual = None
             self.listener.is_cancelled = True
@@ -278,9 +278,11 @@ class YtSelection:
         
         info = getattr(self, "result", None)
         
+        fake_message = FakeMessage(self.listener.message)
+
         bot_loop.create_task(YtDlpClass(
            self.listener.client,
-           self.listener.message,
+           fake_message,
            is_leech=self.listener.is_leech,
            options=new_task_opts,
            pre_extracted_info=info, 
