@@ -135,6 +135,8 @@ async def clean_zombies():
     try:
         await cmd_exec(["pkill", "-9", "yt-dlp"])
         await cmd_exec(["pkill", "-9", "ffmpeg"])
+        await cmd_exec(["pkill", "-9", "aria2c"])
+        await cmd_exec(["pkill", "-9", "qbittorrent-nox"])
     except Exception:
         pass
 
