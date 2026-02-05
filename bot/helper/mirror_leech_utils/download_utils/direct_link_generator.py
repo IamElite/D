@@ -136,7 +136,7 @@ debrid_link_sites = [
     "worldbytez.com",
     "world-files.com",
     "wupfile.com",
-    "zippyshare.com",
+    "zippyshare.com"
 ]
 
 
@@ -150,16 +150,26 @@ def gdflix(url):
     try:
         response = scraper.get(url)
         html = response.text
-        pattern = r'<a\s+[^>]*href=["\'](https?://[^"\']+)["\'][^>]*>(?:(?!(?:</a>)).)*?(?:Instant DL|CLOUD DOWNLOAD)(?:(?!(?:</a>)).)*?</a>'
         
-        match = search(pattern, html)
-        if match:
-             dlink = match.group(1)
-             try:
-                 head = scraper.get(dlink, allow_redirects=True, stream=True)
-                 return head.url
-             except Exception:
-                 return dlink
+        def get_link_by_text(keyword):
+            pattern = f'(?si)<a\\s+[^>]*href=["\'](https?://[^"\']+)["\'][^>]*>(?:(?!</a>).)*?{keyword}'
+            match = search(pattern, html)
+            if match:
+                 dlink = match.group(1)
+                 try:
+                     head = scraper.get(dlink, allow_redirects=True, stream=True)
+                     return head.url
+                 except Exception:
+                     return dlink
+            return None
+
+        # Priority 1: Instant DL
+        if link := get_link_by_text("Instant DL"):
+            return link
+
+        # Priority 2: CLOUD DOWNLOAD (Backup)
+        if link := get_link_by_text("CLOUD DOWNLOAD"):
+            return link
                 
         raise DirectDownloadLinkException("ERROR: Download link not found (Instant DL/Cloud Download)")
     except Exception as e:
