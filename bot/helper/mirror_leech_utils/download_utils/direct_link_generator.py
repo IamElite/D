@@ -158,7 +158,13 @@ def gdflix(url):
                  dlink = match.group(1)
                  try:
                      head = scraper.get(dlink, allow_redirects=True, stream=True)
-                     return head.url
+                     final_url = head.url
+                     if "fastcdn-dl.pages.dev" in final_url:
+                          parsed = urlparse(final_url)
+                          q = parse_qs(parsed.query)
+                          if "url" in q:
+                              return q["url"][0]
+                     return final_url
                  except Exception:
                      return dlink
             return None
