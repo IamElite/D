@@ -130,7 +130,17 @@ async def clean_download(opath):
             LOGGER.error(str(e))
 
 
+
+async def clean_zombies():
+    try:
+        await cmd_exec(["pkill", "-9", "yt-dlp"])
+        await cmd_exec(["pkill", "-9", "ffmpeg"])
+    except Exception:
+        pass
+
+
 async def clean_all():
+    await clean_zombies()
     await TorrentManager.remove_all()
     with suppress(Exception):
         LOGGER.info("Cleaning Download Directory")
