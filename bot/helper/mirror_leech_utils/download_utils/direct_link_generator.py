@@ -139,7 +139,8 @@ debrid_link_sites = [
     "zippyshare.com"
 ]
 
-from bs4 import BeautifulSoup
+    "zippyshare.com"
+]
 
 def gdflix(url):
     """
@@ -150,22 +151,23 @@ def gdflix(url):
     scraper = create_scraper()
     try:
         response = scraper.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        html = response.text
         
-        # Priority 1: Instant DL [10GBPS]
-        # Priority 2: CLOUD DOWNLOAD [R2]
+        # Regex to find links with specific text
+        # Looking for <a href="..."> ... Instant DL ... </a>
+        # or <a href="..."> ... CLOUD DOWNLOAD ... </a>
         
-        links = soup.find_all('a')
-        for link in links:
-            text = link.get_text(strip=True)
-            if "Instant DL" in text or "CLOUD DOWNLOAD" in text:
-                dlink = link.get('href')
-                # Resolve redirect to get the final googleusercontent link
-                try:
-                   head = scraper.get(dlink, allow_redirects=True, stream=True)
-                   return head.url
-                except Exception:
-                   return dlink
+        # Pattern captures content inside href="..."
+        pattern = r'<a\s+[^>]*href=["\'](https?://[^"\']+)["\'][^>]*>(?:(?!(?:</a>)).)*?(?:Instant DL|CLOUD DOWNLOAD)(?:(?!(?:</a>)).)*?</a>'
+        
+        match = search(pattern, html)
+        if match:
+             dlink = match.group(1)
+             try:
+                 head = scraper.get(dlink, allow_redirects=True, stream=True)
+                 return head.url
+             except Exception:
+                 return dlink
                 
         raise DirectDownloadLinkException("ERROR: Download link not found (Instant DL/Cloud Download)")
     except Exception as e:
