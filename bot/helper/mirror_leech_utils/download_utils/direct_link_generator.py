@@ -139,6 +139,37 @@ debrid_link_sites = [
     "zippyshare.com"
 ]
 
+from bs4 import BeautifulSoup
+
+def gdflix(url):
+    """
+    Generate a direct download link for gdflix.net URLs.
+    @param url: URL from gdflix.net
+    @return: Direct download link
+    """
+    scraper = create_scraper()
+    try:
+        response = scraper.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Priority 1: Instant DL [10GBPS]
+        # Priority 2: CLOUD DOWNLOAD [R2]
+        
+        links = soup.find_all('a')
+        for link in links:
+            text = link.get_text(strip=True)
+            if "Instant DL" in text or "CLOUD DOWNLOAD" in text:
+                dlink = link.get('href')
+                # Resolve redirect to get the final googleusercontent link
+                try:
+                   head = scraper.get(dlink, allow_redirects=True, stream=True)
+                   return head.url
+                except Exception:
+                   return dlink
+                
+        raise DirectDownloadLinkException("ERROR: Download link not found (Instant DL/Cloud Download)")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e}") from e
 
 
 def direct_link_generator(link):
@@ -146,6 +177,8 @@ def direct_link_generator(link):
     domain = urlparse(link).hostname
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
+    elif "gdflix.net" in domain:
+        return gdflix(link)
     elif Config.DEBRID_LINK_API and any(x in domain for x in debrid_link_sites):
         return debrid_link(link)
     elif "yadi.sk" in link or "disk.yandex." in link:
