@@ -1,4 +1,4 @@
-from asyncio import Event, wait_for
+from asyncio import Event, wait_for, sleep
 from functools import partial
 from time import time
 import random
@@ -66,6 +66,16 @@ async def select_format(_, query, obj):
         else:
             obj.qual = data[1]
         obj.event.set()
+
+
+
+class FakeMessage:
+    def __init__(self, original_message):
+        self._msg = original_message
+        self.id = original_message.id + int(time() * 1000) + random.randint(100, 10000000)
+
+    def __getattr__(self, name):
+        return getattr(self._msg, name)
 
 
 class YtSelection:
@@ -256,18 +266,14 @@ class YtSelection:
                  best_tbr = max(tbr_dict.keys(), key=lambda k: float(k) if k else 0)
                  v_format = tbr_dict[best_tbr][1]
                  await self.add_child_task(v_format)
+                 await sleep(0.5)
             await edit_message(self._reply_to, "All qualities added to queue.")
             self.qual = None
             self.listener.is_cancelled = True
             self.event.set()
 
     async def add_child_task(self, qual):
-        class FakeMessage:
-            def __init__(self, original_message):
-                self._msg = original_message
-                self.id = original_message.id + int(time() * 1000) + random.randint(100, 10000000)
-            def __getattr__(self, name):
-                return getattr(self._msg, name)
+
 
         YtDlpClass = self.listener.__class__
         new_task_opts = self.listener.user_dict.get("YT_DLP_OPTIONS", {}).copy()
