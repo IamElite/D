@@ -27,8 +27,17 @@ async def main():
 
     await load_settings()
 
+    import sys
+    from time import localtime
+
     def changetz(*args):
-        return datetime.now(timezone(Config.TIMEZONE)).timetuple()
+        try:
+            return datetime.now(timezone(Config.TIMEZONE)).timetuple()
+        except (ImportError, TypeError):
+             # Handle sys.meta_path is None during shutdown
+            if sys.meta_path is None:
+                return localtime()
+            raise
 
     Formatter.converter = changetz
 
@@ -90,5 +99,5 @@ from .helper.telegram_helper.message_utils import (
 
 
 
-LOGGER.info("Beast is now running!")
+LOGGER.info("Syntax is now running!")
 bot_loop.run_forever()
