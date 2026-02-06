@@ -188,6 +188,18 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "",
         "<i>Send your Metadata. Default: <code>[ @SyntaxRealm ]</code>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "UPHOSTER": (
+        "",
+        "",
+        "<i>Send the API Key / Token for <b>{name}</b>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+}
+
+SUPPORTED_UPHOSTERS = {
+    "stream": {},
+    "download": {
+        "FreeDL": "FREEDL_API",
+    }
 }
 
 
@@ -205,6 +217,7 @@ async def get_user_settings(from_user, stype="main"):
         )
         buttons.data_button("Mirror Settings", f"userset {user_id} mirror")
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
+        buttons.data_button("Uphoster Settings", f"userset {user_id} uphoster")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
             "Misc Settings", f"userset {user_id} advanced", position="l_body"
@@ -629,6 +642,52 @@ async def get_user_settings(from_user, stype="main"):
 ┊ <b>YT-DLP Options</b> → <code>{ytopt}</code>
 ╰ <b>YT User Cookie File</b> → <b>{user_cookie_msg}</b>"""
 
+    elif stype == "uphoster":
+        buttons.data_button("Stream Sites", f"userset {user_id} uphoster_stream")
+        buttons.data_button("Download Sites", f"userset {user_id} uphoster_download")
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+        text = f"""⌬ <b>Uphoster Settings :</b>
+╭ <b>Name</b> → {user_name}
+╰ <b>Select a category to configure uphoster keys.</b>"""
+
+    elif stype == "uphoster_stream":
+        for name, key in SUPPORTED_UPHOSTERS["stream"].items():
+            val = "Exits" if user_dict.get(key) or getattr(Config, key, None) else "None"
+            buttons.data_button(f"{name} ({val})", f"userset {user_id} uphoster_edit {key} {name}")
+        
+        buttons.data_button("Back", f"userset {user_id} uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+        text = f"""⌬ <b>Stream Uphoster Settings :</b>
+╭ <b>Name</b> → {user_name}
+╰ <b>Select a site to configure its API Key.</b>"""
+
+    elif stype == "uphoster_download":
+        for name, key in SUPPORTED_UPHOSTERS["download"].items():
+            val = "Exits" if user_dict.get(key) or getattr(Config, key, None) else "None"
+            buttons.data_button(f"{name} ({val})", f"userset {user_id} uphoster_edit {key} {name}")
+
+        buttons.data_button("Back", f"userset {user_id} uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+        text = f"""⌬ <b>Download Uphoster Settings :</b>
+╭ <b>Name</b> → {user_name}
+╰ <b>Select a site to configure its API Key.</b>"""
+
+    elif stype.startswith("uphoster_edit"):
+        _, key, name = stype.split(maxsplit=2)
+        buttons.data_button("Back", f"userset {user_id} uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+        
+        val = user_dict.get(key) or getattr(Config, key, None) or "None"
+        text = f"""⌬ <b>Edit {name} :</b>
+╭ <b>Name</b> → {user_name}
+┊ <b>Current Key</b> → <code>{val}</code>
+╰ <b>Send new API Key / Token for {name}.</b>"""
+
     return text, btns
 
 
@@ -987,6 +1046,10 @@ async def edit_user_settings(client, query):
         "advanced",
         "gdrive",
         "rclone",
+        "rclone",
+        "uphoster",
+        "uphoster_stream",
+        "uphoster_download",
     ]:
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1087,6 +1150,22 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, "DEFAULT_UPLOAD", du)
         await update_user_settings(query, stype="general")
         await database.update_user_data(user_id)
+    elif data[2] == "uphoster_edit":
+        await query.answer()
+        buttons = ButtonMaker()
+        key = data[3]
+        name = data[4]
+        text = user_settings_text["UPHOSTER"][2].format(name=name)
+        stype = "uphoster_stream" if key in SUPPORTED_UPHOSTERS["stream"].values() else "uphoster_download"
+        buttons.data_button("Stop", f"userset {user_id} {stype}")
+        buttons.data_button("Back", f"userset {user_id} {stype}", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        await edit_message(
+            message, message.text.html + "\n\n" + text, buttons.build_menu(1)
+        )
+        rfunc = partial(update_user_settings, query, stype)
+        pfunc = partial(set_option, option=key, rfunc=rfunc)
+        await event_handler(client, query, pfunc, rfunc)
     elif data[2] == "back":
         await query.answer()
         stype = data[3] if len(data) == 4 else "main"

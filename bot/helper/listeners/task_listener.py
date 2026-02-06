@@ -45,7 +45,10 @@ from ..mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
+from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
 from ..mirror_leech_utils.upload_utils.telegram_uploader import TelegramUploader
+from ..mirror_leech_utils.upload_utils.uphoster_uploader import UphosterUploader
+from ...modules.users_settings import SUPPORTED_UPHOSTERS
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
     delete_message,
@@ -336,6 +339,17 @@ class TaskListener(TaskConfig):
                 tg.upload(),
             )
             del tg
+
+        elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]:
+            LOGGER.info(f"Uphoster Upload Name: {self.name} to {self.up_dest}")
+            uphoster = UphosterUploader(self, up_path)
+            async with task_dict_lock:
+                task_dict[self.mid] = UphosterStatus(self, uphoster, gid, "up")
+            await gather(
+                update_status_message(self.message.chat.id),
+                uphoster.upload()
+            )
+            del uphoster
         elif is_gdrive_id(self.up_dest):
             LOGGER.info(f"Gdrive Upload Name: {self.name}")
             drive = GoogleDriveUpload(self, up_path)
