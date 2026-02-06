@@ -65,24 +65,29 @@ class UphosterUploader:
         
         async with ClientSession() as session:
             # Step 1: Get dedicated upload server URL (Essential for large files to avoid 413)
-            async with session.get(f"https://api.streamtape.com/file/upload?login={login}&key={key}") as resp:
-                data = await resp.json()
-                if resp.status != 200 or data.get("status") != 200:
-                    raise Exception(f"Failed to get upload server: {data}")
-                
-                result = data.get("result")
-                if not result:
-                    raise Exception(f"StreamTape API Error (Get Server): Result is empty. Response: {data}")
-                
-                upload_url = result.get("url")
-                if not upload_url:
-                    raise Exception(f"StreamTape API Error (Get Server): Upload URL missing. Response: {data}")
+            upload_url = None
+            try:
+                async with session.get("https://api.streamtape.com/file/upload", params={'login': login, 'key': key}) as resp:
+                    data = await resp.json()
+                    if resp.status == 200 and data.get("status") == 200:
+                        result = data.get("result")
+                        if result and result.get("url"):
+                            upload_url = result.get("url")
+                    else:
+                        LOGGER.warning(f"StreamTape Get Server failed: {data}")
+            except Exception as e:
+                LOGGER.error(f"StreamTape Server Lookup Error: {e}")
 
             # Step 2: Sanitization
             import re
             clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
             if not clean_name:
                 clean_name = f"video_{int(time())}.mp4"
+
+            # Fallback to direct upload if dedicated server lookup failed
+            if not upload_url:
+                LOGGER.info("Streaming secondary upload node (Direct Fallback)")
+                upload_url = f"https://api.streamtape.com/file/ul?login={login}&key={key}&name={clean_name}"
 
             # Step 3: Manual Multipart Construction
             boundary = f"----BoundaryStreamTape{int(time())}"

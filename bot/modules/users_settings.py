@@ -193,6 +193,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "",
         "<i>Send the API Key / Token for <b>{name}</b>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "STREAMTAPE_LOGIN": (
+        "",
+        "",
+        "<i>Send your StreamTape <b>API Login</b> (found in Account Settings).</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "STREAMTAPE_KEY": (
+        "",
+        "",
+        "<i>Send your StreamTape <b>API Password</b> (found in Account Settings, Not account password!).</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 SUPPORTED_UPHOSTERS = {
