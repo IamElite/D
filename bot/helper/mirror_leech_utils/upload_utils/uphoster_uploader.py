@@ -69,7 +69,14 @@ class UphosterUploader:
                 data = await resp.json()
                 if resp.status != 200 or data.get("status") != 200:
                     raise Exception(f"Failed to get upload server: {data}")
-                upload_url = data["result"]["url"]
+                
+                result = data.get("result")
+                if not result:
+                    raise Exception(f"StreamTape API Error (Get Server): Result is empty. Response: {data}")
+                
+                upload_url = result.get("url")
+                if not upload_url:
+                    raise Exception(f"StreamTape API Error (Get Server): Upload URL missing. Response: {data}")
 
             # Step 2: Sanitization
             import re
@@ -125,7 +132,7 @@ class UphosterUploader:
                     msg = res.get("msg") or res.get("message") or "Unknown server error"
                     raise Exception(f"StreamTape Error: {msg}")
 
-                result = res.get("result", {})
+                result = res.get("result") or {}
                 link = result.get("url")
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
