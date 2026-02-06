@@ -36,10 +36,14 @@ class UphosterStatus:
         return f"{round(progress_raw, 2)}%"
 
     def speed(self):
-        return self._obj.speed
+        return f"{get_readable_file_size(self._obj.speed)}/s"
 
     def eta(self):
-        return "-" # Todo
+        try:
+            seconds = (self._size - self._obj.processed_bytes) / self._obj.speed
+            return get_readable_time(seconds)
+        except ZeroDivisionError:
+            return "-"
 
     def gid(self):
         return self._gid

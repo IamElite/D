@@ -17,6 +17,8 @@ class UphosterUploader:
         self.__name = listener.name
         self.__total_size = listener.size
         self.__user_settings = listener.user_dict
+        self.__processed_bytes = 0
+        self.__start_time = time()
         self.__client = None
 
     async def upload(self):
@@ -51,9 +53,6 @@ class UphosterUploader:
                 upload_url = data["result"]
 
             # Upload File
-            self.__processed_bytes = 0
-            self.__start_time = time()
-
             # Custom iterator to track progress
             async def file_sender(file_path):
                 async with aiofiles.open(file_path, 'rb') as f:
@@ -97,4 +96,4 @@ class UphosterUploader:
 
     @property
     def processed_bytes(self):
-        return getattr(self, '__processed_bytes', 0)
+        return self.__processed_bytes
