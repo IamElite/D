@@ -1,6 +1,8 @@
 from aiofiles.os import path as aiopath
+import aiofiles
 from aiohttp import ClientSession
 from requests_toolbelt import MultipartEncoder
+from time import time
 
 from ...ext_utils.bot_utils import sync_to_async
 from ...ext_utils.status_utils import get_readable_file_size
@@ -49,31 +51,50 @@ class UphosterUploader:
                 upload_url = data["result"]
 
             # Upload File
-            self.__client = session # For status updates tracking if needed
-            
-            # Use requests_toolbelt for multipart upload with progress monitoring if possible
-            # But for now, simple aiohttp post
-            
-            # Note: A proper progress bar requires a custom AsyncIterable or using a library that supports it with aiohttp.
-            # For simplicity in this first pass, we might rely on the status object polling logical size if we can't hook directly.
-            # But UphosterStatus will probably look at `self.processed_bytes`.
-            
-            # Simplified upload for now
-            with open(self.__path, "rb") as f:
-                async with session.post(upload_url, data={"file": f, "sess_id": "", "utype": "anon"}) as upload_resp:
-                    res = await upload_resp.json()
+            self.__processed_bytes = 0
+            self.__start_time = time()
+
+            # Custom iterator to track progress
+            async def file_sender(file_path):
+                async with aiofiles.open(file_path, 'rb') as f:
+                    chunk = await f.read(64 * 1024)
+                    while chunk:
+                        self.__processed_bytes += len(chunk)
+                        yield chunk
+                        chunk = await f.read(64 * 1024)
+
+            # Note: For XFileSharing, the param with the file is usually 'file'
+            from aiohttp import FormData
+            data = FormData()
+            data.add_field('file', file_sender(self.__path), filename=self.__name)
+            data.add_field('sess_id', '')
+            data.add_field('utype', 'anon')
+
+            async with session.post(upload_url, data=data) as upload_resp:
+                res = await upload_resp.json()
+                
+                # Handle both list and dict response formats
+                if isinstance(res, list):
+                    files = res
+                elif isinstance(res, dict):
                     files = res.get("files", [])
-                    if not files:
-                         raise Exception(f"Upload failed: {res}")
-                    
-                    # Success
-                    link = files[0].get("url")
-                    await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", None, None)
+                else:
+                    raise Exception(f"Unexpected response format: {res}")
+
+                if not files:
+                    raise Exception(f"Upload failed: {res}")
+                
+                # Success
+                link = files[0].get("url")
+                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", None, None)
 
     @property
     def speed(self):
-        return "0 B/s" # TODO: Implement progress tracking
+        try:
+            return self.__processed_bytes / (time() - self.__start_time)
+        except Exception:
+            return 0
 
     @property
     def processed_bytes(self):
-        return 0 # TODO: Implement progress tracking
+        return getattr(self, '__processed_bytes', 0)
