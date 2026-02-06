@@ -66,6 +66,7 @@ class UphosterUploader:
             from aiohttp import FormData
             data = FormData()
             data.add_field('file', file_sender(self.__path), filename=self.__name)
+            data.add_field('key', api_key)
             data.add_field('sess_id', '')
             data.add_field('utype', 'anon')
 
@@ -85,6 +86,12 @@ class UphosterUploader:
                 
                 # Success
                 f_data = files[0]
+                
+                # Check for server-side failure in the status key
+                if f_data.get("file_status", "").lower() == "failed":
+                    error_msg = f_data.get("file_status_msg") or f_data.get("file_status")
+                    raise Exception(f"Upload failed server-side: {error_msg}")
+
                 link = f_data.get("url") or f_data.get("link")
                 
                 # Some API clones return 'undefined' or 'undef' as string if failed
