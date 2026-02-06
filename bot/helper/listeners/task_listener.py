@@ -53,6 +53,7 @@ from ..telegram_helper.message_utils import (
     send_message,
     update_status_message,
 )
+from ...core.startup import update_aria2_options, update_qb_options
 
 
 class TaskListener(TaskConfig):
@@ -66,6 +67,10 @@ class TaskListener(TaskConfig):
                     intvl.cancel()
             intervals["status"].clear()
             await gather(TorrentManager.aria2.purgeDownloadResult(), delete_status())
+            # Auto-Scale Down to Eco Mode when Idle
+            LOGGER.info("No active tasks. Switching to Eco Mode (Low CPU/RAM).")
+            await update_aria2_options(force_mode=False)
+            await update_qb_options(force_mode=False)
 
     def clear(self):
         self.subname = ""
@@ -85,6 +90,13 @@ class TaskListener(TaskConfig):
                 self.same_dir[self.folder_name]["total"] -= 1
 
     async def on_download_start(self):
+        # Auto-Scale Up to Performance Mode (if enabled) when First Task Starts
+        async with task_dict_lock:
+             if len(task_dict) == 0 and Config.HIGH_PERFORMANCE_MODE:
+                 LOGGER.info("First task started. Switching to High Performance Mode.")
+                 await update_aria2_options(force_mode=True)
+                 await update_qb_options(force_mode=True)
+
         mode_name = "Leech" if self.is_leech else "Mirror"
         if self.bot_pm and self.is_super_chat:
             self.pm_msg = await send_message(

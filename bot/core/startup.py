@@ -27,7 +27,7 @@ from .tg_client import TgClient
 from .torrent_manager import TorrentManager
 
 
-async def update_qb_options():
+async def update_qb_options(force_mode=None):
     if not qbit_options:
         if not TorrentManager.qbittorrent:
             LOGGER.warning(
@@ -41,8 +41,10 @@ async def update_qb_options():
             if k.startswith("rss"):
                 del qbit_options[k]
         qbit_options["web_ui_password"] = "admin"
+        qbit_options["web_ui_password"] = "admin"
         # Performance Tuning based on Server Mode
-        if Config.HIGH_PERFORMANCE_MODE:
+        is_high_perf = force_mode if force_mode is not None else Config.HIGH_PERFORMANCE_MODE
+        if is_high_perf:
             # Ultra Speed Mode (High CPU/RAM)
             qbit_options.update({
                 "max_connec": 500,
@@ -65,12 +67,13 @@ async def update_qb_options():
         await TorrentManager.qbittorrent.app.set_preferences(qbit_options)
 
 
-async def update_aria2_options():
+async def update_aria2_options(force_mode=None):
     if not aria2_options:
         op = await TorrentManager.aria2.getGlobalOption()
         aria2_options.update(op)
         # Performance Tuning based on Server Mode
-        if Config.HIGH_PERFORMANCE_MODE:
+        is_high_perf = force_mode if force_mode is not None else Config.HIGH_PERFORMANCE_MODE
+        if is_high_perf:
             # Ultra Speed Mode (High CPU/RAM)
             aria2_options.update({
                 "max-connection-per-server": "16",
