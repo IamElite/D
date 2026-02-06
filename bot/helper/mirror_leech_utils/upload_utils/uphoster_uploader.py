@@ -45,35 +45,53 @@ class UphosterUploader:
 
     async def __streamup_upload(self, api_key):
         async with ClientSession() as session:
-            # StreamUP uses direct upload endpoint
+            # Step 1: Try to get a specific upload server (common for v1 clones)
             upload_url = "https://api.streamup.cc/v1/upload"
+            try:
+                async with session.get(f"https://api.streamup.cc/v1/upload/server?api_key={api_key}") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        if data.get("result", {}).get("upload_server"):
+                            upload_url = data["result"]["upload_server"]
+            except:
+                pass
 
-            # Use standard FormData for StreamUP (some servers prefer it over manual multipart)
-            data = FormData()
-            data.add_field("api_key", api_key)
-            data.add_field("file", open(self.__path, 'rb'), filename=self.__name)
+            # Step 2: Manual Multipart Upload
+            boundary = f"----Boundary{int(time())}"
+            field_name = "file"
+            
+            parts = [
+                f'--{boundary}\r\nContent-Disposition: form-data; name="api_key"\r\n\r\n{api_key}\r\n'
+            ]
+            
+            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{self.__name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
+            file_footer = f'\r\n--{boundary}--\r\n'
+            
+            body_head = "".join(parts).encode() + file_header.encode()
+            body_tail = file_footer.encode()
+            total_len = len(body_head) + self.__total_size + len(body_tail)
 
-            # Note: We use a wrapper or manual sender if we need progress tracking with FormData,
-            # but for debugging the 500 error, let's try the most "standard" way first.
-            # Actually, to maintain progress tracking, we use the file_sender logic with FormData.
-            async def file_sender(file_path):
-                async with aiofiles.open(file_path, 'rb') as f:
+            async def stream_body():
+                yield body_head
+                async with aiofiles.open(self.__path, 'rb') as f:
                     chunk = await f.read(64 * 1024)
                     while chunk:
                         self.__processed_bytes += len(chunk)
                         yield chunk
                         chunk = await f.read(64 * 1024)
+                yield body_tail
 
-            data = FormData()
-            data.add_field("api_key", api_key)
-            data.add_field("file", file_sender(self.__path), filename=self.__name)
+            headers = {
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "Content-Length": str(total_len),
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
 
-            async with session.post(upload_url, data=data) as upload_resp:
+            async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
                 if upload_resp.status != 200:
                     try:
-                        res = await upload_resp.json()
-                        if "error" in res:
-                            raise Exception(f"StreamUP Error {upload_resp.status}: {res['error']}")
+                        err_text = await upload_resp.text()
+                        LOGGER.error(f"StreamUP Upload Error {upload_resp.status}: {err_text[:500]}")
                     except:
                         pass
                     raise Exception(f"Upload server returned status {upload_resp.status}")
@@ -86,9 +104,10 @@ class UphosterUploader:
                     raise Exception("Failed to decode JSON response from StreamUP")
 
                 if not res.get("success", True) and "message" in res:
-                    raise Exception(f"StreamUP Error: {res['message']}")
+                    msg = res.get("message") or res.get("error")
+                    raise Exception(f"StreamUP Error: {msg}")
 
-                link = res.get("filecode") or res.get("url")
+                link = res.get("filecode") or res.get("url") or res.get("streaming_url")
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
                 
