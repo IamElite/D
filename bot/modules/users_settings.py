@@ -651,8 +651,8 @@ async def get_user_settings(from_user, stype="main"):
 ╰ <b>YT User Cookie File</b> → <b>{user_cookie_msg}</b>"""
 
     elif stype == "uphoster":
-        buttons.data_button("Stream Sites", f"userset {user_id} uphoster_stream")
-        buttons.data_button("Download Sites", f"userset {user_id} uphoster_download")
+        buttons.data_button("Stream Sites", f"userset {user_id} upstream")
+        buttons.data_button("Download Sites", f"userset {user_id} updown")
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(2)
@@ -660,12 +660,12 @@ async def get_user_settings(from_user, stype="main"):
 ╭ <b>Name</b> → {user_name}
 ╰ <b>Select a category to configure uphoster keys.</b>"""
 
-    elif stype == "uphoster_stream":
+    elif stype == "upstream":
         for name, key in SUPPORTED_UPHOSTERS["stream"].items():
             if name == "StreamTape":
                 continue
             val = "Exits" if user_dict.get(key) or getattr(Config, key, None) else "None"
-            buttons.data_button(f"{name} ({val})", f"userset {user_id} uphoster_edit {key} {name}")
+            buttons.data_button(f"{name} ({val})", f"userset {user_id} upedit {key}")
         
         buttons.data_button("Back", f"userset {user_id} uphoster", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
@@ -674,10 +674,10 @@ async def get_user_settings(from_user, stype="main"):
 ╭ <b>Name</b> → {user_name}
 ╰ <b>Select a site to configure its API Key.</b>"""
 
-    elif stype == "uphoster_download":
+    elif stype == "updown":
         for name, key in SUPPORTED_UPHOSTERS["download"].items():
             val = "Exits" if user_dict.get(key) or getattr(Config, key, None) else "None"
-            buttons.data_button(f"{name} ({val})", f"userset {user_id} uphoster_edit {key} {name}")
+            buttons.data_button(f"{name} ({val})", f"userset {user_id} upedit {key}")
 
         buttons.data_button("Back", f"userset {user_id} uphoster", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
@@ -686,8 +686,10 @@ async def get_user_settings(from_user, stype="main"):
 ╭ <b>Name</b> → {user_name}
 ╰ <b>Select a site to configure its API Key.</b>"""
 
-    elif stype.startswith("uphoster_edit"):
-        _, key, name = stype.split(maxsplit=2)
+    elif stype.startswith("upedit"):
+        _, key = stype.split(maxsplit=1)
+        name = next((n for n, k in SUPPORTED_UPHOSTERS["stream"].items() if k == key), None) or \
+               next((n for n, k in SUPPORTED_UPHOSTERS["download"].items() if k == key), "Unknown")
         buttons.data_button("Back", f"userset {user_id} uphoster", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(2)
@@ -1058,8 +1060,8 @@ async def edit_user_settings(client, query):
         "rclone",
         "rclone",
         "uphoster",
-        "uphoster_stream",
-        "uphoster_download",
+        "upstream",
+        "updown",
     ]:
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1160,13 +1162,14 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, "DEFAULT_UPLOAD", du)
         await update_user_settings(query, stype="general")
         await database.update_user_data(user_id)
-    elif data[2] == "uphoster_edit":
+    elif data[2] == "upedit":
         await query.answer()
         buttons = ButtonMaker()
         key = data[3]
-        name = data[4]
+        name = next((n for n, k in SUPPORTED_UPHOSTERS["stream"].items() if k == key), None) or \
+               next((n for n, k in SUPPORTED_UPHOSTERS["download"].items() if k == key), "Unknown")
         text = user_settings_text["UPHOSTER"][2].format(name=name)
-        stype = "uphoster_stream" if key in SUPPORTED_UPHOSTERS["stream"].values() else "uphoster_download"
+        stype = "upstream" if key in SUPPORTED_UPHOSTERS["stream"].values() else "updown"
         buttons.data_button("Stop", f"userset {user_id} {stype}")
         buttons.data_button("Back", f"userset {user_id} {stype}", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
