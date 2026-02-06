@@ -254,9 +254,16 @@ class YoutubeDLHelper:
         # Force Max Speed: Always use 16 connections
         conns = 16
         
-        # 3. Enable Aria2c configuration
+        # 3. Enable Aria2c configuration (Specific Protocols Only)
+        # Prevents "No such file" error on HLS/DASH fragments
         self.opts.update({
-            "external_downloader": "aria2c",
+            "concurrent_fragment_downloads": conns,  # Speed for HLS/DASH
+            "external_downloader": {
+                "http": "aria2c",
+                "https": "aria2c",
+                "ftp": "aria2c",
+                "file": "aria2c"
+            },
             "external_downloader_args": {
                 "aria2c": [
                     f"-x{conns}", 
@@ -266,7 +273,8 @@ class YoutubeDLHelper:
                 ]
             }
         })
-        LOGGER.info(f"YT-DLP Max Speed: Using Aria2c with {conns} connections")
+        LOGGER.info(f"YT-DLP Max Speed: Aria2c for Direct Files + {conns} Fragment Threads for Streams")
+
 
         self.opts["format"] = qual
 
