@@ -58,6 +58,7 @@ from .telegram_helper.message_utils import (
     send_message,
     send_status_message,
 )
+from ..modules.users_settings import SUPPORTED_UPHOSTERS
 
 
 class TaskConfig:
@@ -289,6 +290,8 @@ class TaskConfig:
                 ):
                     self.up_dest = f"mrcc:{self.up_dest}"
                 self.up_dest = self.up_dest.strip("/")
+            elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]:
+                pass
             else:
                 raise ValueError("Wrong Upload Destination!")
 
