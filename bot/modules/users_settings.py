@@ -200,6 +200,7 @@ SUPPORTED_UPHOSTERS = {
     "download": {
         "FreeDL": "FREEDL_API",
         "ZapUpload": "ZAPUPLOAD_API",
+        "VidNest": "VIDNEST_API",
     }
 }
 

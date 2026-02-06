@@ -28,9 +28,11 @@ class UphosterUploader:
 
         try:
             if site_name == "FreeDL":
-                await self.__xfs_upload("https://freedl.ink/api", api_key, "https://frdl.my")
+                await self.__xfs_upload("https://freedl.ink/api", api_key, "https://frdl.my", "file_0")
             elif site_name == "ZapUpload":
                 await self.__zapupload_upload(api_key)
+            elif site_name == "VidNest":
+                await self.__xfs_upload("https://vidnest.io/api", api_key, "https://vidnest.io", "file")
             else:
                 await self.__listener.on_upload_error(f"Uploader not implemented for {site_name}")
         except Exception as e:
@@ -69,7 +71,7 @@ class UphosterUploader:
                 
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
-    async def __xfs_upload(self, api_url, api_key, base_url):
+    async def __xfs_upload(self, api_url, api_key, base_url, field_name="file_0"):
         async with ClientSession() as session:
             # Step 1: Get Upload Server
             async with session.get(f"{api_url}/upload/server?key={api_key}") as resp:
@@ -89,7 +91,7 @@ class UphosterUploader:
                         chunk = await f.read(64 * 1024)
 
             data = FormData()
-            data.add_field('file_0', file_sender(self.__path), filename=self.__name)
+            data.add_field(field_name, file_sender(self.__path), filename=self.__name)
             data.add_field('key', api_key)
             data.add_field('sess_id', sess_id)
             data.add_field('utype', 'prem')
