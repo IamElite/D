@@ -28,8 +28,7 @@ class UphosterUploader:
 
         LOGGER.info(f"Uploading {self.__name} to {site_name}")
 
-        async with task_dict_lock:
-            task_dict[self.__listener.mid] = UphosterStatus(self.__listener, self, self.__listener.gid(), "up")
+
 
         try:
             if site_name == "FreeDL":
