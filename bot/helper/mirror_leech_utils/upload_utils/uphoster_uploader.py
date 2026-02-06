@@ -48,42 +48,32 @@ class UphosterUploader:
             # StreamUP uses direct upload endpoint
             upload_url = "https://api.streamup.cc/v1/upload"
 
-            # Step 2: Manual Multipart Upload
-            boundary = f"----Boundary{int(time())}"
-            field_name = "file"
-            
-            parts = [
-                f'--{boundary}\r\nContent-Disposition: form-data; name="api_key"\r\n\r\n{api_key}\r\n'
-            ]
-            
-            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{self.__name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
-            file_footer = f'\r\n--{boundary}--\r\n'
-            
-            body_head = "".join(parts).encode() + file_header.encode()
-            body_tail = file_footer.encode()
-            total_len = len(body_head) + self.__total_size + len(body_tail)
+            # Use standard FormData for StreamUP (some servers prefer it over manual multipart)
+            data = FormData()
+            data.add_field("api_key", api_key)
+            data.add_field("file", open(self.__path, 'rb'), filename=self.__name)
 
-            async def stream_body():
-                yield body_head
-                async with aiofiles.open(self.__path, 'rb') as f:
+            # Note: We use a wrapper or manual sender if we need progress tracking with FormData,
+            # but for debugging the 500 error, let's try the most "standard" way first.
+            # Actually, to maintain progress tracking, we use the file_sender logic with FormData.
+            async def file_sender(file_path):
+                async with aiofiles.open(file_path, 'rb') as f:
                     chunk = await f.read(64 * 1024)
                     while chunk:
                         self.__processed_bytes += len(chunk)
                         yield chunk
                         chunk = await f.read(64 * 1024)
-                yield body_tail
 
-            headers = {
-                "Content-Type": f"multipart/form-data; boundary={boundary}",
-                "Content-Length": str(total_len),
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            }
+            data = FormData()
+            data.add_field("api_key", api_key)
+            data.add_field("file", file_sender(self.__path), filename=self.__name)
 
-            async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
+            async with session.post(upload_url, data=data) as upload_resp:
                 if upload_resp.status != 200:
                     try:
-                        err_text = await upload_resp.text()
-                        LOGGER.error(f"StreamUP Upload Error {upload_resp.status}: {err_text[:500]}")
+                        res = await upload_resp.json()
+                        if "error" in res:
+                            raise Exception(f"StreamUP Error {upload_resp.status}: {res['error']}")
                     except:
                         pass
                     raise Exception(f"Upload server returned status {upload_resp.status}")
