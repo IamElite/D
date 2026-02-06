@@ -42,7 +42,7 @@ class UphosterUploader:
     async def __freedl_upload(self, api_key):
         async with ClientSession() as session:
             # Get Upload Server
-            async with session.get(f"https://freedl.link/api/upload/server?key={api_key}") as resp:
+            async with session.get(f"https://frdl.to/api/upload/server?key={api_key}") as resp:
                 data = await resp.json()
                 if resp.status != 200 or not data.get("result"):
                     raise Exception(f"Failed to get upload server: {data}")
