@@ -97,7 +97,15 @@ class UphosterUploader:
                     LOGGER.error(f"Failed to decode JSON from Vidara. Raw response: {raw_text[:500]}")
                     raise Exception("Failed to decode JSON response from Vidara")
 
-                link = res.get("url")
+                link = res.get("url") or res.get("link")
+                if not link:
+                    f_code = res.get("filecode") or res.get("file_code")
+                    if f_code:
+                        if str(f_code).startswith("http"):
+                            link = f_code
+                        else:
+                            link = f"https://vidara.so/v/{f_code}"
+
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
                 
