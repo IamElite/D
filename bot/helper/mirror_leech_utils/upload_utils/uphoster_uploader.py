@@ -86,8 +86,15 @@ class UphosterUploader:
                 # Success
                 f_data = files[0]
                 link = f_data.get("url") or f_data.get("link")
-                if not link and (file_code := f_data.get("file_code")):
-                    link = f"https://freedl.ink/{file_code}"
+                
+                # Some API clones return 'undefined' or 'undef' as string if failed
+                if link and "undef" in link.lower():
+                    link = None
+                
+                if not link:
+                    file_code = f_data.get("file_code") or f_data.get("filecode")
+                    if file_code and "undef" not in str(file_code).lower():
+                        link = f"https://frdl.my/{file_code}"
                 
                 if not link:
                     LOGGER.warning(f"Upload link not found in response: {res}")
