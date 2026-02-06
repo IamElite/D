@@ -17,19 +17,11 @@ class UphosterUploader:
 
     async def upload(self):
         site_name = self.__listener.up_dest
-        if site_name == "StreamTape":
-            api_key = self.__user_settings.get("STREAMTAPE_KEY")
-            login = self.__user_settings.get("STREAMTAPE_LOGIN")
-            if not login or not api_key:
-                # Fallback to legacy field if login/key aren't both set
-                api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
-                          self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
-        else:
-            api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
-                      self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
+        api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
+                  self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
         
         if not api_key:
-            await self.__listener.on_upload_error(f"API Key / Login missing for {site_name}!")
+            await self.__listener.on_upload_error(f"API Key not found for {site_name}!")
             return
 
         LOGGER.info(f"Uploading {self.__name} to {site_name}")
@@ -45,104 +37,11 @@ class UphosterUploader:
                 await self.__vidara_upload(api_key)
             elif site_name == "StreamUP":
                 await self.__streamup_upload(api_key)
-            elif site_name == "StreamTape":
-                await self.__streamtape_upload(api_key)
             else:
                 await self.__listener.on_upload_error(f"Uploader not implemented for {site_name}")
         except Exception as e:
             LOGGER.error(f"Upload failed: {e}")
             await self.__listener.on_upload_error(str(e))
-
-    async def __streamtape_upload(self, api_key):
-        site_name = self.__listener.up_dest
-        login = self.__user_settings.get("STREAMTAPE_LOGIN")
-        key = self.__user_settings.get("STREAMTAPE_KEY")
-
-        if not (login and key):
-            if ":" not in api_key:
-                 raise Exception("StreamTape requires 'Login' and 'API Key'. Please check /settings.")
-            login, key = api_key.split(":", 1)
-        
-        async with ClientSession() as session:
-            # Step 1: Get dedicated upload server URL (Essential for large files to avoid 413)
-            upload_url = None
-            try:
-                async with session.get("https://api.streamtape.com/file/upload", params={'login': login, 'key': key}) as resp:
-                    data = await resp.json()
-                    if resp.status == 200 and data.get("status") == 200:
-                        result = data.get("result")
-                        if result and result.get("url"):
-                            upload_url = result.get("url")
-                    else:
-                        LOGGER.warning(f"StreamTape Get Server failed: {data}")
-            except Exception as e:
-                LOGGER.error(f"StreamTape Server Lookup Error: {e}")
-
-            # Step 2: Sanitization
-            import re
-            clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
-            if not clean_name:
-                clean_name = f"video_{int(time())}.mp4"
-
-            # Fallback to direct upload if dedicated server lookup failed
-            if not upload_url:
-                LOGGER.info("Streaming secondary upload node (Direct Fallback)")
-                upload_url = f"https://api.streamtape.com/file/ul?login={login}&key={key}&name={clean_name}"
-
-            # Step 3: Manual Multipart Construction
-            boundary = f"----BoundaryStreamTape{int(time())}"
-            field_name = "file"
-            
-            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{clean_name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
-            file_footer = f'\r\n--{boundary}--\r\n'
-            
-            body_head = file_header.encode()
-            body_tail = file_footer.encode()
-            total_len = len(body_head) + self.__total_size + len(body_tail)
-
-            async def stream_body():
-                yield body_head
-                async with aiofiles.open(self.__path, 'rb') as f:
-                    chunk = await f.read(64 * 1024)
-                    while chunk:
-                        self.__processed_bytes += len(chunk)
-                        yield chunk
-                        chunk = await f.read(64 * 1024)
-                yield body_tail
-
-            headers = {
-                "Content-Type": f"multipart/form-data; boundary={boundary}",
-                "Content-Length": str(total_len),
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "application/json"
-            }
-
-            async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
-                if upload_resp.status != 200:
-                    try:
-                        err_text = await upload_resp.text()
-                        LOGGER.error(f"StreamTape Upload Error {upload_resp.status}: {err_text[:500]}")
-                    except:
-                        pass
-                    raise Exception(f"Upload server returned status {upload_resp.status}")
-
-                try:
-                    res = await upload_resp.json()
-                except Exception:
-                    raw_text = await upload_resp.text()
-                    LOGGER.error(f"Failed to decode JSON from StreamTape. Raw response: {raw_text[:500]}")
-                    raise Exception(f"Failed to decode JSON response from StreamTape: {raw_text[:200]}")
-
-                if res.get("status") != 200:
-                    msg = res.get("msg") or res.get("message") or "Unknown server error"
-                    raise Exception(f"StreamTape Error: {msg}")
-
-                result = res.get("result") or {}
-                link = result.get("url")
-                if not link:
-                    raise Exception(f"Upload link not found in response: {res}")
-                
-                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
     async def __streamup_upload(self, api_key):
         async with ClientSession() as session:

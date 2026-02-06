@@ -193,25 +193,12 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "",
         "<i>Send the API Key / Token for <b>{name}</b>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
     ),
-    "STREAMTAPE_LOGIN": (
-        "",
-        "",
-        "<i>Send your StreamTape <b>API Login</b> (found in Account Settings).</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
-    ),
-    "STREAMTAPE_KEY": (
-        "",
-        "",
-        "<i>Send your StreamTape <b>API Password</b> (found in Account Settings, Not account password!).</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
-    ),
 }
 
 SUPPORTED_UPHOSTERS = {
     "stream": {
         "Vidara": "VIDARA_API",
         "StreamUP": "STREAMUP_API",
-        "StreamTape": "STREAMTAPE_API", # Routing
-        "StreamTape Login": "STREAMTAPE_LOGIN", # UI
-        "StreamTape Key": "STREAMTAPE_KEY", # UI
     },
     "download": {
         "FreeDL": "FREEDL_API",
@@ -672,8 +659,6 @@ async def get_user_settings(from_user, stype="main"):
 
     elif stype == "upstream":
         for name, key in SUPPORTED_UPHOSTERS["stream"].items():
-            if name == "StreamTape":
-                continue
             val = "Exits" if user_dict.get(key) or getattr(Config, key, None) else "None"
             buttons.data_button(f"{name} ({val})", f"userset {user_id} upedit {key}")
         
