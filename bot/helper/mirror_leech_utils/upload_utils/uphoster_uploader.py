@@ -84,8 +84,15 @@ class UphosterUploader:
                     raise Exception(f"Upload failed: {res}")
                 
                 # Success
-                link = files[0].get("url")
-                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", None, None)
+                f_data = files[0]
+                link = f_data.get("url") or f_data.get("link")
+                if not link and (file_code := f_data.get("file_code")):
+                    link = f"https://freedl.ink/{file_code}"
+                
+                if not link:
+                    LOGGER.warning(f"Upload link not found in response: {res}")
+                
+                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
     @property
     def speed(self):
