@@ -37,28 +37,38 @@ class UphosterUploader:
                 await self.__vidara_upload(api_key)
             elif site_name == "StreamUP":
                 await self.__streamup_upload(api_key)
-            elif site_name == "Abyss":
-                await self.__abyss_upload(api_key)
+            elif site_name == "StreamTape":
+                await self.__streamtape_upload(api_key)
             else:
                 await self.__listener.on_upload_error(f"Uploader not implemented for {site_name}")
         except Exception as e:
             LOGGER.error(f"Upload failed: {e}")
             await self.__listener.on_upload_error(str(e))
 
-    async def __abyss_upload(self, api_key):
+    async def __streamtape_upload(self, api_key):
+        if ":" not in api_key:
+            raise Exception("StreamTape API format must be 'LOGIN:KEY'")
+        
+        login, key = api_key.split(":", 1)
+        
         async with ClientSession() as session:
-            # Abyss (Hydrax) direct upload endpoint
-            upload_url = f"http://up.hydrax.net/{api_key}"
-            
-            # Manual Multipart construction for maximum reliability
-            boundary = f"----BoundaryAbyss{int(time())}"
+            # Step 1: Get Upload URL
+            async with session.get(f"https://api.streamtape.com/file/upload?login={login}&key={key}") as resp:
+                data = await resp.json()
+                if resp.status != 200 or data.get("status") != 200:
+                    raise Exception(f"Failed to get upload server: {data}")
+                upload_url = data["result"]["url"]
+
+            # Step 2: Manual Multipart Upload
+            boundary = f"----BoundaryStreamTape{int(time())}"
             field_name = "file"
             
+            # Sanitization (reused from StreamUP fix)
             import re
             clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
             if not clean_name:
                 clean_name = f"video_{int(time())}.mp4"
-            
+
             file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{clean_name}"\r\nContent-Type: video/mp4\r\n\r\n'
             file_footer = f'\r\n--{boundary}--\r\n'
             
@@ -79,14 +89,15 @@ class UphosterUploader:
             headers = {
                 "Content-Type": f"multipart/form-data; boundary={boundary}",
                 "Content-Length": str(total_len),
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json"
             }
 
             async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
                 if upload_resp.status != 200:
                     try:
                         err_text = await upload_resp.text()
-                        LOGGER.error(f"Abyss Upload Error {upload_resp.status}: {err_text[:500]}")
+                        LOGGER.error(f"StreamTape Upload Error {upload_resp.status}: {err_text[:500]}")
                     except:
                         pass
                     raise Exception(f"Upload server returned status {upload_resp.status}")
@@ -95,17 +106,15 @@ class UphosterUploader:
                     res = await upload_resp.json()
                 except Exception:
                     raw_text = await upload_resp.text()
-                    LOGGER.error(f"Failed to decode JSON from Abyss. Raw response: {raw_text[:500]}")
-                    raise Exception(f"Failed to decode JSON response from Abyss: {raw_text[:200]}")
+                    LOGGER.error(f"Failed to decode JSON from StreamTape. Raw response: {raw_text[:500]}")
+                    raise Exception(f"Failed to decode JSON response from StreamTape: {raw_text[:200]}")
 
-                if res.get("status") == False:
-                    raise Exception(f"Abyss Error: {res.get('msg') or res.get('error')}")
+                if res.get("status") != 200:
+                    msg = res.get("msg") or "Unknown server error"
+                    raise Exception(f"StreamTape Error: {msg}")
 
-                # Abyss/Hydrax link extraction
-                link = res.get("url") or res.get("slug")
-                if link and not str(link).startswith("http"):
-                    link = f"https://abyss.to/v/{link}"
-                
+                result = res.get("result", {})
+                link = result.get("url")
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
                 

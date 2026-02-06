@@ -199,7 +199,7 @@ SUPPORTED_UPHOSTERS = {
     "stream": {
         "Vidara": "VIDARA_API",
         "StreamUP": "STREAMUP_API",
-        "Abyss": "ABYSS_API",
+        "StreamTape": "STREAMTAPE_API",
     },
     "download": {
         "FreeDL": "FREEDL_API",
