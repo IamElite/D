@@ -38,7 +38,7 @@ from ..helper.ext_utils.bot_utils import (
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient
 from ..core.torrent_manager import TorrentManager
-from ..core.startup import update_qb_options, update_variables
+from ..core.startup import update_qb_options, update_variables, update_aria2_options
 from ..helper.ext_utils.db_handler import database
 from ..core.jdownloader_booter import jdownloader
 from ..helper.ext_utils.task_manager import start_from_queued
@@ -301,7 +301,10 @@ async def edit_variable(_, message, pre_message, key):
     await update_buttons(pre_message, "var")
     await delete_message(message)
     await database.update_config({key: value})
-    if key in ["SEARCH_PLUGINS", "SEARCH_API_LINK"]:
+    if key == "HIGH_PERFORMANCE_MODE":
+        await update_aria2_options()
+        await update_qb_options()
+    elif key in ["SEARCH_PLUGINS", "SEARCH_API_LINK"]:
         await initiate_search_tools()
     elif key in ["QUEUE_ALL", "QUEUE_DOWNLOAD", "QUEUE_UPLOAD"]:
         await start_from_queued()

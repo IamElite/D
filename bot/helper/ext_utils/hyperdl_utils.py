@@ -39,7 +39,14 @@ class HyperTGDownload:
         self.dump_chat = None
         self.download_dir = "downloads/"
         self.directory = None
-        self.num_parts = Config.HYPER_THREADS or max(8, len(self.clients))
+        # Resource Scaling based on Config
+        if Config.HIGH_PERFORMANCE_MODE:
+            self.num_parts = Config.HYPER_THREADS or max(8, len(self.clients))
+            self.chunk_size = 4 * 1024 * 1024 # 4MB (High Speed)
+        else:
+            self.num_parts = 4 # Conservative threads
+            self.chunk_size = 1024 * 1024 # 1MB (Low RAM)
+            
         self.cache_file_ref = {}
         self.cache_last_access = {}
         self.cache_max_size = 100
@@ -393,14 +400,23 @@ class HyperTGDownload:
         # Medium files (20-100MB): 2-4 parts
         # Large files (100-200MB): 4-8 parts
         # Very large files (>200MB): 8-16 parts for max speed
-        if self.file_size < 20 * 1024 * 1024:
-            num_parts = 1
-        elif self.file_size < 100 * 1024 * 1024:
-            num_parts = min(4, max(2, self.file_size // (25 * 1024 * 1024)))
-        elif self.file_size < 200 * 1024 * 1024:
-            num_parts = min(8, max(4, self.file_size // (25 * 1024 * 1024)))
+        # Smart part calculation based on HIGH_PERFORMANCE_MODE
+        if Config.HIGH_PERFORMANCE_MODE:
+             # Aggressive Strategy (Max Speed)
+            if self.file_size < 20 * 1024 * 1024:
+                num_parts = 1
+            elif self.file_size < 100 * 1024 * 1024:
+                num_parts = min(4, max(2, self.file_size // (25 * 1024 * 1024)))
+            elif self.file_size < 200 * 1024 * 1024:
+                num_parts = min(8, max(4, self.file_size // (25 * 1024 * 1024)))
+            else:
+                num_parts = min(16, max(8, self.file_size // (50 * 1024 * 1024)))
         else:
-            num_parts = min(16, max(8, self.file_size // (50 * 1024 * 1024)))
+            # Conservative Strategy (Protect CPU/RAM)
+            if self.file_size < 50 * 1024 * 1024:
+                num_parts = 1
+            else:
+                num_parts = min(4, max(2, self.file_size // (50 * 1024 * 1024)))
         
         # Limit by available clients and configured HYPER_THREADS
         num_parts = min(num_parts, self.num_parts)

@@ -261,11 +261,14 @@ class YoutubeDLHelper:
         if options:
             self._set_options(options)
 
-        # Force Max Speed: Always use 16 connections
-        conns = 16
+        # Force Max Speed: Smart Downloader Selection
+        # Logic adapted for HIGH_PERFORMANCE_MODE
+        if Config.HIGH_PERFORMANCE_MODE:
+            conns = 16 # Max Speed Mode
+        else:
+            conns = 4 # Eco Mode
+            LOGGER.info("YT-DLP: Eco Mode (4 connections)")
         
-        # 3. Enable Aria2c configuration (Specific Protocols Only)
-        # Prevents "No such file" error on HLS/DASH fragments
         self.opts.update({
             "concurrent_fragment_downloads": conns,  # Speed for HLS/DASH
             "external_downloader": {

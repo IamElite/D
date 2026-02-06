@@ -113,6 +113,7 @@ class Config:
     USE_SERVICE_ACCOUNTS = False
     WEB_PINCODE = True
     YT_DLP_OPTIONS = {}
+    HIGH_PERFORMANCE_MODE = True  # Toggle for High Speed (True) vs Eco Mode (False)
 
     @classmethod
     def get(cls, key):
