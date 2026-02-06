@@ -44,7 +44,7 @@ class HyperTGDownload:
         self.cache_max_size = 100
         self._processed_bytes = 0
         self.file_size = 0
-        self.chunk_size = 1024 * 1024
+        self.chunk_size = 2 * 1024 * 1024  # 2MB chunks for better speed
         self.file_name = ""
         self._cancel_event = Event()
         self.session_pool = {}
@@ -364,10 +364,19 @@ class HyperTGDownload:
             + ".temp"
         )
 
-        num_parts = min(self.num_parts, max(1, self.file_size // (10 * 1024 * 1024)))
-
-        if self.file_size < 10 * 1024 * 1024:
+        # Smart part calculation: fewer parts = less overhead = faster speed
+        # Small files (<20MB): single part
+        # Medium files (20-100MB): 2-4 parts
+        # Large files (>100MB): scale based on file size, max 8 parts for efficiency
+        if self.file_size < 20 * 1024 * 1024:
             num_parts = 1
+        elif self.file_size < 100 * 1024 * 1024:
+            num_parts = min(4, max(2, self.file_size // (25 * 1024 * 1024)))
+        else:
+            num_parts = min(8, max(4, self.file_size // (50 * 1024 * 1024)))
+        
+        # Limit by available clients
+        num_parts = min(num_parts, len(self.clients)) if self.clients else num_parts
 
         part_size = self.file_size // num_parts if num_parts > 0 else self.file_size
         ranges = [
@@ -392,7 +401,7 @@ class HyperTGDownload:
                     try:
                         async with aiopen(part_file_path, "rb") as part_file:
                             while True:
-                                chunk = await part_file.read(8 * 1024 * 1024)
+                                chunk = await part_file.read(16 * 1024 * 1024)  # 16MB buffer for faster merge
                                 if not chunk:
                                     break
                                 await temp_file.write(chunk)
