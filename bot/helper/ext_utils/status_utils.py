@@ -217,7 +217,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
     total_ul = 0
     for tk in tasks:
         try:
-            st = tk.status()
+            if iscoroutinefunction(tk.status):
+                st = await tk.status()
+            else:
+                st = tk.status()
             sp = speed_string_to_bytes(tk.speed())
             if st == MirrorStatus.STATUS_DOWNLOAD or st == MirrorStatus.STATUS_ARCHIVE:
                 total_dl += sp
