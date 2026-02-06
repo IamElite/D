@@ -37,11 +37,79 @@ class UphosterUploader:
                 await self.__vidara_upload(api_key)
             elif site_name == "StreamUP":
                 await self.__streamup_upload(api_key)
+            elif site_name == "Abyss":
+                await self.__abyss_upload(api_key)
             else:
                 await self.__listener.on_upload_error(f"Uploader not implemented for {site_name}")
         except Exception as e:
             LOGGER.error(f"Upload failed: {e}")
             await self.__listener.on_upload_error(str(e))
+
+    async def __abyss_upload(self, api_key):
+        async with ClientSession() as session:
+            # Abyss (Hydrax) direct upload endpoint
+            upload_url = f"http://up.hydrax.net/{api_key}"
+            
+            # Manual Multipart construction for maximum reliability
+            boundary = f"----BoundaryAbyss{int(time())}"
+            field_name = "file"
+            
+            import re
+            clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
+            if not clean_name:
+                clean_name = f"video_{int(time())}.mp4"
+            
+            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{clean_name}"\r\nContent-Type: video/mp4\r\n\r\n'
+            file_footer = f'\r\n--{boundary}--\r\n'
+            
+            body_head = file_header.encode()
+            body_tail = file_footer.encode()
+            total_len = len(body_head) + self.__total_size + len(body_tail)
+
+            async def stream_body():
+                yield body_head
+                async with aiofiles.open(self.__path, 'rb') as f:
+                    chunk = await f.read(64 * 1024)
+                    while chunk:
+                        self.__processed_bytes += len(chunk)
+                        yield chunk
+                        chunk = await f.read(64 * 1024)
+                yield body_tail
+
+            headers = {
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "Content-Length": str(total_len),
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+
+            async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
+                if upload_resp.status != 200:
+                    try:
+                        err_text = await upload_resp.text()
+                        LOGGER.error(f"Abyss Upload Error {upload_resp.status}: {err_text[:500]}")
+                    except:
+                        pass
+                    raise Exception(f"Upload server returned status {upload_resp.status}")
+
+                try:
+                    res = await upload_resp.json()
+                except Exception:
+                    raw_text = await upload_resp.text()
+                    LOGGER.error(f"Failed to decode JSON from Abyss. Raw response: {raw_text[:500]}")
+                    raise Exception(f"Failed to decode JSON response from Abyss: {raw_text[:200]}")
+
+                if res.get("status") == False:
+                    raise Exception(f"Abyss Error: {res.get('msg') or res.get('error')}")
+
+                # Abyss/Hydrax link extraction
+                link = res.get("url") or res.get("slug")
+                if link and not str(link).startswith("http"):
+                    link = f"https://abyss.to/v/{link}"
+                
+                if not link:
+                    raise Exception(f"Upload link not found in response: {res}")
+                
+                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
     async def __streamup_upload(self, api_key):
         async with ClientSession() as session:
