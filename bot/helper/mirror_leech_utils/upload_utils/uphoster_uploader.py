@@ -64,15 +64,18 @@ class UphosterUploader:
             login, key = api_key.split(":", 1)
         
         async with ClientSession() as session:
-            # Step 1: Sanitization (reused from StreamUP fix)
+            # Step 1: Get dedicated upload server URL (Essential for large files to avoid 413)
+            async with session.get(f"https://api.streamtape.com/file/upload?login={login}&key={key}") as resp:
+                data = await resp.json()
+                if resp.status != 200 or data.get("status") != 200:
+                    raise Exception(f"Failed to get upload server: {data}")
+                upload_url = data["result"]["url"]
+
+            # Step 2: Sanitization
             import re
             clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
             if not clean_name:
                 clean_name = f"video_{int(time())}.mp4"
-
-            # Step 2: One-Step Upload Endpoint
-            # Note: name parameter is helpful for StreamTape to recognize the file correctly
-            upload_url = f"https://api.streamtape.com/file/ul?login={login}&key={key}&name={clean_name}"
 
             # Step 3: Manual Multipart Construction
             boundary = f"----BoundaryStreamTape{int(time())}"
