@@ -198,6 +198,7 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 SUPPORTED_UPHOSTERS = {
     "stream": {
         "Vidara": "VIDARA_API",
+        "StreamUP": "STREAMUP_API",
     },
     "download": {
         "FreeDL": "FREEDL_API",

@@ -35,11 +35,74 @@ class UphosterUploader:
                 await self.__xfs_upload(site_name, "https://vidnest.io/api", api_key, "https://vidnest.io", "file")
             elif site_name == "Vidara":
                 await self.__vidara_upload(api_key)
+            elif site_name == "StreamUP":
+                await self.__streamup_upload(api_key)
             else:
                 await self.__listener.on_upload_error(f"Uploader not implemented for {site_name}")
         except Exception as e:
             LOGGER.error(f"Upload failed: {e}")
             await self.__listener.on_upload_error(str(e))
+
+    async def __streamup_upload(self, api_key):
+        async with ClientSession() as session:
+            # StreamUP uses direct upload endpoint
+            upload_url = "https://api.streamup.cc/v1/upload"
+
+            # Step 2: Manual Multipart Upload
+            boundary = f"----Boundary{int(time())}"
+            field_name = "file"
+            
+            parts = [
+                f'--{boundary}\r\nContent-Disposition: form-data; name="api_key"\r\n\r\n{api_key}\r\n'
+            ]
+            
+            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{self.__name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
+            file_footer = f'\r\n--{boundary}--\r\n'
+            
+            body_head = "".join(parts).encode() + file_header.encode()
+            body_tail = file_footer.encode()
+            total_len = len(body_head) + self.__total_size + len(body_tail)
+
+            async def stream_body():
+                yield body_head
+                async with aiofiles.open(self.__path, 'rb') as f:
+                    chunk = await f.read(64 * 1024)
+                    while chunk:
+                        self.__processed_bytes += len(chunk)
+                        yield chunk
+                        chunk = await f.read(64 * 1024)
+                yield body_tail
+
+            headers = {
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "Content-Length": str(total_len),
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+
+            async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
+                if upload_resp.status != 200:
+                    try:
+                        err_text = await upload_resp.text()
+                        LOGGER.error(f"StreamUP Upload Error {upload_resp.status}: {err_text[:500]}")
+                    except:
+                        pass
+                    raise Exception(f"Upload server returned status {upload_resp.status}")
+
+                try:
+                    res = await upload_resp.json()
+                except Exception:
+                    raw_text = await upload_resp.text()
+                    LOGGER.error(f"Failed to decode JSON from StreamUP. Raw response: {raw_text[:500]}")
+                    raise Exception("Failed to decode JSON response from StreamUP")
+
+                if not res.get("success", True) and "message" in res:
+                    raise Exception(f"StreamUP Error: {res['message']}")
+
+                link = res.get("filecode") or res.get("url")
+                if not link:
+                    raise Exception(f"Upload link not found in response: {res}")
+                
+                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
     async def __vidara_upload(self, api_key):
         async with ClientSession() as session:
