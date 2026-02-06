@@ -199,6 +199,7 @@ SUPPORTED_UPHOSTERS = {
     "stream": {},
     "download": {
         "FreeDL": "FREEDL_API",
+        "ZapUpload": "ZAPUPLOAD_API",
     }
 }
 
