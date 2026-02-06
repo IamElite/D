@@ -90,60 +90,74 @@ class UphosterUploader:
                         yield chunk
                         chunk = await f.read(64 * 1024)
 
-            data = FormData()
-            data.add_field(field_name, file_sender(self.__path), filename=self.__name)
-            data.add_field('key', api_key)
-            if sess_id:
-                data.add_field('sess_id', sess_id)
-            if site_name != "VidNest":
-                data.add_field('utype', 'prem')
-            data.add_field('html_redirect', '0')
-            data.add_field('json', '1')
+            from aiohttp import MultipartWriter
+            from aiohttp.hdrs import CONTENT_LENGTH
 
-            async with session.post(upload_url, data=data) as upload_resp:
-                if upload_resp.status != 200:
+            with MultipartWriter('form-data') as mp:
+                # Add key first
+                mp.append(api_key).set_content_disposition('form-data', name='key')
+                if sess_id:
+                    mp.append(sess_id).set_content_disposition('form-data', name='sess_id')
+                
+                # Site specific params
+                if site_name == "FreeDL":
+                    mp.append('prem').set_content_disposition('form-data', name='utype')
+                    mp.append('0').set_content_disposition('form-data', name='html_redirect')
+                    mp.append('1').set_content_disposition('form-data', name='json')
+                elif site_name == "VidNest":
+                    # Standard XFS often needs these for API response even if not in docs
+                    mp.append('0').set_content_disposition('form-data', name='html_redirect')
+                    mp.append('1').set_content_disposition('form-data', name='json')
+                
+                # Add file last with explicit Content-Length to avoid chunked encoding (fixes 400 Bad Request)
+                part = mp.append(file_sender(self.__path))
+                part.set_content_disposition('form-data', name=field_name, filename=self.__name)
+                part.headers[CONTENT_LENGTH] = str(self.__total_size)
+
+                async with session.post(upload_url, data=mp) as upload_resp:
+                    if upload_resp.status != 200:
+                        try:
+                            err_text = await upload_resp.text()
+                            LOGGER.error(f"{site_name} Upload Error {upload_resp.status}: {err_text[:500]}")
+                        except:
+                            pass
+                        raise Exception(f"Upload server returned status {upload_resp.status}")
+
                     try:
-                        err_text = await upload_resp.text()
-                        LOGGER.error(f"{site_name} Upload Error {upload_resp.status}: {err_text[:500]}")
-                    except:
-                        pass
-                    raise Exception(f"Upload server returned status {upload_resp.status}")
+                        res = await upload_resp.json()
+                    except Exception as e:
+                        raw_text = await upload_resp.text()
+                        LOGGER.error(f"Failed to decode JSON from {site_name}. Raw response: {raw_text[:500]}")
+                        raise Exception(f"Failed to decode JSON response from {site_name}")
+                
+                    if isinstance(res, list):
+                        files = res
+                    elif isinstance(res, dict):
+                        files = res.get("files", [])
+                    else:
+                        raise Exception(f"Unexpected response format from {site_name}: {res}")
 
-                try:
-                    res = await upload_resp.json()
-                except Exception as e:
-                    raw_text = await upload_resp.text()
-                    LOGGER.error(f"Failed to decode JSON from {site_name}. Raw response: {raw_text[:500]}")
-                    raise Exception(f"Failed to decode JSON response from {site_name}")
-                
-                if isinstance(res, list):
-                    files = res
-                elif isinstance(res, dict):
-                    files = res.get("files", [])
-                else:
-                    raise Exception(f"Unexpected response format from {site_name}: {res}")
+                    if not files:
+                        raise Exception(f"Upload failed: {res}")
+                    
+                    f_data = files[0]
+                    if f_data.get("file_status", "").lower() == "failed":
+                        error_msg = f_data.get("file_status_msg") or f_data.get("file_status")
+                        raise Exception(f"Upload failed server-side: {error_msg}")
 
-                if not files:
-                    raise Exception(f"Upload failed: {res}")
-                
-                f_data = files[0]
-                if f_data.get("file_status", "").lower() == "failed":
-                    error_msg = f_data.get("file_status_msg") or f_data.get("file_status")
-                    raise Exception(f"Upload failed server-side: {error_msg}")
-
-                link = f_data.get("url") or f_data.get("link")
-                if link and "undef" in link.lower():
-                    link = None
-                
-                if not link:
-                    file_code = f_data.get("file_code") or f_data.get("filecode")
-                    if file_code and "undef" not in str(file_code).lower():
-                        link = f"{base_url}/{file_code}"
-                
-                if not link:
-                    LOGGER.warning(f"Upload link not found in response from {site_name}: {res}")
-                
-                await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
+                    link = f_data.get("url") or f_data.get("link")
+                    if link and "undef" in link.lower():
+                        link = None
+                    
+                    if not link:
+                        file_code = f_data.get("file_code") or f_data.get("filecode")
+                        if file_code and "undef" not in str(file_code).lower():
+                            link = f"{base_url}/{file_code}"
+                    
+                    if not link:
+                        LOGGER.warning(f"Upload link not found in response from {site_name}: {res}")
+                    
+                    await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
     @property
     def speed(self):
