@@ -28,11 +28,11 @@ class UphosterUploader:
 
         try:
             if site_name == "FreeDL":
-                await self.__xfs_upload("https://freedl.ink/api", api_key, "https://frdl.my", "file_0")
+                await self.__xfs_upload(site_name, "https://freedl.ink/api", api_key, "https://frdl.my", "file_0")
             elif site_name == "ZapUpload":
                 await self.__zapupload_upload(api_key)
             elif site_name == "VidNest":
-                await self.__xfs_upload("https://vidnest.io/api", api_key, "https://vidnest.io", "file")
+                await self.__xfs_upload(site_name, "https://vidnest.io/api", api_key, "https://vidnest.io", "file")
             else:
                 await self.__listener.on_upload_error(f"Uploader not implemented for {site_name}")
         except Exception as e:
@@ -71,7 +71,7 @@ class UphosterUploader:
                 
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
-    async def __xfs_upload(self, api_url, api_key, base_url, field_name="file_0"):
+    async def __xfs_upload(self, site_name, api_url, api_key, base_url, field_name="file_0"):
         async with ClientSession() as session:
             # Step 1: Get Upload Server
             async with session.get(f"{api_url}/upload/server?key={api_key}") as resp:
@@ -104,7 +104,7 @@ class UphosterUploader:
                 if upload_resp.status != 200:
                     try:
                         err_text = await upload_resp.text()
-                        LOGGER.error(f"XFS Upload Error {upload_resp.status}: {err_text[:500]}")
+                        LOGGER.error(f"{site_name} Upload Error {upload_resp.status}: {err_text[:500]}")
                     except:
                         pass
                     raise Exception(f"Upload server returned status {upload_resp.status}")
@@ -113,7 +113,7 @@ class UphosterUploader:
                     res = await upload_resp.json()
                 except Exception as e:
                     raw_text = await upload_resp.text()
-                    LOGGER.error(f"Failed to decode JSON. Raw response: {raw_text[:500]}")
+                    LOGGER.error(f"Failed to decode JSON from {site_name}. Raw response: {raw_text[:500]}")
                     raise Exception(f"Failed to decode JSON response from {site_name}")
                 
                 if isinstance(res, list):
@@ -121,7 +121,7 @@ class UphosterUploader:
                 elif isinstance(res, dict):
                     files = res.get("files", [])
                 else:
-                    raise Exception(f"Unexpected response format: {res}")
+                    raise Exception(f"Unexpected response format from {site_name}: {res}")
 
                 if not files:
                     raise Exception(f"Upload failed: {res}")
@@ -141,7 +141,7 @@ class UphosterUploader:
                         link = f"{base_url}/{file_code}"
                 
                 if not link:
-                    LOGGER.warning(f"Upload link not found in response: {res}")
+                    LOGGER.warning(f"Upload link not found in response from {site_name}: {res}")
                 
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
