@@ -93,11 +93,28 @@ class UphosterUploader:
             data = FormData()
             data.add_field(field_name, file_sender(self.__path), filename=self.__name)
             data.add_field('key', api_key)
-            data.add_field('sess_id', sess_id)
-            data.add_field('utype', 'prem')
+            if sess_id:
+                data.add_field('sess_id', sess_id)
+            if site_name != "VidNest":
+                data.add_field('utype', 'prem')
+            data.add_field('html_redirect', '0')
+            data.add_field('json', '1')
 
             async with session.post(upload_url, data=data) as upload_resp:
-                res = await upload_resp.json()
+                if upload_resp.status != 200:
+                    try:
+                        err_text = await upload_resp.text()
+                        LOGGER.error(f"XFS Upload Error {upload_resp.status}: {err_text[:500]}")
+                    except:
+                        pass
+                    raise Exception(f"Upload server returned status {upload_resp.status}")
+
+                try:
+                    res = await upload_resp.json()
+                except Exception as e:
+                    raw_text = await upload_resp.text()
+                    LOGGER.error(f"Failed to decode JSON. Raw response: {raw_text[:500]}")
+                    raise Exception(f"Failed to decode JSON response from {site_name}")
                 
                 if isinstance(res, list):
                     files = res
