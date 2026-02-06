@@ -9,7 +9,7 @@ from logging import Formatter
 
 from pytz import timezone
 
-from . import LOGGER, bot_loop
+from . import LOGGER, bot_loop, task_dict
 from .core.tg_client import TgClient
 
 
@@ -72,6 +72,13 @@ async def main():
         telegraph.create_account(),
         rclone_serve_booter(),
     )
+
+    if not task_dict:
+        LOGGER.info("Startup: No active tasks. Forcing Eco Mode (Low CPU/RAM).")
+        await gather(
+            update_aria2_options(force_mode=False),
+            update_qb_options(force_mode=False),
+        )
 
 
 bot_loop.run_until_complete(main())
