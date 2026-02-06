@@ -51,6 +51,7 @@ class UphosterUploader:
                 if resp.status != 200 or not data.get("result"):
                     raise Exception(f"Failed to get upload server: {data}")
                 upload_url = data["result"]
+                sess_id = data.get("sess_id", "")
 
             # Upload File
             # Custom iterator to track progress
@@ -62,13 +63,13 @@ class UphosterUploader:
                         yield chunk
                         chunk = await f.read(64 * 1024)
 
-            # Note: For XFileSharing, the param with the file is usually 'file'
+            # Note: For XFileSharing, the param with the file is usually 'file_0'
             from aiohttp import FormData
             data = FormData()
-            data.add_field('file', file_sender(self.__path), filename=self.__name)
+            data.add_field('file_0', file_sender(self.__path), filename=self.__name)
             data.add_field('key', api_key)
-            data.add_field('sess_id', '')
-            data.add_field('utype', 'anon')
+            data.add_field('sess_id', sess_id)
+            data.add_field('utype', 'prem')
 
             async with session.post(upload_url, data=data) as upload_resp:
                 res = await upload_resp.json()
