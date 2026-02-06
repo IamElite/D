@@ -25,7 +25,8 @@ from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
 
-from ... import LOGGER, status_dict
+from ... import LOGGER, status_dict, task_dict_lock, task_dict
+from ...mirror_leech_utils.status_utils.merge_status import MergeStatus
 from ...core.config_manager import Config
 from ...core.tg_client import TgClient
 
@@ -106,6 +107,29 @@ class HyperTGDownload:
         else:
             self.cache_last_access[index] = time()
         return self.cache_file_ref[index]
+
+    @property
+    def size(self):
+        return self.file_size
+        
+    @property
+    def downloaded_bytes(self):
+        return self._processed_bytes
+
+    @property
+    def download_speed(self):
+        return getattr(self, "_download_speed", 0)
+
+    @property
+    def eta(self):
+        return getattr(self, "_eta", "-")
+        
+    @property
+    def progress(self):
+        try:
+             return (self._processed_bytes / self.file_size) * 100
+        except:
+             return 0
 
     async def _clean_cache(self):
         while True:
@@ -399,6 +423,10 @@ class HyperTGDownload:
                 prog_task = create_task(self.progress_callback(progress, progress_args))
 
             results = await gather(*tasks)
+
+            # Switch to Merge Status
+            async with task_dict_lock:
+                 task_dict[self._listener.mid] = MergeStatus(self._listener, self, self._listener.mid)
 
             async with aiopen(temp_file_path, "wb") as temp_file:
                 for _, part_file_path in sorted(results, key=lambda x: x[0]):

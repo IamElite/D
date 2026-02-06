@@ -6,7 +6,7 @@ from ...ext_utils.status_utils import (
 )
 
 
-class YtDlpStatus:
+class MergeStatus:
     def __init__(self, listener, obj, gid):
         self._obj = obj
         self._gid = gid
@@ -23,9 +23,7 @@ class YtDlpStatus:
         return get_readable_file_size(self._obj.size)
 
     def status(self):
-        if self._obj.is_merging:
-            return MirrorStatus.STATUS_MERGE
-        return MirrorStatus.STATUS_DOWNLOAD
+        return MirrorStatus.STATUS_MERGE
 
     def name(self):
         return self.listener.name
@@ -37,15 +35,10 @@ class YtDlpStatus:
         return f"{get_readable_file_size(self._obj.download_speed)}/s"
 
     def eta(self):
-        if self._obj.eta != "-":
-            return get_readable_time(self._obj.eta)
-        try:
-            seconds = (
-                self._obj.size - self._obj.downloaded_bytes
-            ) / self._obj.download_speed
-            return get_readable_time(seconds)
-        except Exception:
-            return "-"
+        return self._obj.eta
 
     def task(self):
         return self._obj
+
+    def cancel_task(self):
+        return self._obj.cancel_task()

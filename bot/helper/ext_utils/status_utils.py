@@ -35,6 +35,7 @@ class MirrorStatus:
     STATUS_SAMVID = "SamVid"
     STATUS_CONVERT = "Convert"
     STATUS_FFMPEG = "FFmpeg"
+    STATUS_MERGE = "Merge"
 
 
 class EngineStatus:

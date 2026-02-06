@@ -16,6 +16,7 @@ from ...ext_utils.task_manager import (
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ...telegram_helper.message_utils import send_status_message
 from ..status_utils.yt_dlp_status import YtDlpStatus
+from ..status_utils.merge_status import MergeStatus
 
 LOGGER = getLogger(__name__)
 
@@ -32,6 +33,9 @@ class MyLogger:
                 r".Merger..Merging formats into..(.*?).$", msg
             ) or re_search(r".ExtractAudio..Destination..(.*?)$", msg):
                 LOGGER.info(msg)
+                if not self._obj.is_merging:
+                    self._obj.is_merging = True
+                    async_to_sync(self._obj.switch_to_merge)
                 newname = match.group(1)
                 newname = newname.rsplit("/", 1)[-1]
                 self._listener.name = newname
@@ -55,8 +59,10 @@ class YoutubeDLHelper:
         self._eta = "-"
         self._listener = listener
         self._gid = ""
+        self._gid = ""
         self._ext = ""
         self.is_playlist = False
+        self.is_merging = False # New flag for merge status
         self.playlist_count = 0
         self.opts = {
             "progress_hooks": [self._on_download_progress],
@@ -145,6 +151,10 @@ class YoutubeDLHelper:
             await self._listener.on_download_start()
             if self._listener.multi <= 1:
                 await send_status_message(self._listener.message)
+
+    async def switch_to_merge(self):
+        async with task_dict_lock:
+            task_dict[self._listener.mid] = MergeStatus(self._listener, self, self._gid)
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
