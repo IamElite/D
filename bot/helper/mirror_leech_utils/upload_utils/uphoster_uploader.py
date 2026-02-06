@@ -45,26 +45,25 @@ class UphosterUploader:
 
     async def __streamup_upload(self, api_key):
         async with ClientSession() as session:
-            # Step 1: Try to get a specific upload server (common for v1 clones)
-            upload_url = "https://api.streamup.cc/v1/upload"
-            try:
-                async with session.get(f"https://api.streamup.cc/v1/upload/server?api_key={api_key}") as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        if data.get("result", {}).get("upload_server"):
-                            upload_url = data["result"]["upload_server"]
-            except:
-                pass
+            # Step 1: Endpoint with query key (common fallback for picky v1 APIs)
+            upload_url = f"https://api.streamup.cc/v1/upload?api_key={api_key}"
+            
+            # Step 2: Sanitize Filename (remove characters that might break server-side scripts)
+            import re
+            clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
+            if not clean_name:
+                clean_name = f"video_{int(time())}.mp4"
 
-            # Step 2: Manual Multipart Upload
-            boundary = f"----Boundary{int(time())}"
+            # Step 3: Manual Multipart Construction
+            boundary = f"----BoundaryStreamUP{int(time())}"
             field_name = "file"
             
+            # Some servers expect api_key first
             parts = [
                 f'--{boundary}\r\nContent-Disposition: form-data; name="api_key"\r\n\r\n{api_key}\r\n'
             ]
             
-            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{self.__name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
+            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{clean_name}"\r\nContent-Type: video/mp4\r\n\r\n'
             file_footer = f'\r\n--{boundary}--\r\n'
             
             body_head = "".join(parts).encode() + file_header.encode()
@@ -84,7 +83,8 @@ class UphosterUploader:
             headers = {
                 "Content-Type": f"multipart/form-data; boundary={boundary}",
                 "Content-Length": str(total_len),
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json"
             }
 
             async with session.post(upload_url, data=stream_body(), headers=headers) as upload_resp:
@@ -101,10 +101,10 @@ class UphosterUploader:
                 except Exception:
                     raw_text = await upload_resp.text()
                     LOGGER.error(f"Failed to decode JSON from StreamUP. Raw response: {raw_text[:500]}")
-                    raise Exception("Failed to decode JSON response from StreamUP")
+                    raise Exception(f"Failed to decode JSON response from StreamUP: {raw_text[:200]}")
 
-                if not res.get("success", True) and "message" in res:
-                    msg = res.get("message") or res.get("error")
+                if not res.get("success", True) or "error" in res:
+                    msg = res.get("error") or res.get("message")
                     raise Exception(f"StreamUP Error: {msg}")
 
                 link = res.get("filecode") or res.get("url") or res.get("streaming_url")
