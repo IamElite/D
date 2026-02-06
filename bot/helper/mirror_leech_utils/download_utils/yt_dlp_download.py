@@ -5,7 +5,7 @@ from contextlib import suppress
 from secrets import token_hex
 from yt_dlp import YoutubeDL, DownloadError
 
-from .... import task_dict_lock, task_dict, user_data
+from .... import task_dict_lock, task_dict, user_data, status_dict
 from ....core.config_manager import BinConfig
 from ...ext_utils.bot_utils import sync_to_async, async_to_sync
 from ...ext_utils.task_manager import (
@@ -247,6 +247,26 @@ class YoutubeDLHelper:
 
         if options:
             self._set_options(options)
+
+        if options:
+            self._set_options(options)
+
+        # Force Max Speed: Always use 16 connections
+        conns = 16
+        
+        # 3. Enable Aria2c configuration
+        self.opts.update({
+            "external_downloader": "aria2c",
+            "external_downloader_args": {
+                "aria2c": [
+                    f"-x{conns}", 
+                    f"-s{conns}", 
+                    "-k1M", 
+                    "--disk-cache=16M"
+                ]
+            }
+        })
+        LOGGER.info(f"YT-DLP Max Speed: Using Aria2c with {conns} connections")
 
         self.opts["format"] = qual
 

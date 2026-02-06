@@ -69,7 +69,7 @@ class Config:
     LEECH_SPLIT_SIZE = 2097152000
     MEDIA_GROUP = False
     HYBRID_LEECH = True
-    HYPER_THREADS = 8  # Balanced for speed and stability with many tasks
+    HYPER_THREADS = 16  # Max Speed Mode
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0
