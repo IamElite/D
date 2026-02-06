@@ -199,7 +199,9 @@ SUPPORTED_UPHOSTERS = {
     "stream": {
         "Vidara": "VIDARA_API",
         "StreamUP": "STREAMUP_API",
-        "StreamTape": "STREAMTAPE_API",
+        "StreamTape": "STREAMTAPE_API", # Routing
+        "StreamTape Login": "STREAMTAPE_LOGIN", # UI
+        "StreamTape Key": "STREAMTAPE_KEY", # UI
     },
     "download": {
         "FreeDL": "FREEDL_API",
@@ -660,6 +662,8 @@ async def get_user_settings(from_user, stype="main"):
 
     elif stype == "uphoster_stream":
         for name, key in SUPPORTED_UPHOSTERS["stream"].items():
+            if name == "StreamTape":
+                continue
             val = "Exits" if user_dict.get(key) or getattr(Config, key, None) else "None"
             buttons.data_button(f"{name} ({val})", f"userset {user_id} uphoster_edit {key} {name}")
         

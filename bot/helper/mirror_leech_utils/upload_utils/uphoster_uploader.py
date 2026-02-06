@@ -17,11 +17,19 @@ class UphosterUploader:
 
     async def upload(self):
         site_name = self.__listener.up_dest
-        api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
-                  self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
+        if site_name == "StreamTape":
+            api_key = self.__user_settings.get("STREAMTAPE_KEY")
+            login = self.__user_settings.get("STREAMTAPE_LOGIN")
+            if not login or not api_key:
+                # Fallback to legacy field if login/key aren't both set
+                api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
+                          self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
+        else:
+            api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
+                      self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
         
         if not api_key:
-            await self.__listener.on_upload_error(f"API Key not found for {site_name}!")
+            await self.__listener.on_upload_error(f"API Key / Login missing for {site_name}!")
             return
 
         LOGGER.info(f"Uploading {self.__name} to {site_name}")
@@ -46,30 +54,31 @@ class UphosterUploader:
             await self.__listener.on_upload_error(str(e))
 
     async def __streamtape_upload(self, api_key):
-        if ":" not in api_key:
-            raise Exception("StreamTape API format must be 'LOGIN:KEY'")
-        
-        login, key = api_key.split(":", 1)
+        site_name = self.__listener.up_dest
+        login = self.__user_settings.get("STREAMTAPE_LOGIN")
+        key = self.__user_settings.get("STREAMTAPE_KEY")
+
+        if not (login and key):
+            if ":" not in api_key:
+                 raise Exception("StreamTape requires 'Login' and 'API Key'. Please check /settings.")
+            login, key = api_key.split(":", 1)
         
         async with ClientSession() as session:
-            # Step 1: Get Upload URL
-            async with session.get(f"https://api.streamtape.com/file/upload?login={login}&key={key}") as resp:
-                data = await resp.json()
-                if resp.status != 200 or data.get("status") != 200:
-                    raise Exception(f"Failed to get upload server: {data}")
-                upload_url = data["result"]["url"]
-
-            # Step 2: Manual Multipart Upload
-            boundary = f"----BoundaryStreamTape{int(time())}"
-            field_name = "file"
-            
-            # Sanitization (reused from StreamUP fix)
+            # Step 1: Sanitization (reused from StreamUP fix)
             import re
             clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', self.__name)
             if not clean_name:
                 clean_name = f"video_{int(time())}.mp4"
 
-            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{clean_name}"\r\nContent-Type: video/mp4\r\n\r\n'
+            # Step 2: One-Step Upload Endpoint
+            # Note: name parameter is helpful for StreamTape to recognize the file correctly
+            upload_url = f"https://api.streamtape.com/file/ul?login={login}&key={key}&name={clean_name}"
+
+            # Step 3: Manual Multipart Construction
+            boundary = f"----BoundaryStreamTape{int(time())}"
+            field_name = "file"
+            
+            file_header = f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{clean_name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
             file_footer = f'\r\n--{boundary}--\r\n'
             
             body_head = file_header.encode()
@@ -110,7 +119,7 @@ class UphosterUploader:
                     raise Exception(f"Failed to decode JSON response from StreamTape: {raw_text[:200]}")
 
                 if res.get("status") != 200:
-                    msg = res.get("msg") or "Unknown server error"
+                    msg = res.get("msg") or res.get("message") or "Unknown server error"
                     raise Exception(f"StreamTape Error: {msg}")
 
                 result = res.get("result", {})
