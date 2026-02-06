@@ -25,7 +25,7 @@ from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
 
-from ... import LOGGER
+from ... import LOGGER, status_dict
 from ...core.config_manager import Config
 from ...core.tg_client import TgClient
 
@@ -378,6 +378,24 @@ class HyperTGDownload:
         else:
             num_parts = min(16, max(8, self.file_size // (50 * 1024 * 1024)))
         
+        # Dynamic Thread Scaling: Prevents "Task 1 Speed Hogging"
+        # If multiple tasks are running, reduce threads per task
+        active_downloads = 0
+        for task in status_dict.values():
+            status = task.status()
+            if status == "Dl" and "Telegram" in task.name():
+                 active_downloads += 1
+        
+        # Ensure at least 1 count (current task)
+        active_downloads = max(1, active_downloads)
+        
+        # Scale down parts based on active load: 1 task = 100%, 2 tasks = 50%, etc.
+        # But notify keep min 3 parts for speed if file is large enough
+        if active_downloads > 1:
+            scaled_parts = max(3, self.num_parts // active_downloads)
+            num_parts = min(num_parts, scaled_parts)
+            LOGGER.info(f"Dynamic Scaling: {active_downloads} tasks active. Reduced parts to {num_parts} for fair sharing.")
+
         # Limit by available clients and configured HYPER_THREADS
         num_parts = min(num_parts, self.num_parts)
         num_parts = min(num_parts, len(self.clients)) if self.clients else num_parts

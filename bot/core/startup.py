@@ -41,6 +41,13 @@ async def update_qb_options():
             if k.startswith("rss"):
                 del qbit_options[k]
         qbit_options["web_ui_password"] = "admin"
+        # Performance Tuning for Ultra Speed
+        qbit_options.update({
+            "max_connec": 200,
+            "max_connec_per_torrent": 40,
+            "upload_slots_behavior": "upload_slots_behavior_fixed",
+            "upload_choking_algorithm": "upload_choking_algorithm_round_robin"
+        })
         await TorrentManager.qbittorrent.app.set_preferences(
             {"web_ui_password": "admin"}
         )
@@ -52,6 +59,14 @@ async def update_aria2_options():
     if not aria2_options:
         op = await TorrentManager.aria2.getGlobalOption()
         aria2_options.update(op)
+        # Performance Tuning for Balanced Speed (Safe for 50+ tasks)
+        aria2_options.update({
+            "max-connection-per-server": "8",
+            "split": "8",
+            "min-split-size": "10M",
+            "max-concurrent-downloads": "5",
+            "disk-cache": "16M"
+        })
     else:
         await TorrentManager.aria2.changeGlobalOption(aria2_options)
 

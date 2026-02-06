@@ -69,7 +69,7 @@ class Config:
     LEECH_SPLIT_SIZE = 2097152000
     MEDIA_GROUP = False
     HYBRID_LEECH = True
-    HYPER_THREADS = 16  # Increased for high-bandwidth servers (Heroku 367MB/s)
+    HYPER_THREADS = 8  # Balanced for speed and stability with many tasks
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0
