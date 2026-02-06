@@ -26,7 +26,7 @@ from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
 
 from ... import LOGGER, status_dict, task_dict_lock, task_dict
-from ...mirror_leech_utils.status_utils.merge_status import MergeStatus
+from ..mirror_leech_utils.status_utils.merge_status import MergeStatus
 from ...core.config_manager import Config
 from ...core.tg_client import TgClient
 
