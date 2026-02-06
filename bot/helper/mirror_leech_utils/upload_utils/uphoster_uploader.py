@@ -4,7 +4,7 @@ from requests_toolbelt import MultipartEncoder
 
 from ...ext_utils.bot_utils import sync_to_async
 from ...ext_utils.status_utils import get_readable_file_size
-from ...modules.users_settings import SUPPORTED_UPHOSTERS
+from ....modules.users_settings import SUPPORTED_UPHOSTERS
 from ..status_utils.uphoster_status import UphosterStatus
 from ... import task_dict, task_dict_lock, LOGGER
 
