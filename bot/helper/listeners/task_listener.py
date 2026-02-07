@@ -340,7 +340,7 @@ class TaskListener(TaskConfig):
             )
             del tg
 
-        elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]:
+        elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] or self.up_dest.lower() == "all":
             LOGGER.info(f"Uphoster Upload Name: {self.name} to {self.up_dest}")
             uphoster = UphosterUploader(self, up_path)
             async with task_dict_lock:
