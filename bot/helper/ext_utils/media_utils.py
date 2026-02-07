@@ -374,8 +374,8 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     
     # Calculate collage dimensions
     padding = 4
-    header_height = max(180, (collage_width // 1280) * 180) if mode == "detailed" else 0
     collage_width = cols * cell_width + (cols + 1) * padding
+    header_height = max(180, (collage_width // 1280) * 180) if mode == "detailed" else 0
     collage_height = rows * cell_height + (rows + 1) * padding + header_height
     
     # Create collage canvas
