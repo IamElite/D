@@ -101,6 +101,7 @@ class Mirror(TaskListener):
             "-z": False,
             "-sv": False,
             "-ss": False,
+            "-sst": False,
             "-f": False,
             "-fd": False,
             "-fu": False,
@@ -176,6 +177,10 @@ class Mirror(TaskListener):
                     self.screenshot_orientation = "landscape"
         else:
             self.screen_shots = ss_arg
+        sst_arg = args["-sst"]
+        if sst_arg and isinstance(sst_arg, str):
+            self.screenshot_timestamps = sst_arg.replace(",", " ").split()
+        
         self.force_run = args["-f"]
         self.force_download = args["-fd"]
         self.force_upload = args["-fu"]

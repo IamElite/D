@@ -579,24 +579,23 @@ async def get_user_settings(from_user, stype="main"):
 """
 
     elif stype == "screenshot":
-        # Screenshot Mode cycling: image -> doc -> title -> detailed -> image
+        # Screenshot Mode cycling
         ss_modes = ["image", "doc", "title", "detailed"]
-        ss_mode_labels = {"image": "📷 Image", "doc": "📄 Document", "title": "🕐 Title", "detailed": "📋 Detailed"}
+        ss_mode_labels = {"image": "📷 Image", "doc": "📄 Doc", "title": "🕐 Title", "detailed": "📋 Detailed"}
         current_ss_mode = user_dict.get("SCREENSHOT_MODE", "image")
-        next_ss_idx = (ss_modes.index(current_ss_mode) + 1) % len(ss_modes)
-        next_ss_mode = ss_modes[next_ss_idx]
+        next_ss_mode = ss_modes[(ss_modes.index(current_ss_mode) + 1) % len(ss_modes)]
         buttons.data_button(
-            f"SS Mode: {ss_mode_labels.get(current_ss_mode, 'Image')}",
+            f"Mode: {ss_mode_labels.get(current_ss_mode, 'Image')}",
             f"userset {user_id} ssmode {next_ss_mode}"
         )
 
+        # Orientation cycling
         ss_orientations = ["landscape", "portrait"]
         ss_orient_labels = {"landscape": "🖼️ Landscape", "portrait": "📱 Portrait"}
         current_ss_orient = user_dict.get("SCREENSHOT_ORIENTATION", "landscape")
-        next_ss_orient_idx = (ss_orientations.index(current_ss_orient) + 1) % len(ss_orientations)
-        next_ss_orient = ss_orientations[next_ss_orient_idx]
+        next_ss_orient = ss_orientations[(ss_orientations.index(current_ss_orient) + 1) % len(ss_orientations)]
         buttons.data_button(
-            f"SS Orientation: {ss_orient_labels.get(current_ss_orient, 'Landscape')}",
+            f"Orient: {ss_orient_labels.get(current_ss_orient, 'Land')}",
             f"userset {user_id} ssorient {next_ss_orient}"
         )
 
@@ -606,19 +605,11 @@ async def get_user_settings(from_user, stype="main"):
 
         text = f"""⌬ <b>Screenshot Settings</b>
 
-<b>Modes :</b>
-- 📷 <b>Image</b> : Standard photo collage.
-- 📄 <b>Document</b> : Collage sent as document.
-- 🕐 <b>Title</b> : With timestamp overlays.
-- 📋 <b>Detailed</b> : Pro layout with media info.
+<b>Flags:</b> <code>-ss count:mode:orient</code>
+<b>Timestamps:</b> <code>-sst 10 01:20 01:10:05</code>
 
-<b>Orientations :</b>
-- 🖼️ <b>Landscape</b> : Horizontal grid (3x3).
-- 📱 <b>Portrait</b> : Vertical/Narrow grid (Lamba).
-
-<b>Command Usage :</b>
-Use <code>-ss count:mode:orient</code>
-Example: <code>-ss 9:detailed:p</code> or <code>-ss 10:title:l</code>"""
+<b>Modes:</b> Image, Doc, Title, Detailed
+<b>Orients:</b> Land, Port (9:16)"""
 
     elif stype == "ffset":
         buttons.data_button("FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS")

@@ -376,6 +376,7 @@ class YtDlp(TaskListener):
             "-z": False,
             "-sv": False,
             "-ss": False,
+            "-sst": False,
             "-f": False,
             "-fd": False,
             "-fu": False,
@@ -452,6 +453,12 @@ class YtDlp(TaskListener):
                     self.screenshot_orientation = "landscape"
         else:
             self.screen_shots = ss_arg
+        
+        # Parse -sst flag for custom timestamps (e.g., "-sst 10:20:30")
+        sst_arg = args["-sst"]
+        if sst_arg and isinstance(sst_arg, str):
+            self.screenshot_timestamps = sst_arg.replace(",", " ").split()
+            
         self.force_run = args["-f"]
         self.force_download = args["-fd"]
         self.force_upload = args["-fu"]

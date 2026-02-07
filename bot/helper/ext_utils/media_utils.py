@@ -275,7 +275,7 @@ def _get_grid_size(count, orientation="landscape"):
     return rows, cols
 
 
-async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscape") -> str:
+async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscape", sst=None) -> str:
     """
     Create a single collage image with all screenshots in a grid layout.
     
@@ -283,12 +283,28 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
         video_file: Path to video file
         ss_nb: Number of screenshots to take
         mode: 'image', 'doc', 'title', or 'detailed'
+        sst: List of custom timestamps (optional)
     
     Returns:
         Path to collage image or False on error
     """
     from PIL import ImageDraw, ImageFont
     
+    def parse_time(time_str):
+        if not time_str:
+            return 0
+        try:
+            time_str = str(time_str).strip()
+            if ":" in time_str:
+                parts = time_str.split(":")
+                if len(parts) == 3: # HH:MM:SS
+                    return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                elif len(parts) == 2: # MM:SS
+                    return int(parts[0]) * 60 + int(parts[1])
+            return int(float(time_str))
+        except Exception:
+            return 0
+
     duration, artist, title_meta = await get_media_info(video_file)
     if duration == 0:
         LOGGER.error("take_ss_collage: Can't get the duration of video")
@@ -342,14 +358,24 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
             pass
     
     # Generate screenshots
-    interval = duration // (ss_nb + 1)
-    cap_time = interval
     timestamps = []
-    cmds = []
+    if sst and isinstance(sst, list):
+        for t in sst:
+            seconds = parse_time(t)
+            if 0 <= seconds <= duration:
+                timestamps.append(seconds)
+        ss_nb = len(timestamps)
     
-    for i in range(ss_nb):
+    if not timestamps:
+        interval = duration // (ss_nb + 1)
+        cap_time = interval
+        for i in range(ss_nb):
+            timestamps.append(cap_time)
+            cap_time += interval
+
+    cmds = []
+    for i, cap_time in enumerate(timestamps):
         output = f"{temp_dir}/SS_{i:02}.png"
-        timestamps.append(cap_time)
         cmd = [
             "taskset", "-c", f"{cores}",
             BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
@@ -357,7 +383,6 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
             "-q:v", "1", "-frames:v", "1", "-threads", f"{threads}",
             output,
         ]
-        cap_time += interval
         cmds.append(cmd_exec(cmd))
     
     try:
@@ -527,19 +552,19 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
 
 
 # Legacy functions for backward compatibility
-async def take_ss(video_file, ss_nb, orientation="landscape") -> bool:
+async def take_ss(video_file, ss_nb, orientation="landscape", sst=None) -> bool:
     """Create screenshots collage (backward compatible wrapper)"""
-    return await take_ss_collage(video_file, ss_nb, mode="image", orientation=orientation)
+    return await take_ss_collage(video_file, ss_nb, mode="image", orientation=orientation, sst=sst)
 
 
-async def take_ss_with_title(video_file, ss_nb, orientation="landscape") -> bool:
+async def take_ss_with_title(video_file, ss_nb, orientation="landscape", sst=None) -> bool:
     """Create screenshots collage with timeline overlay"""
-    return await take_ss_collage(video_file, ss_nb, mode="title", orientation=orientation)
+    return await take_ss_collage(video_file, ss_nb, mode="title", orientation=orientation, sst=sst)
 
 
-async def take_ss_detailed(video_file, ss_nb, orientation="landscape") -> bool:
+async def take_ss_detailed(video_file, ss_nb, orientation="landscape", sst=None) -> bool:
     """Create screenshots collage with media info header and timeline"""
-    return await take_ss_collage(video_file, ss_nb, mode="detailed", orientation=orientation)
+    return await take_ss_collage(video_file, ss_nb, mode="detailed", orientation=orientation, sst=sst)
 
 
 async def get_audio_thumbnail(audio_file):

@@ -108,6 +108,7 @@ class TaskConfig:
         self.screen_shots = False
         self.screenshot_mode = self.user_dict.get("SCREENSHOT_MODE", "image")  # Options: image, doc, title, detailed
         self.screenshot_orientation = self.user_dict.get("SCREENSHOT_ORIENTATION", "landscape")  # Options: landscape, portrait
+        self.screenshot_timestamps = None  # List of timestamps from -sst flag
         self.is_cancelled = False
         self.force_run = False
         self.force_download = False
@@ -995,6 +996,7 @@ class TaskConfig:
     async def generate_screenshots(self, dl_path):
         ss_nb = int(self.screen_shots) if isinstance(self.screen_shots, str) else 9
         orientation = getattr(self, 'screenshot_orientation', 'landscape')
+        sst = getattr(self, 'screenshot_timestamps', None)
         
         # Select the appropriate screenshot function based on mode
         if self.screenshot_mode == "title":
@@ -1007,7 +1009,7 @@ class TaskConfig:
         if self.is_file:
             if (await get_document_type(dl_path))[0]:
                 LOGGER.info(f"Creating Screenshot ({self.screenshot_mode}, {orientation}) for: {dl_path}")
-                res = await ss_func(dl_path, ss_nb, orientation=orientation)
+                res = await ss_func(dl_path, ss_nb, orientation=orientation, sst=sst)
                 if res:
                     new_folder = ospath.splitext(dl_path)[0]
                     if new_folder == dl_path:
@@ -1025,7 +1027,7 @@ class TaskConfig:
                 for file_ in files:
                     f_path = ospath.join(dirpath, file_)
                     if (await get_document_type(f_path))[0]:
-                        await ss_func(f_path, ss_nb, orientation=orientation)
+                        await ss_func(f_path, ss_nb, orientation=orientation, sst=sst)
         return dl_path
 
     async def convert_media(self, dl_path, gid):
