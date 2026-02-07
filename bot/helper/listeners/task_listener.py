@@ -422,9 +422,12 @@ class TaskListener(TaskConfig):
                 and not self.private_link
             ):
                 buttons = ButtonMaker()
-                if link and (Config.SHOW_CLOUD_LINK or self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]):
-                    btn_name = f"☁️ {self.up_dest} Link" if self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] else "☁️ Cloud Link"
-                    buttons.url_button(btn_name, link)
+                if link and (Config.SHOW_CLOUD_LINK or self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] or self.up_dest.lower() == "all"):
+                    if self.up_dest.lower() == "all":
+                        msg += f"\n\n{link}"
+                    else:
+                        btn_name = f"☁️ {self.up_dest} Link" if self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] else "☁️ Cloud Link"
+                        buttons.url_button(btn_name, link)
                 else:
                     msg += f"\n\nPath: <code>{rclone_path or link}</code>"
                 if rclone_path and Config.RCLONE_SERVE_URL and not self.private_link:

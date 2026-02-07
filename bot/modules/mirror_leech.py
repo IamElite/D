@@ -335,6 +335,24 @@ class Mirror(TaskListener):
             and not is_gdrive_link(self.link)
             and not is_mega_link(self.link)
         ):
+            if self.up_dest and self.up_dest.lower() != "all" and \
+               self.up_dest not in SUPPORTED_UPHOSTERS["download"] and \
+               self.up_dest not in SUPPORTED_UPHOSTERS["stream"]:
+                
+                uplist = "<b><u>Available Uphosters:</u></b>\n\n"
+                uplist += "<b>Stream Sites:</b>\n"
+                for name in SUPPORTED_UPHOSTERS["stream"]:
+                    uplist += f"⋗ <code>{name}</code>\n"
+                uplist += "\n<b>Download Sites:</b>\n"
+                for name in SUPPORTED_UPHOSTERS["download"]:
+                    uplist += f"⋗ <code>{name}</code>\n"
+                uplist += "\n<i>Use <b>-up all</b> to upload to all configured sites!</i>"
+                
+                await send_message(self.message, uplist)
+                await self.remove_from_same_dir()
+                await delete_links(self.message)
+                return
+
             await send_message(
                 self.message, COMMAND_USAGE["mirror"][0], COMMAND_USAGE["mirror"][1]
             )

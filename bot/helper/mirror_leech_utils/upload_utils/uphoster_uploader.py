@@ -17,6 +17,11 @@ class UphosterUploader:
 
     async def upload(self):
         site_name = self.__listener.up_dest
+        
+        if site_name.lower() == "all":
+            await self.__upload_to_all()
+            return
+
         api_key = self.__user_settings.get(SUPPORTED_UPHOSTERS["download"].get(site_name)) or \
                   self.__user_settings.get(SUPPORTED_UPHOSTERS["stream"].get(site_name))
         
@@ -43,7 +48,73 @@ class UphosterUploader:
             LOGGER.error(f"Upload failed: {e}")
             await self.__listener.on_upload_error(str(e))
 
-    async def __streamup_upload(self, api_key):
+    async def __upload_to_all(self):
+        results = {"stream": {}, "download": {}}
+        to_upload = []
+
+        for category in ["stream", "download"]:
+            for name, key in SUPPORTED_UPHOSTERS[category].items():
+                api_key = self.__user_settings.get(key)
+                if api_key:
+                    to_upload.append((name, category, api_key))
+
+        if not to_upload:
+            await self.__listener.on_upload_error("No Uphoster credentials found! Please check /settings.")
+            return
+
+        LOGGER.info(f"Uploading {self.__name} to multiple hosts: {[x[0] for x in to_upload]}")
+
+        for name, category, api_key in to_upload:
+            try:
+                # Capture complete callback to get the link
+                # We need a temporary listener or a way to intercept the link
+                # For simplicity, we can modify the upload methods to return the link
+                # or use a local function as a mock listener
+                link = await self.__direct_upload(name, api_key)
+                if link:
+                    results[category][name] = link
+            except Exception as e:
+                LOGGER.error(f"Failed to upload to {name}: {e}")
+
+        if not results["stream"] and not results["download"]:
+            await self.__listener.on_upload_error("All multi-uploads failed!")
+            return
+
+        # Format grouped output
+        msg = ""
+        if results["stream"]:
+            msg += "<b><u>Stream Sites</u></b>\n"
+            for name, link in results["stream"].items():
+                msg += f"⋗ <a href='{link}'>{name}</a>\n"
+        
+        if results["download"]:
+            if msg: msg += "\n"
+            msg += "<b><u>Download Sites</u></b>\n"
+            for name, link in results["download"].items():
+                msg += f"⋗ <a href='{link}'>{name}</a>\n"
+
+        # Sending results as 'link' to listener (Listener will handle it)
+        # We pass self.__name twice to satisfy the files dict requirement
+        await self.__listener.on_upload_complete(msg, {msg: self.__name}, None, "File", "", "")
+
+    async def __direct_upload(self, site_name, api_key):
+        # Helper to route based on name and return the link instead of calling complete
+        try:
+            if site_name == "FreeDL":
+                return await self.__xfs_upload(site_name, "https://freedl.ink/api", api_key, "https://frdl.my", "file_0", multi=True)
+            elif site_name == "ZapUpload":
+                return await self.__zapupload_upload(api_key, multi=True)
+            elif site_name == "VidNest":
+                return await self.__xfs_upload(site_name, "https://vidnest.io/api", api_key, "https://vidnest.io", "file", multi=True)
+            elif site_name == "Vidara":
+                return await self.__vidara_upload(api_key, multi=True)
+            elif site_name == "StreamUP":
+                return await self.__streamup_upload(api_key, multi=True)
+        except Exception as e:
+            LOGGER.error(f"Direct upload to {site_name} failed: {e}")
+        return None
+
+    async def __streamup_upload(self, api_key, multi=False):
         async with ClientSession() as session:
             # Step 1: Endpoint with query key (common fallback for picky v1 APIs)
             upload_url = f"https://api.streamup.cc/v1/upload?api_key={api_key}"
@@ -111,9 +182,11 @@ class UphosterUploader:
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
                 
+                if multi:
+                    return link
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
-    async def __vidara_upload(self, api_key):
+    async def __vidara_upload(self, api_key, multi=False):
         async with ClientSession() as session:
             # Step 1: Get Upload Server
             async with session.get(f"https://api.vidara.so/v1/upload/server?api_key={api_key}") as resp:
@@ -181,9 +254,11 @@ class UphosterUploader:
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
                 
+                if multi:
+                    return link
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
-    async def __zapupload_upload(self, api_key):
+    async def __zapupload_upload(self, api_key, multi=False):
         async with ClientSession() as session:
             # Custom iterator to track progress (reused logic)
             async def file_sender(file_path):
@@ -213,9 +288,11 @@ class UphosterUploader:
                 if not link:
                     raise Exception(f"Upload link not found in response: {res}")
                 
+                if multi:
+                    return link
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
-    async def __xfs_upload(self, site_name, api_url, api_key, base_url, field_name="file_0"):
+    async def __xfs_upload(self, site_name, api_url, api_key, base_url, field_name="file_0", multi=False):
         async with ClientSession() as session:
             # Step 1: Get Upload Server
             async with session.get(f"{api_url}/upload/server?key={api_key}") as resp:
@@ -303,6 +380,8 @@ class UphosterUploader:
                 if not link:
                     LOGGER.warning(f"Upload link not found in response from {site_name}: {res}")
                 
+                if multi:
+                    return link
                 await self.__listener.on_upload_complete(link, {link: self.__name}, None, "File", "", "")
 
     @property
