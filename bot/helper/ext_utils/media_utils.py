@@ -360,31 +360,41 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     
     # Calculate collage dimensions
     padding = 4
-    header_height = 80 if mode == "detailed" else 0
+    header_height = 120 if mode == "detailed" else 0
     collage_width = cols * cell_width + (cols + 1) * padding
     collage_height = rows * cell_height + (rows + 1) * padding + header_height
     
     # Create collage canvas
-    collage = Image.new("RGB", (collage_width, collage_height), color=(30, 30, 30))
+    collage = Image.new("RGB", (collage_width, collage_height), color=(20, 20, 20))
     draw = ImageDraw.Draw(collage)
     
-    # Try to load font
-    try:
-        font_large = ImageFont.truetype("DejaVuSans.ttf", 20)
-        font_small = ImageFont.truetype("DejaVuSans.ttf", 14)
-        font_time = ImageFont.truetype("DejaVuSans.ttf", 16)
-    except Exception:
-        font_large = ImageFont.load_default()
-        font_small = font_large
-        font_time = font_large
+    # Set font sizes based on collage width
+    large_size = max(24, collage_width // 40)
+    small_size = max(18, collage_width // 60)
+    time_size = max(20, cell_width // 15)
+
+    # Try to load font with fallback
+    def get_font(size):
+        for font_name in ["DejaVuSans.ttf", "arial.ttf", "LiberationSans-Regular.ttf", "Verdana.ttf"]:
+            try:
+                return ImageFont.truetype(font_name, size)
+            except Exception:
+                continue
+        return ImageFont.load_default()
+
+    font_large = get_font(large_size)
+    font_small = get_font(small_size)
+    font_time = get_font(time_size)
     
     # Draw header for detailed mode
     if mode == "detailed":
+        draw.rectangle([0, 0, collage_width, header_height], fill=(10, 10, 10))
         info_text = f"📁 {name}  |  📐 {vid_width}x{vid_height}  |  ⏱️ {_format_time(duration)}  |  💾 {size_str}  |  🎬 {codec}"
         bbox = draw.textbbox((0, 0), info_text, font=font_small)
         text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         text_x = (collage_width - text_width) // 2
-        text_y = (header_height - 20) // 2
+        text_y = (header_height - text_height) // 2
         draw.text((text_x, text_y), info_text, fill=(255, 255, 255), font=font_small)
     
     # Paste screenshots into grid
@@ -399,7 +409,6 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
             img_path = f"{temp_dir}/SS_{idx:02}.png"
             try:
                 with Image.open(img_path) as img:
-                    # Resize if needed
                     if img.size != (cell_width, cell_height):
                         img = img.resize((cell_width, cell_height), Image.Resampling.LANCZOS)
                     collage.paste(img, (x, y))
@@ -407,34 +416,36 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
                     # Add timeline overlay for title/detailed modes
                     if mode in ("title", "detailed"):
                         time_text = _format_time(timestamps[idx])
-                        # Draw text with border
-                        tx, ty = x + cell_width - 10, y + cell_height - 10
                         bbox = draw.textbbox((0, 0), time_text, font=font_time)
                         tw = bbox[2] - bbox[0]
                         th = bbox[3] - bbox[1]
-                        tx = tx - tw
-                        ty = ty - th
-                        # Draw border
-                        for dx in [-1, 0, 1]:
-                            for dy in [-1, 0, 1]:
-                                if dx != 0 or dy != 0:
-                                    draw.text((tx + dx, ty + dy), time_text, fill=(0, 0, 0), font=font_time)
+                        
+                        # Background box for readability
+                        box_padding = 6
+                        tx, ty = x + cell_width - tw - box_padding - 10, y + cell_height - th - box_padding - 10
+                        draw.rectangle(
+                            [tx - box_padding, ty - box_padding, tx + tw + box_padding, ty + th + box_padding],
+                            fill=(0, 0, 0, 180)
+                        )
+                        # Text with subtle border
+                        for dx in [-1, 1]:
+                            for dy in [-1, 1]:
+                                draw.text((tx + dx, ty + dy), time_text, fill=(0, 0, 0), font=font_time)
                         draw.text((tx, ty), time_text, fill=(255, 255, 255), font=font_time)
             except Exception as e:
                 LOGGER.error(f"Error pasting screenshot {idx}: {e}")
-                # Draw error cell
-                draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(50, 50, 50))
-                draw.text((x + cell_width//3, y + cell_height//2 - 10), "Error", fill=(255, 100, 100), font=font_large)
+                draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(40, 40, 40))
+                draw.text((x + 10, y + 10), "Error", fill=(200, 50, 50), font=font_large)
         else:
             # Empty cell - draw "No Image" text
-            draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(50, 50, 50), outline=(80, 80, 80))
+            draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(40, 40, 40), outline=(60, 60, 60))
             no_img_text = "No Image"
             bbox = draw.textbbox((0, 0), no_img_text, font=font_large)
             tw = bbox[2] - bbox[0]
             th = bbox[3] - bbox[1]
             tx = x + (cell_width - tw) // 2
             ty = y + (cell_height - th) // 2
-            draw.text((tx, ty), no_img_text, fill=(128, 128, 128), font=font_large)
+            draw.text((tx, ty), no_img_text, fill=(100, 100, 100), font=font_large)
     
     # Save collage
     collage_path = f"{ss_dir}/SS.{name_only}_collage.png"

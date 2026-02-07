@@ -165,11 +165,11 @@ class Mirror(TaskListener):
         ss_arg = args["-ss"]
         if ss_arg and isinstance(ss_arg, str) and ":" in ss_arg:
             ss_parts = ss_arg.split(":", 1)
-            self.screen_shots = ss_parts[0] if ss_parts[0] else "10"
-            self.screenshot_mode = ss_parts[1].lower() if len(ss_parts) > 1 and ss_parts[1] else "image"
+            self.screen_shots = ss_parts[0] if ss_parts[0] else "9"
+            if len(ss_parts) > 1 and ss_parts[1]:
+                self.screenshot_mode = ss_parts[1].lower()
         else:
             self.screen_shots = ss_arg
-            self.screenshot_mode = "image"
         self.force_run = args["-f"]
         self.force_download = args["-fd"]
         self.force_upload = args["-fu"]
