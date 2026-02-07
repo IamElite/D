@@ -266,7 +266,7 @@ class TaskListener(TaskConfig):
             self.is_file = await aiopath.isfile(up_path)
             self.name = up_path.replace(f"{up_dir}/", "").split("/", 1)[0]
 
-        if self.screen_shots:
+        if self.screen_shots or self.screenshot_timestamps:
             up_path = await self.generate_screenshots(up_path)
             if self.is_cancelled:
                 return

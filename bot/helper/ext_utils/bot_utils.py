@@ -145,8 +145,6 @@ def arg_parser(items, arg_base):
         "-j",
         "-d",
         "-sv",
-        "-ss",
-        "-sst",
         "-f",
         "-fd",
         "-fu",

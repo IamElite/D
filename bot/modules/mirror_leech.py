@@ -180,6 +180,8 @@ class Mirror(TaskListener):
         sst_arg = args["-sst"]
         if sst_arg and isinstance(sst_arg, str):
             self.screenshot_timestamps = sst_arg.replace(",", " ").split()
+            if not self.screen_shots:
+                self.screen_shots = str(len(self.screenshot_timestamps))
         
         self.force_run = args["-f"]
         self.force_download = args["-fd"]
