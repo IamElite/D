@@ -199,11 +199,11 @@ SUPPORTED_UPHOSTERS = {
     "stream": {
         "Vidara": "VIDARA_API",
         "StreamUP": "STREAMUP_API",
+        "VidNest": "VIDNEST_API",
     },
     "download": {
         "FreeDL": "FREEDL_API",
         "ZapUpload": "ZAPUPLOAD_API",
-        "VidNest": "VIDNEST_API",
     }
 }
 
