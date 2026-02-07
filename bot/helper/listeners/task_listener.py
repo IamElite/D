@@ -422,13 +422,10 @@ class TaskListener(TaskConfig):
                 and not self.private_link
             ):
                 buttons = ButtonMaker()
-                if link and (Config.SHOW_CLOUD_LINK or self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] or self.up_dest.lower() == "all"):
-                    if self.up_dest.lower() == "all":
-                        msg += f"\n\n{link}"
-                    else:
-                        btn_name = f"☁️ {self.up_dest} Link" if self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] else "☁️ Cloud Link"
-                        buttons.url_button(btn_name, link)
-                else:
+                if link and (Config.SHOW_CLOUD_LINK or self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]):
+                    btn_name = f"☁️ {self.up_dest} Link" if self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] else "☁️ Cloud Link"
+                    buttons.url_button(btn_name, link)
+                elif not link or self.up_dest.lower() != "all":
                     msg += f"\n\nPath: <code>{rclone_path or link}</code>"
                 if rclone_path and Config.RCLONE_SERVE_URL and not self.private_link:
                     remote, rpath = rclone_path.split(":", 1)
@@ -467,17 +464,21 @@ class TaskListener(TaskConfig):
             chat_type_str = chat_type_str.lower()
             is_private_chat = chat_type_str == "private"
             is_group_chat = chat_type_str in ("group", "supergroup")
+            final_sent_msg = None
             if self.bot_pm and is_group_chat:
                 await send_message(self.message, group_msg)
-                await send_message(self.user_id, msg, button)
+                final_sent_msg = await send_message(self.user_id, msg, button)
             elif self.bot_pm and is_private_chat:
-                await send_message(self.user_id, msg, button)
+                final_sent_msg = await send_message(self.user_id, msg, button)
             elif not self.bot_pm and is_group_chat:
-                await send_message(self.message, complete_msg, button)
+                final_sent_msg = await send_message(self.message, complete_msg, button)
             elif not self.bot_pm and is_private_chat:
-                await send_message(self.message, msg, button)
+                final_sent_msg = await send_message(self.message, msg, button)
             else:
-                await send_message(self.message, complete_msg, button)
+                final_sent_msg = await send_message(self.message, complete_msg, button)
+
+            if self.up_dest.lower() == "all" and final_sent_msg:
+                await send_message(final_sent_msg, link)
 
             mirror_log_id = getattr(Config, "MIRROR_LOG_ID", None)
             if mirror_log_id:
