@@ -431,15 +431,13 @@ async def get_user_settings(from_user, stype="main"):
         else:
             thumb_layout = "None"
 
-        # Screenshot Mode cycling: image -> doc -> title -> detailed -> image
-        ss_modes = ["image", "doc", "title", "detailed"]
         ss_mode_labels = {"image": "📷 Image", "doc": "📄 Document", "title": "🕐 Title", "detailed": "📋 Detailed"}
         current_ss_mode = user_dict.get("SCREENSHOT_MODE", "image")
-        next_ss_idx = (ss_modes.index(current_ss_mode) + 1) % len(ss_modes)
-        next_ss_mode = ss_modes[next_ss_idx]
+        ss_orient_labels = {"landscape": "🖼️ Landscape", "portrait": "📱 Portrait"}
+        current_ss_orient = user_dict.get("SCREENSHOT_ORIENTATION", "landscape")
+
         buttons.data_button(
-            f"SS Mode: {ss_mode_labels.get(current_ss_mode, 'Image')}",
-            f"userset {user_id} ssmode {next_ss_mode}"
+            "Screenshot", f"userset {user_id} sset"
         )
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
@@ -461,7 +459,8 @@ async def get_user_settings(from_user, stype="main"):
 ┊ Mixed Leech → <b>{hybrid_leech}</b>
 ┊ Metadata → <code>{escape(meta)}</code>
 ┊ Thumbnail Layout → <b>{thumb_layout}</b>
-╰ Screenshot Mode → <b>{ss_mode_labels.get(current_ss_mode, 'Image')}</b>
+┊ Screenshot Mode → <b>{ss_mode_labels.get(current_ss_mode, 'Image')}</b>
+╰ Screenshot Orient → <b>{ss_orient_labels.get(current_ss_orient, 'Landscape')}</b>
 """
 
 
@@ -578,6 +577,48 @@ async def get_user_settings(from_user, stype="main"):
 ┊ <b>Index Link</b> → <code>{index}</code>
 ╰ <b>Stop Duplicate</b> → <b>{sd_msg}</b>
 """
+
+    elif stype == "screenshot":
+        # Screenshot Mode cycling: image -> doc -> title -> detailed -> image
+        ss_modes = ["image", "doc", "title", "detailed"]
+        ss_mode_labels = {"image": "📷 Image", "doc": "📄 Document", "title": "🕐 Title", "detailed": "📋 Detailed"}
+        current_ss_mode = user_dict.get("SCREENSHOT_MODE", "image")
+        next_ss_idx = (ss_modes.index(current_ss_mode) + 1) % len(ss_modes)
+        next_ss_mode = ss_modes[next_ss_idx]
+        buttons.data_button(
+            f"SS Mode: {ss_mode_labels.get(current_ss_mode, 'Image')}",
+            f"userset {user_id} ssmode {next_ss_mode}"
+        )
+
+        ss_orientations = ["landscape", "portrait"]
+        ss_orient_labels = {"landscape": "🖼️ Landscape", "portrait": "📱 Portrait"}
+        current_ss_orient = user_dict.get("SCREENSHOT_ORIENTATION", "landscape")
+        next_ss_orient_idx = (ss_orientations.index(current_ss_orient) + 1) % len(ss_orientations)
+        next_ss_orient = ss_orientations[next_ss_orient_idx]
+        buttons.data_button(
+            f"SS Orientation: {ss_orient_labels.get(current_ss_orient, 'Landscape')}",
+            f"userset {user_id} ssorient {next_ss_orient}"
+        )
+
+        buttons.data_button("Back", f"userset {user_id} back leech", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+
+        text = f"""⌬ <b>Screenshot Settings</b>
+
+<b>Modes :</b>
+- 📷 <b>Image</b> : Standard photo collage.
+- 📄 <b>Document</b> : Collage sent as document.
+- 🕐 <b>Title</b> : With timestamp overlays.
+- 📋 <b>Detailed</b> : Pro layout with media info.
+
+<b>Orientations :</b>
+- 🖼️ <b>Landscape</b> : Horizontal grid (3x3).
+- 📱 <b>Portrait</b> : Vertical/Narrow grid (Lamba).
+
+<b>Command Usage :</b>
+Use <code>-ss count:mode:orient</code>
+Example: <code>-ss 9:detailed:p</code> or <code>-ss 10:title:l</code>"""
 
     elif stype == "ffset":
         buttons.data_button("FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS")
@@ -1087,10 +1128,18 @@ async def edit_user_settings(client, query):
             back_to = "leech"
         await update_user_settings(query, stype=back_to)
         await database.update_user_data(user_id)
+    elif data[2] == "sset":
+        await query.answer()
+        await update_user_settings(query, "screenshot")
     elif data[2] == "ssmode":
         await query.answer(f"Screenshot Mode: {data[3].upper()}")
         update_user_ldata(user_id, "SCREENSHOT_MODE", data[3])
-        await update_user_settings(query, stype="leech")
+        await update_user_settings(query, stype="screenshot")
+        await database.update_user_data(user_id)
+    elif data[2] == "ssorient":
+        await query.answer(f"SS Orientation: {data[3].upper()}")
+        update_user_ldata(user_id, "SCREENSHOT_ORIENTATION", data[3])
+        await update_user_settings(query, stype="screenshot")
         await database.update_user_data(user_id)
     elif data[2] == "file":
         await query.answer()

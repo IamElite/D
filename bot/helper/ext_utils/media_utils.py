@@ -256,15 +256,29 @@ def _format_time(seconds):
     return f"{minutes}:{secs:02d}"
 
 
-def _get_grid_size(count):
-    """Calculate optimal grid size for given count"""
+def _get_grid_size(count, orientation="landscape"):
+    """Calculate optimal grid size for given count and orientation"""
     import math
-    cols = math.ceil(math.sqrt(count))
-    rows = math.ceil(count / cols)
+    if orientation == "portrait":
+        rows = math.ceil(math.sqrt(count))
+        cols = math.ceil(count / rows)
+        if cols * rows < count:
+            cols += 1
+        # Ensure rows >= cols for portrait
+        if cols > rows:
+            rows, cols = cols, rows
+    else:
+        cols = math.ceil(math.sqrt(count))
+        rows = math.ceil(count / cols)
+        if cols * rows < count:
+            rows += 1
+        # Ensure cols >= rows for landscape
+        if rows > cols:
+            rows, cols = cols, rows
     return rows, cols
 
 
-async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
+async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscape") -> str:
     """
     Create a single collage image with all screenshots in a grid layout.
     
@@ -361,7 +375,7 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
         return False
     
     # Calculate grid layout
-    rows, cols = _get_grid_size(ss_nb)
+    rows, cols = _get_grid_size(ss_nb, orientation)
     total_cells = rows * cols
     
     # Load first image to get dimensions
@@ -408,11 +422,11 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
         meta_data = [
             ("File      :", name),
             ("Size      :", size_str),
-            ("Res.     :", f"{vid_width}x{vid_height}"),
-            ("Dur.     :", f"{_format_time(duration)} ({duration}s)"),
-            ("Format :", format_name),
-            ("Video    :", video_details),
-            ("Audio    :", audio_details)
+            ("Res.      :", f"{vid_width}x{vid_height}"),
+            ("Dur.      :", f"{_format_time(duration)} ({duration}s)"),
+            ("Format    :", format_name),
+            ("Video     :", video_details),
+            ("Audio     :", audio_details)
         ]
         
         line_height = small_size + (small_size // 2)
@@ -498,20 +512,20 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     return ss_dir
 
 
-# Legacy function for backward compatibility
-async def take_ss(video_file, ss_nb) -> bool:
+# Legacy functions for backward compatibility
+async def take_ss(video_file, ss_nb, orientation="landscape") -> bool:
     """Create screenshots collage (backward compatible wrapper)"""
-    return await take_ss_collage(video_file, ss_nb, mode="image")
+    return await take_ss_collage(video_file, ss_nb, mode="image", orientation=orientation)
 
 
-async def take_ss_with_title(video_file, ss_nb) -> bool:
+async def take_ss_with_title(video_file, ss_nb, orientation="landscape") -> bool:
     """Create screenshots collage with timeline overlay"""
-    return await take_ss_collage(video_file, ss_nb, mode="title")
+    return await take_ss_collage(video_file, ss_nb, mode="title", orientation=orientation)
 
 
-async def take_ss_detailed(video_file, ss_nb) -> bool:
+async def take_ss_detailed(video_file, ss_nb, orientation="landscape") -> bool:
     """Create screenshots collage with media info header and timeline"""
-    return await take_ss_collage(video_file, ss_nb, mode="detailed")
+    return await take_ss_collage(video_file, ss_nb, mode="detailed", orientation=orientation)
 
 
 async def get_audio_thumbnail(audio_file):
