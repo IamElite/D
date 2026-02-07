@@ -162,26 +162,29 @@ class Mirror(TaskListener):
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
         self.sample_video = args["-sv"]
-        # Parse -ss flag for count, mode, and orientation (e.g., "9:detailed:p" → count=9, mode=detailed, orient=portrait)
-        ss_arg = args["-ss"]
-        if ss_arg and isinstance(ss_arg, str) and ":" in ss_arg:
-            ss_parts = ss_arg.split(":")
-            self.screen_shots = ss_parts[0] if ss_parts[0] else "9"
-            if len(ss_parts) > 1 and ss_parts[1]:
-                self.screenshot_mode = ss_parts[1].lower()
-            if len(ss_parts) > 2 and ss_parts[2]:
-                orient = ss_parts[2].lower()
-                if orient.startswith("p"):
-                    self.screenshot_orientation = "portrait"
-                elif orient.startswith("l"):
-                    self.screenshot_orientation = "landscape"
-        else:
-            self.screen_shots = ss_arg
+        if ss_arg:
+            if isinstance(ss_arg, str) and ":" in ss_arg:
+                ss_parts = ss_arg.split(":")
+                self.screen_shots = ss_parts[0] if ss_parts[0] else "9"
+                if len(ss_parts) > 1 and ss_parts[1]:
+                    self.screenshot_mode = ss_parts[1].lower()
+                if len(ss_parts) > 2 and ss_parts[2]:
+                    orient = ss_parts[2].lower()
+                    if orient.startswith("p"):
+                        self.screenshot_orientation = "portrait"
+                    elif orient.startswith("l"):
+                        self.screenshot_orientation = "landscape"
+            else:
+                self.screen_shots = ss_arg
+        
         sst_arg = args["-sst"]
-        if sst_arg and isinstance(sst_arg, str):
-            self.screenshot_timestamps = sst_arg.replace(",", " ").split()
-            if not self.screen_shots:
-                self.screen_shots = str(len(self.screenshot_timestamps))
+        if sst_arg:
+            if isinstance(sst_arg, str):
+                self.screenshot_timestamps = sst_arg.replace(",", " ").split()
+                if not self.screen_shots:
+                    self.screen_shots = str(len(self.screenshot_timestamps))
+            elif not self.screen_shots:
+                self.screen_shots = "9"
         
         self.force_run = args["-f"]
         self.force_download = args["-fd"]

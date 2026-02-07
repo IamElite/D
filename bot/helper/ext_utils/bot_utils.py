@@ -145,6 +145,8 @@ def arg_parser(items, arg_base):
         "-j",
         "-d",
         "-sv",
+        "-ss",
+        "-sst",
         "-f",
         "-fd",
         "-fu",
@@ -187,6 +189,8 @@ def arg_parser(items, arg_base):
                     "-med",
                     "-ut",
                     "-bt",
+                    "-ss",
+                    "-sst",
                 ]
             ):
                 arg_base[part] = True

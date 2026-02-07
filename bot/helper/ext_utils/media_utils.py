@@ -503,15 +503,15 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
                         _, _, tw, th = draw.textbbox((0, 0), time_text, font=font_time)
                         
                         # Sleek semi-transparent background box
-                        box_padding_h = 8
-                        box_padding_v = 4
+                        box_padding_h = 10
+                        box_padding_v = 6
                         bw, bh = tw + 2 * box_padding_h, th + 2 * box_padding_v
                         
-                        # Position box at bottom-right of cell
-                        bx = x + cell_width - bw - 10
-                        by = y + cell_height - bh - 10
+                        # Position box at TOP-right of cell for best visibility (Pro look)
+                        bx = x + cell_width - bw - 15
+                        by = y + 15
                         
-                        overlay = Image.new('RGBA', (bw, bh), (0, 0, 0, 160))
+                        overlay = Image.new('RGBA', (bw, bh), (0, 0, 0, 210))
                         collage.paste(overlay, (bx, by), overlay)
                         
                         # Center text in box
