@@ -66,10 +66,7 @@ class UphosterUploader:
 
         for name, category, api_key in to_upload:
             try:
-                # Capture complete callback to get the link
-                # We need a temporary listener or a way to intercept the link
-                # For simplicity, we can modify the upload methods to return the link
-                # or use a local function as a mock listener
+                self.__processed_bytes = 0
                 link = await self.__direct_upload(name, api_key)
                 if link:
                     results[category][name] = link
@@ -81,20 +78,18 @@ class UphosterUploader:
             return
 
         # Format grouped output
-        msg = ""
+        msg = f"<b>{self.__name}</b>\n"
         if results["stream"]:
-            msg += "<b><u>Stream Sites</u></b>\n"
+            msg += "\n👀 <b>Stream</b>\n"
             for name, link in results["stream"].items():
-                msg += f"⋗ <a href='{link}'>{name}</a>\n"
+                msg += f"⋗ {link}\n"
         
         if results["download"]:
-            if msg: msg += "\n"
-            msg += "<b><u>Download Sites</u></b>\n"
+            msg += "\n⏬ <b>Download</b>\n"
             for name, link in results["download"].items():
-                msg += f"⋗ <a href='{link}'>{name}</a>\n"
+                msg += f"⋗ {link}\n"
 
-        # Sending results as 'link' to listener (Listener will handle it)
-        # We pass self.__name twice to satisfy the files dict requirement
+        # Sending results as 'link' to listener
         await self.__listener.on_upload_complete(msg, {msg: self.__name}, None, "File", "", "")
 
     async def __direct_upload(self, site_name, api_key):
