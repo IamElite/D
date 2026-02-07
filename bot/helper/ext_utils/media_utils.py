@@ -290,29 +290,43 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     await makedirs(temp_dir, exist_ok=True)
     
     # Get video info for detailed mode
-    vid_width, vid_height, codec, size_str = 0, 0, "N/A", "N/A"
+    vid_width, vid_height, codec, size_str, format_name = 0, 0, "N/A", "N/A", "N/A"
+    video_details, audio_details = "N/A", "N/A"
+    
     if mode == "detailed":
         try:
             cmd = [
                 BinConfig.FFPROBE_NAME, "-v", "quiet", "-print_format", "json",
-                "-show_streams", "-select_streams", "v:0", video_file
+                "-show_format", "-show_streams", video_file
             ]
             stdout, _, _ = await cmd_exec(cmd)
             probe_data = json.loads(stdout)
+            
+            format_info = probe_data.get("format", {})
+            format_name = format_info.get("format_long_name", "N/A")
+            
             streams = probe_data.get("streams", [])
-            vid_width = streams[0].get("width", 0) if streams else 0
-            vid_height = streams[0].get("height", 0) if streams else 0
-            codec = streams[0].get("codec_name", "N/A") if streams else "N/A"
-        except Exception:
-            pass
+            v_streams = [s for s in streams if s.get("codec_type") == "video"]
+            a_streams = [s for s in streams if s.get("codec_type") == "audio"]
+            
+            if v_streams:
+                v = v_streams[0]
+                vid_width = v.get("width", 0)
+                vid_height = v.get("height", 0)
+                codec = v.get("codec_name", "h264")
+                video_details = f"{v.get('codec_long_name', 'N/A')} ({codec})"
+            
+            if a_streams:
+                audio_details = ", ".join([f"{idx+1}. {s.get('tags', {}).get('language', 'Undetermined')} ({s.get('codec_name', 'N/A')})" for idx, s in enumerate(a_streams)])
+                
+        except Exception as e:
+            LOGGER.error(f"take_ss_collage ffprobe error: {e}")
+            
         try:
             file_size = ospath.getsize(video_file)
+            size_str = f"{file_size / 1048576:.2f} MB ({file_size:,} bytes)"
             if file_size >= 1073741824:
-                size_str = f"{file_size / 1073741824:.2f} GB"
-            elif file_size >= 1048576:
-                size_str = f"{file_size / 1048576:.2f} MB"
-            else:
-                size_str = f"{file_size / 1024:.2f} KB"
+                 size_str = f"{file_size / 1073741824:.2f} GB ({file_size:,} bytes)"
         except Exception:
             pass
     
@@ -360,7 +374,7 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     
     # Calculate collage dimensions
     padding = 4
-    header_height = 120 if mode == "detailed" else 0
+    header_height = max(180, (collage_width // 1280) * 180) if mode == "detailed" else 0
     collage_width = cols * cell_width + (cols + 1) * padding
     collage_height = rows * cell_height + (rows + 1) * padding + header_height
     
@@ -370,12 +384,12 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     
     # Set font sizes based on collage width
     large_size = max(24, collage_width // 40)
-    small_size = max(18, collage_width // 60)
+    small_size = max(18, collage_width // 55)
     time_size = max(20, cell_width // 15)
 
     # Try to load font with fallback
     def get_font(size):
-        for font_name in ["DejaVuSans.ttf", "arial.ttf", "LiberationSans-Regular.ttf", "Verdana.ttf"]:
+        for font_name in ["DejaVuSans-Bold.ttf", "DejaVuSans.ttf", "arial.ttf", "LiberationSans-Regular.ttf", "Verdana.ttf"]:
             try:
                 return ImageFont.truetype(font_name, size)
             except Exception:
@@ -388,14 +402,26 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     
     # Draw header for detailed mode
     if mode == "detailed":
-        draw.rectangle([0, 0, collage_width, header_height], fill=(10, 10, 10))
-        info_text = f"📁 {name}  |  📐 {vid_width}x{vid_height}  |  ⏱️ {_format_time(duration)}  |  💾 {size_str}  |  🎬 {codec}"
-        bbox = draw.textbbox((0, 0), info_text, font=font_small)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        text_x = (collage_width - text_width) // 2
-        text_y = (header_height - text_height) // 2
-        draw.text((text_x, text_y), info_text, fill=(255, 255, 255), font=font_small)
+        draw.rectangle([0, 0, collage_width, header_height], fill=(255, 255, 255))
+        
+        # Prepare multi-line metadata
+        meta_lines = [
+            f"File      : {name}",
+            f"Size      : {size_str}",
+            f"Res.     : {vid_width}x{vid_height}",
+            f"Dur.     : {_format_time(duration)} ({duration}s)",
+            f"Format : {format_name}",
+            f"Video    : {video_details}",
+            f"Audio    : {audio_details}"
+        ]
+        
+        line_height = small_size + (small_size // 3)
+        current_y = 15
+        left_margin = 20
+        
+        for line in meta_lines:
+            draw.text((left_margin, current_y), line, fill=(0, 0, 0), font=font_small)
+            current_y += line_height
     
     # Paste screenshots into grid
     for idx in range(total_cells):
