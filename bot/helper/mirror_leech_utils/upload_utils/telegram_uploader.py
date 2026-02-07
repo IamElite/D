@@ -254,25 +254,73 @@ class TelegramUploader:
         return rlist
 
     async def _send_screenshots(self, dirpath, outputs):
-        inputs = [
-            InputMediaPhoto(ospath.join(dirpath, p), p.rsplit("/", 1)[-1])
-            for p in outputs
-        ]
-        for i in range(0, len(inputs), 10):
-            batch = inputs[i : i + 10]
-            if Config.BOT_PM:
-                await TgClient.bot.send_media_group(
-                    chat_id=self._listener.user_id,
-                    media=batch,
-                    disable_notification=True,
-                )
-            self._sent_msg = (
-                await self._sent_msg.reply_media_group(
-                    media=batch,
+        # Find collage file (single image containing all screenshots)
+        collage_files = [f for f in outputs if "collage" in f.lower()]
+        
+        # Check if doc mode - send as document instead of photo
+        is_doc_mode = getattr(self._listener, 'screenshot_mode', 'image') == 'doc'
+        
+        if collage_files:
+            # New collage format - send single image
+            collage_path = ospath.join(dirpath, collage_files[0])
+            caption = f"📸 Screenshots ({len(outputs) - 1} frames)" if len(outputs) > 1 else "📸 Screenshots"
+            
+            if is_doc_mode:
+                if Config.BOT_PM:
+                    await TgClient.bot.send_document(
+                        chat_id=self._listener.user_id,
+                        document=collage_path,
+                        caption=caption,
+                        disable_notification=True,
+                    )
+                self._sent_msg = await self._sent_msg.reply_document(
+                    document=collage_path,
+                    caption=caption,
                     quote=True,
                     disable_notification=True,
                 )
-            )[-1]
+            else:
+                if Config.BOT_PM:
+                    await TgClient.bot.send_photo(
+                        chat_id=self._listener.user_id,
+                        photo=collage_path,
+                        caption=caption,
+                        disable_notification=True,
+                    )
+                self._sent_msg = await self._sent_msg.reply_photo(
+                    photo=collage_path,
+                    caption=caption,
+                    quote=True,
+                    disable_notification=True,
+                )
+        else:
+            # Fallback: old format with multiple images
+            if is_doc_mode:
+                inputs = [
+                    InputMediaDocument(ospath.join(dirpath, p), p.rsplit("/", 1)[-1])
+                    for p in outputs
+                ]
+            else:
+                inputs = [
+                    InputMediaPhoto(ospath.join(dirpath, p), p.rsplit("/", 1)[-1])
+                    for p in outputs
+                ]
+            
+            for i in range(0, len(inputs), 10):
+                batch = inputs[i : i + 10]
+                if Config.BOT_PM:
+                    await TgClient.bot.send_media_group(
+                        chat_id=self._listener.user_id,
+                        media=batch,
+                        disable_notification=True,
+                    )
+                self._sent_msg = (
+                    await self._sent_msg.reply_media_group(
+                        media=batch,
+                        quote=True,
+                        disable_notification=True,
+                    )
+                )[-1]
 
     async def _send_media_group(self, subkey, key, msgs):
         for index, msg in enumerate(msgs):

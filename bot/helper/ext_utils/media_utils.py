@@ -246,6 +246,223 @@ async def take_ss(video_file, ss_nb) -> bool:
         return False
 
 
+def _format_time(seconds):
+    """Format seconds to HH:MM:SS or MM:SS format"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes}:{secs:02d}"
+
+
+def _get_grid_size(count):
+    """Calculate optimal grid size for given count"""
+    import math
+    cols = math.ceil(math.sqrt(count))
+    rows = math.ceil(count / cols)
+    return rows, cols
+
+
+async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
+    """
+    Create a single collage image with all screenshots in a grid layout.
+    
+    Args:
+        video_file: Path to video file
+        ss_nb: Number of screenshots to take
+        mode: 'image', 'doc', 'title', or 'detailed'
+    
+    Returns:
+        Path to collage image or False on error
+    """
+    from PIL import ImageDraw, ImageFont
+    
+    duration, artist, title_meta = await get_media_info(video_file)
+    if duration == 0:
+        LOGGER.error("take_ss_collage: Can't get the duration of video")
+        return False
+    
+    dirpath, name = video_file.rsplit("/", 1)
+    name_only, ext = ospath.splitext(name)
+    ss_dir = f"{dirpath}/{name_only}_mltbss"
+    temp_dir = f"{ss_dir}/temp"
+    await makedirs(temp_dir, exist_ok=True)
+    
+    # Get video info for detailed mode
+    vid_width, vid_height, codec, size_str = 0, 0, "N/A", "N/A"
+    if mode == "detailed":
+        try:
+            cmd = [
+                BinConfig.FFPROBE_NAME, "-v", "quiet", "-print_format", "json",
+                "-show_streams", "-select_streams", "v:0", video_file
+            ]
+            stdout, _, _ = await cmd_exec(cmd)
+            probe_data = json.loads(stdout)
+            streams = probe_data.get("streams", [])
+            vid_width = streams[0].get("width", 0) if streams else 0
+            vid_height = streams[0].get("height", 0) if streams else 0
+            codec = streams[0].get("codec_name", "N/A") if streams else "N/A"
+        except Exception:
+            pass
+        try:
+            file_size = ospath.getsize(video_file)
+            if file_size >= 1073741824:
+                size_str = f"{file_size / 1073741824:.2f} GB"
+            elif file_size >= 1048576:
+                size_str = f"{file_size / 1048576:.2f} MB"
+            else:
+                size_str = f"{file_size / 1024:.2f} KB"
+        except Exception:
+            pass
+    
+    # Generate screenshots
+    interval = duration // (ss_nb + 1)
+    cap_time = interval
+    timestamps = []
+    cmds = []
+    
+    for i in range(ss_nb):
+        output = f"{temp_dir}/SS_{i:02}.png"
+        timestamps.append(cap_time)
+        cmd = [
+            "taskset", "-c", f"{cores}",
+            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+            "-ss", f"{cap_time}", "-i", video_file,
+            "-q:v", "1", "-frames:v", "1", "-threads", f"{threads}",
+            output,
+        ]
+        cap_time += interval
+        cmds.append(cmd_exec(cmd))
+    
+    try:
+        results = await wait_for(gather(*cmds), timeout=120)
+        if results[0][2] != 0:
+            LOGGER.error(f"Error creating screenshots. Path: {video_file}. stderr: {results[0][1]}")
+            await rmtree(ss_dir, ignore_errors=True)
+            return False
+    except Exception:
+        LOGGER.error(f"Error creating screenshots. Path: {video_file}. Error: Timeout!")
+        await rmtree(ss_dir, ignore_errors=True)
+        return False
+    
+    # Calculate grid layout
+    rows, cols = _get_grid_size(ss_nb)
+    total_cells = rows * cols
+    
+    # Load first image to get dimensions
+    first_img_path = f"{temp_dir}/SS_00.png"
+    try:
+        with Image.open(first_img_path) as first_img:
+            cell_width, cell_height = first_img.size
+    except Exception:
+        cell_width, cell_height = 640, 360
+    
+    # Calculate collage dimensions
+    padding = 4
+    header_height = 80 if mode == "detailed" else 0
+    collage_width = cols * cell_width + (cols + 1) * padding
+    collage_height = rows * cell_height + (rows + 1) * padding + header_height
+    
+    # Create collage canvas
+    collage = Image.new("RGB", (collage_width, collage_height), color=(30, 30, 30))
+    draw = ImageDraw.Draw(collage)
+    
+    # Try to load font
+    try:
+        font_large = ImageFont.truetype("DejaVuSans.ttf", 20)
+        font_small = ImageFont.truetype("DejaVuSans.ttf", 14)
+        font_time = ImageFont.truetype("DejaVuSans.ttf", 16)
+    except Exception:
+        font_large = ImageFont.load_default()
+        font_small = font_large
+        font_time = font_large
+    
+    # Draw header for detailed mode
+    if mode == "detailed":
+        info_text = f"📁 {name}  |  📐 {vid_width}x{vid_height}  |  ⏱️ {_format_time(duration)}  |  💾 {size_str}  |  🎬 {codec}"
+        bbox = draw.textbbox((0, 0), info_text, font=font_small)
+        text_width = bbox[2] - bbox[0]
+        text_x = (collage_width - text_width) // 2
+        text_y = (header_height - 20) // 2
+        draw.text((text_x, text_y), info_text, fill=(255, 255, 255), font=font_small)
+    
+    # Paste screenshots into grid
+    for idx in range(total_cells):
+        row = idx // cols
+        col = idx % cols
+        x = padding + col * (cell_width + padding)
+        y = header_height + padding + row * (cell_height + padding)
+        
+        if idx < ss_nb:
+            # Paste actual screenshot
+            img_path = f"{temp_dir}/SS_{idx:02}.png"
+            try:
+                with Image.open(img_path) as img:
+                    # Resize if needed
+                    if img.size != (cell_width, cell_height):
+                        img = img.resize((cell_width, cell_height), Image.Resampling.LANCZOS)
+                    collage.paste(img, (x, y))
+                    
+                    # Add timeline overlay for title/detailed modes
+                    if mode in ("title", "detailed"):
+                        time_text = _format_time(timestamps[idx])
+                        # Draw text with border
+                        tx, ty = x + cell_width - 10, y + cell_height - 10
+                        bbox = draw.textbbox((0, 0), time_text, font=font_time)
+                        tw = bbox[2] - bbox[0]
+                        th = bbox[3] - bbox[1]
+                        tx = tx - tw
+                        ty = ty - th
+                        # Draw border
+                        for dx in [-1, 0, 1]:
+                            for dy in [-1, 0, 1]:
+                                if dx != 0 or dy != 0:
+                                    draw.text((tx + dx, ty + dy), time_text, fill=(0, 0, 0), font=font_time)
+                        draw.text((tx, ty), time_text, fill=(255, 255, 255), font=font_time)
+            except Exception as e:
+                LOGGER.error(f"Error pasting screenshot {idx}: {e}")
+                # Draw error cell
+                draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(50, 50, 50))
+                draw.text((x + cell_width//3, y + cell_height//2 - 10), "Error", fill=(255, 100, 100), font=font_large)
+        else:
+            # Empty cell - draw "No Image" text
+            draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(50, 50, 50), outline=(80, 80, 80))
+            no_img_text = "No Image"
+            bbox = draw.textbbox((0, 0), no_img_text, font=font_large)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
+            tx = x + (cell_width - tw) // 2
+            ty = y + (cell_height - th) // 2
+            draw.text((tx, ty), no_img_text, fill=(128, 128, 128), font=font_large)
+    
+    # Save collage
+    collage_path = f"{ss_dir}/SS.{name_only}_collage.png"
+    collage.save(collage_path, "PNG", quality=95)
+    
+    # Clean up temp directory
+    await rmtree(temp_dir, ignore_errors=True)
+    
+    LOGGER.info(f"Collage created: {collage_path} ({rows}x{cols} grid, {ss_nb} screenshots)")
+    return ss_dir
+
+
+# Legacy function for backward compatibility
+async def take_ss(video_file, ss_nb) -> bool:
+    """Create screenshots collage (backward compatible wrapper)"""
+    return await take_ss_collage(video_file, ss_nb, mode="image")
+
+
+async def take_ss_with_title(video_file, ss_nb) -> bool:
+    """Create screenshots collage with timeline overlay"""
+    return await take_ss_collage(video_file, ss_nb, mode="title")
+
+
+async def take_ss_detailed(video_file, ss_nb) -> bool:
+    """Create screenshots collage with media info header and timeline"""
+    return await take_ss_collage(video_file, ss_nb, mode="detailed")
+
+
 async def get_audio_thumbnail(audio_file):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)

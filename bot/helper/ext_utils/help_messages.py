@@ -161,9 +161,16 @@ You can control those values. Example: /cmd -sv 70:5(sample-duration:part-durati
 
 screenshot = """<b>ScreenShots</b>: -ss
 
-Create screenshots for one video or folder of videos.
-/cmd -ss (it will take the default values which is 10 photos).
-You can control this value. Example: /cmd -ss 6."""
+Create a collage grid image from video screenshots.
+/cmd -ss (default: 9 screenshots in 3x3 grid)
+/cmd -ss 7 (7 screenshots in 3x3 grid with 2 "No Image" cells)
+
+<b>Screenshot Modes:</b>
+/cmd -ss 9:image (collage as image - default)
+/cmd -ss 9:doc (collage as document)
+/cmd -ss 9:title (collage with timeline overlay)
+/cmd -ss 9:detailed (collage with media info header + timeline)"""
+
 
 seed = """<b>Bittorrent seed</b>: -d
 

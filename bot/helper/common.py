@@ -106,6 +106,7 @@ class TaskConfig:
         self.convert_audio = False
         self.convert_video = False
         self.screen_shots = False
+        self.screenshot_mode = self.user_dict.get("SCREENSHOT_MODE", "image")  # Options: image, doc, title, detailed
         self.is_cancelled = False
         self.force_run = False
         self.force_download = False
@@ -991,11 +992,20 @@ class TaskConfig:
             return dl_path
 
     async def generate_screenshots(self, dl_path):
-        ss_nb = int(self.screen_shots) if isinstance(self.screen_shots, str) else 10
+        ss_nb = int(self.screen_shots) if isinstance(self.screen_shots, str) else 9
+        
+        # Select the appropriate screenshot function based on mode
+        if self.screenshot_mode == "title":
+            from .ext_utils.media_utils import take_ss_with_title as ss_func
+        elif self.screenshot_mode == "detailed":
+            from .ext_utils.media_utils import take_ss_detailed as ss_func
+        else:
+            ss_func = take_ss  # Default: image mode
+        
         if self.is_file:
             if (await get_document_type(dl_path))[0]:
-                LOGGER.info(f"Creating Screenshot for: {dl_path}")
-                res = await take_ss(dl_path, ss_nb)
+                LOGGER.info(f"Creating Screenshot ({self.screenshot_mode}) for: {dl_path}")
+                res = await ss_func(dl_path, ss_nb)
                 if res:
                     new_folder = ospath.splitext(dl_path)[0]
                     if new_folder == dl_path:
@@ -1008,12 +1018,12 @@ class TaskConfig:
                     )
                     return new_folder
         else:
-            LOGGER.info(f"Creating Screenshot for: {dl_path}")
+            LOGGER.info(f"Creating Screenshot ({self.screenshot_mode}) for: {dl_path}")
             for dirpath, _, files in await sync_to_async(walk, dl_path, topdown=False):
                 for file_ in files:
                     f_path = ospath.join(dirpath, file_)
                     if (await get_document_type(f_path))[0]:
-                        await take_ss(f_path, ss_nb)
+                        await ss_func(f_path, ss_nb)
         return dl_path
 
     async def convert_media(self, dl_path, gid):

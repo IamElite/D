@@ -437,7 +437,15 @@ class YtDlp(TaskListener):
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
         self.sample_video = args["-sv"]
-        self.screen_shots = args["-ss"]
+        # Parse -ss flag for count and mode (e.g., "10:doc" → count=10, mode=doc)
+        ss_arg = args["-ss"]
+        if ss_arg and isinstance(ss_arg, str) and ":" in ss_arg:
+            ss_parts = ss_arg.split(":", 1)
+            self.screen_shots = ss_parts[0] if ss_parts[0] else "10"
+            self.screenshot_mode = ss_parts[1].lower() if len(ss_parts) > 1 and ss_parts[1] else "image"
+        else:
+            self.screen_shots = ss_arg
+            self.screenshot_mode = "image"
         self.force_run = args["-f"]
         self.force_download = args["-fd"]
         self.force_upload = args["-fu"]

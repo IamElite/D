@@ -431,6 +431,17 @@ async def get_user_settings(from_user, stype="main"):
         else:
             thumb_layout = "None"
 
+        # Screenshot Mode cycling: image -> doc -> title -> detailed -> image
+        ss_modes = ["image", "doc", "title", "detailed"]
+        ss_mode_labels = {"image": "📷 Image", "doc": "📄 Document", "title": "🕐 Title", "detailed": "📋 Detailed"}
+        current_ss_mode = user_dict.get("SCREENSHOT_MODE", "image")
+        next_ss_idx = (ss_modes.index(current_ss_mode) + 1) % len(ss_modes)
+        next_ss_mode = ss_modes[next_ss_idx]
+        buttons.data_button(
+            f"SS Mode: {ss_mode_labels.get(current_ss_mode, 'Image')}",
+            f"userset {user_id} ssmode {next_ss_mode}"
+        )
+
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(2)
@@ -449,8 +460,10 @@ async def get_user_settings(from_user, stype="main"):
 ┊ Leech by <b>{leech_method}</b> session
 ┊ Mixed Leech → <b>{hybrid_leech}</b>
 ┊ Metadata → <code>{escape(meta)}</code>
-╰ Thumbnail Layout → <b>{thumb_layout}</b>
+┊ Thumbnail Layout → <b>{thumb_layout}</b>
+╰ Screenshot Mode → <b>{ss_mode_labels.get(current_ss_mode, 'Image')}</b>
 """
+
 
     elif stype == "rclone":
         buttons.data_button("Rclone Config", f"userset {user_id} menu RCLONE_CONFIG")
@@ -1073,6 +1086,11 @@ async def edit_user_settings(client, query):
         else:
             back_to = "leech"
         await update_user_settings(query, stype=back_to)
+        await database.update_user_data(user_id)
+    elif data[2] == "ssmode":
+        await query.answer(f"Screenshot Mode: {data[3].upper()}")
+        update_user_ldata(user_id, "SCREENSHOT_MODE", data[3])
+        await update_user_settings(query, stype="leech")
         await database.update_user_data(user_id)
     elif data[2] == "file":
         await query.answer()
