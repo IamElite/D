@@ -162,6 +162,7 @@ class Mirror(TaskListener):
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
         self.sample_video = args["-sv"]
+        ss_arg = args["-ss"]
         if ss_arg:
             if isinstance(ss_arg, str) and ":" in ss_arg:
                 ss_parts = ss_arg.split(":")
