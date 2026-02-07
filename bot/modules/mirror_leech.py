@@ -339,13 +339,10 @@ class Mirror(TaskListener):
                self.up_dest not in SUPPORTED_UPHOSTERS["download"] and \
                self.up_dest not in SUPPORTED_UPHOSTERS["stream"]:
                 
-                uplist = "<b><u>Available Uphosters:</u></b>\n\n"
-                uplist += "<b>Stream Sites:</b>\n"
-                for name in SUPPORTED_UPHOSTERS["stream"]:
-                    uplist += f"⋗ <code>{name}</code>\n"
-                uplist += "\n<b>Download Sites:</b>\n"
-                for name in SUPPORTED_UPHOSTERS["download"]:
-                    uplist += f"⋗ <code>{name}</code>\n"
+                uplist = f"Wrong Upload Destination: <b>{self.up_dest}</b>\n\n<b>Available Uphosters:</b>\n"
+                for category in ["stream", "download"]:
+                    for name in SUPPORTED_UPHOSTERS[category]:
+                        uplist += f"⋗ <code>{name}</code>\n"
                 uplist += "\n<i>Use <b>-up all</b> to upload to all configured sites!</i>"
                 
                 await send_message(self.message, uplist)

@@ -278,8 +278,16 @@ class TaskConfig:
             elif (not self.up_dest and default_upload == "gd") or self.up_dest == "gd":
                 self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
             if not self.up_dest:
-                raise ValueError("No Upload Destination!")
-            if is_gdrive_id(self.up_dest):
+                 uplist = "No Upload Destination! Please set DEFAULT_UPLOAD or use -up flag.\n\n<b>Available Uphosters:</b>\n"
+                 for category in ["stream", "download"]:
+                     for name in SUPPORTED_UPHOSTERS[category]:
+                         uplist += f"⋗ <code>{name}</code>\n"
+                 uplist += "\n<i>Use <b>-up all</b> to upload to all configured sites!</i>"
+                 raise ValueError(uplist)
+
+            if self.up_dest.lower() == "all":
+                pass
+            elif is_gdrive_id(self.up_dest):
                 if not self.up_dest.startswith(
                     ("mtp:", "tp:", "sa:")
                 ) and self.user_dict.get("USER_TOKENS", False):
@@ -293,7 +301,12 @@ class TaskConfig:
             elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]:
                 pass
             else:
-                raise ValueError("Wrong Upload Destination!")
+                 uplist = f"Wrong Upload Destination: <b>{self.up_dest}</b>\n\n<b>Available Uphosters:</b>\n"
+                 for category in ["stream", "download"]:
+                     for name in SUPPORTED_UPHOSTERS[category]:
+                         uplist += f"⋗ <code>{name}</code>\n"
+                 uplist += "\n<i>Use <b>-up all</b> to upload to all configured sites!</i>"
+                 raise ValueError(uplist)
 
             if self.up_dest not in ["rcl", "gdl"]:
                 await self.is_token_exists(self.up_dest, "up")
