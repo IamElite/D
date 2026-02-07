@@ -189,8 +189,7 @@ def arg_parser(items, arg_base):
                     "-med",
                     "-ut",
                     "-bt",
-                    "-ss",
-                    "-sst",
+                    "-bt",
                 ]
             ):
                 arg_base[part] = True

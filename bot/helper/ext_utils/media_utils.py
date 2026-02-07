@@ -359,7 +359,7 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
     
     # Generate screenshots
     timestamps = []
-    if sst and isinstance(sst, list):
+    if sst and isinstance(sst, list) and sst:
         for t in sst:
             seconds = parse_time(t)
             if 0 <= seconds <= duration:
@@ -376,6 +376,8 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
     cmds = []
     for i, cap_time in enumerate(timestamps):
         output = f"{temp_dir}/SS_{i:02}.png"
+        if mode == "image":
+            output = f"{ss_dir}/SS.{name_only}_{i:02}.png"
         cmd = [
             "taskset", "-c", f"{cores}",
             BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
@@ -387,6 +389,9 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
     
     try:
         results = await wait_for(gather(*cmds), timeout=120)
+        if mode == "image":
+            await rmtree(temp_dir, ignore_errors=True)
+            return ss_dir
         if results[0][2] != 0:
             LOGGER.error(f"Error creating screenshots. Path: {video_file}. stderr: {results[0][1]}")
             await rmtree(ss_dir, ignore_errors=True)
@@ -507,9 +512,9 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
                         box_padding_v = 6
                         bw, bh = tw + 2 * box_padding_h, th + 2 * box_padding_v
                         
-                        # Position box at TOP-right of cell for best visibility (Pro look)
-                        bx = x + cell_width - bw - 15
-                        by = y + 15
+                        # Position box at BOTTOM-right of cell
+                        bx = x + cell_width - bw - 10
+                        by = y + cell_height - bh - 10
                         
                         overlay = Image.new('RGBA', (bw, bh), (0, 0, 0, 210))
                         collage.paste(overlay, (bx, by), overlay)
