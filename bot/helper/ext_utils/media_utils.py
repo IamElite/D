@@ -260,8 +260,9 @@ def _get_grid_size(count, orientation="landscape"):
     """Calculate optimal grid size for given count and orientation"""
     import math
     if orientation == "portrait":
-        # Target a truly vertical/narrow look (e.g., 2 columns for 9-10 shots)
-        cols = 2 if count <= 12 else 3
+        # Target a total collage aspect ratio closer to 9:16 for portrait
+        # For 16:9 screenshots, we want rows to be roughly 3x cols
+        cols = max(2, math.ceil(math.sqrt(count * 0.35)))
         rows = math.ceil(count / cols)
     else:
         # Standard landscape look (roughly square or wider)
@@ -269,7 +270,7 @@ def _get_grid_size(count, orientation="landscape"):
         rows = math.ceil(count / cols)
         if cols * rows < count:
             rows += 1
-        if rows > cols: # Ensure it's wider or square
+        if rows > cols:
             rows, cols = cols, rows
     return rows, cols
 
@@ -440,10 +441,14 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
         current_y = top_padding
         left_margin = 30
         
-        # Fixed alignment positions
+        # Fixed alignment positions (calculated more robustly)
         label_x = left_margin
-        colon_x = label_x + max([draw.textbbox((0, 0), l, font=font_small_bold)[2] for l, _ in meta_data]) + 10
-        value_x = colon_x + 20
+        # Measure all labels to find maximum width for perfect colon alignment
+        all_labels = [l for l, _ in meta_data]
+        max_label_w = max([draw.textbbox((0, 0), l, font=font_small_bold)[2] for l in all_labels])
+        
+        colon_x = label_x + max_label_w + 15
+        value_x = colon_x + 25
         
         for label, value in meta_data:
             draw.text((label_x, current_y), label, fill=(0, 0, 0), font=font_small_bold)
@@ -501,6 +506,15 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
             ty = y + (cell_height - nth) // 2
             draw.text((tx, ty), no_img_text, fill=(180, 180, 180), font=font_large)
     
+    # Scale down if too large for Telegram (max ~4000px)
+    # The PhotoSaveFileInvalid error is usually due to dimensions exceeding 4000px
+    max_dim = 3840
+    if collage_width > max_dim or collage_height > max_dim:
+        ratio = min(max_dim / collage_width, max_dim / collage_height)
+        new_size = (int(collage_width * ratio), int(collage_height * ratio))
+        collage = collage.resize(new_size, Image.Resampling.LANCZOS)
+        LOGGER.info(f"Collage scaled down to {new_size[0]}x{new_size[1]} for Telegram compatibility")
+
     # Save collage
     collage_path = f"{ss_dir}/SS.{name_only}_collage.png"
     collage.save(collage_path, "PNG", quality=95)
