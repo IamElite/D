@@ -260,20 +260,16 @@ def _get_grid_size(count, orientation="landscape"):
     """Calculate optimal grid size for given count and orientation"""
     import math
     if orientation == "portrait":
-        rows = math.ceil(math.sqrt(count))
-        cols = math.ceil(count / rows)
-        if cols * rows < count:
-            cols += 1
-        # Ensure rows >= cols for portrait
-        if cols > rows:
-            rows, cols = cols, rows
+        # Target a truly vertical/narrow look (e.g., 2 columns for 9-10 shots)
+        cols = 2 if count <= 12 else 3
+        rows = math.ceil(count / cols)
     else:
+        # Standard landscape look (roughly square or wider)
         cols = math.ceil(math.sqrt(count))
         rows = math.ceil(count / cols)
         if cols * rows < count:
             rows += 1
-        # Ensure cols >= rows for landscape
-        if rows > cols:
+        if rows > cols: # Ensure it's wider or square
             rows, cols = cols, rows
     return rows, cols
 
@@ -418,15 +414,15 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
     
     # Draw header content and recalculate height if needed
     if mode == "detailed":
-        # Multi-line metadata with bold labels
+        # Multi-line metadata without manual spacing
         meta_data = [
-            ("File      :", name),
-            ("Size      :", size_str),
-            ("Res.      :", f"{vid_width}x{vid_height}"),
-            ("Dur.      :", f"{_format_time(duration)} ({duration}s)"),
-            ("Format    :", format_name),
-            ("Video     :", video_details),
-            ("Audio     :", audio_details)
+            ("File", name),
+            ("Size", size_str),
+            ("Res.", f"{vid_width}x{vid_height}"),
+            ("Dur.", f"{_format_time(duration)} ({duration}s)"),
+            ("Format", format_name),
+            ("Video", video_details),
+            ("Audio", audio_details)
         ]
         
         line_height = small_size + (small_size // 2)
@@ -443,12 +439,16 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
 
         current_y = top_padding
         left_margin = 30
-        # Calculate label width dynamically from the longest label
-        label_width = max([draw.textbbox((0, 0), f"{l} ", font=font_small_bold)[2] for l, _ in meta_data])
+        
+        # Fixed alignment positions
+        label_x = left_margin
+        colon_x = label_x + max([draw.textbbox((0, 0), l, font=font_small_bold)[2] for l, _ in meta_data]) + 10
+        value_x = colon_x + 20
         
         for label, value in meta_data:
-            draw.text((left_margin, current_y), label, fill=(0, 0, 0), font=font_small_bold)
-            draw.text((left_margin + label_width + 10, current_y), str(value), fill=(30, 30, 30), font=font_small)
+            draw.text((label_x, current_y), label, fill=(0, 0, 0), font=font_small_bold)
+            draw.text((colon_x, current_y), ":", fill=(0, 0, 0), font=font_small_bold)
+            draw.text((value_x, current_y), str(value), fill=(30, 30, 30), font=font_small)
             current_y += line_height
     
     # Paste screenshots into grid
