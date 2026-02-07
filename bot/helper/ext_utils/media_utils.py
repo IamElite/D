@@ -373,54 +373,56 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
         cell_width, cell_height = 640, 360
     
     # Calculate collage dimensions
-    padding = 4
+    padding = max(6, cell_width // 100)
     collage_width = cols * cell_width + (cols + 1) * padding
-    header_height = max(180, (collage_width // 1280) * 180) if mode == "detailed" else 0
+    header_height = max(200, (collage_width // 1280) * 200) if mode == "detailed" else 0
     collage_height = rows * cell_height + (rows + 1) * padding + header_height
     
-    # Create collage canvas
-    collage = Image.new("RGB", (collage_width, collage_height), color=(20, 20, 20))
+    # Create collage canvas (White background for professional borders)
+    collage = Image.new("RGB", (collage_width, collage_height), color=(255, 255, 255))
     draw = ImageDraw.Draw(collage)
     
     # Set font sizes based on collage width
     large_size = max(24, collage_width // 40)
-    small_size = max(18, collage_width // 55)
-    time_size = max(20, cell_width // 15)
+    small_size = max(18, collage_width // 60)
+    time_size = max(18, cell_width // 18)
 
     # Try to load font with fallback
-    def get_font(size):
-        for font_name in ["DejaVuSans-Bold.ttf", "DejaVuSans.ttf", "arial.ttf", "LiberationSans-Regular.ttf", "Verdana.ttf"]:
+    def get_font(size, bold=False):
+        fonts = ["DejaVuSans-Bold.ttf", "arialbd.ttf", "LiberationSans-Bold.ttf"] if bold else ["DejaVuSans.ttf", "arial.ttf", "LiberationSans-Regular.ttf", "Verdana.ttf"]
+        for font_name in fonts:
             try:
                 return ImageFont.truetype(font_name, size)
             except Exception:
                 continue
         return ImageFont.load_default()
 
-    font_large = get_font(large_size)
+    font_large = get_font(large_size, bold=True)
     font_small = get_font(small_size)
+    font_small_bold = get_font(small_size, bold=True)
     font_time = get_font(time_size)
     
     # Draw header for detailed mode
     if mode == "detailed":
-        draw.rectangle([0, 0, collage_width, header_height], fill=(255, 255, 255))
-        
-        # Prepare multi-line metadata
-        meta_lines = [
-            f"File      : {name}",
-            f"Size      : {size_str}",
-            f"Res.     : {vid_width}x{vid_height}",
-            f"Dur.     : {_format_time(duration)} ({duration}s)",
-            f"Format : {format_name}",
-            f"Video    : {video_details}",
-            f"Audio    : {audio_details}"
+        # Multi-line metadata with bold labels
+        meta_data = [
+            ("File      :", name),
+            ("Size      :", size_str),
+            ("Res.     :", f"{vid_width}x{vid_height}"),
+            ("Dur.     :", f"{_format_time(duration)} ({duration}s)"),
+            ("Format :", format_name),
+            ("Video    :", video_details),
+            ("Audio    :", audio_details)
         ]
         
-        line_height = small_size + (small_size // 3)
-        current_y = 15
-        left_margin = 20
+        line_height = small_size + (small_size // 2)
+        current_y = 20
+        left_margin = 30
+        label_width = draw.textbbox((0, 0), "Format : ", font=font_small_bold)[2]
         
-        for line in meta_lines:
-            draw.text((left_margin, current_y), line, fill=(0, 0, 0), font=font_small)
+        for label, value in meta_data:
+            draw.text((left_margin, current_y), label, fill=(0, 0, 0), font=font_small_bold)
+            draw.text((left_margin + label_width + 10, current_y), str(value), fill=(30, 30, 30), font=font_small)
             current_y += line_height
     
     # Paste screenshots into grid
@@ -446,32 +448,27 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
                         tw = bbox[2] - bbox[0]
                         th = bbox[3] - bbox[1]
                         
-                        # Background box for readability
-                        box_padding = 6
+                        # Sleek semi-transparent background box
+                        box_padding = 5
                         tx, ty = x + cell_width - tw - box_padding - 10, y + cell_height - th - box_padding - 10
-                        draw.rectangle(
-                            [tx - box_padding, ty - box_padding, tx + tw + box_padding, ty + th + box_padding],
-                            fill=(0, 0, 0, 180)
-                        )
-                        # Text with subtle border
-                        for dx in [-1, 1]:
-                            for dy in [-1, 1]:
-                                draw.text((tx + dx, ty + dy), time_text, fill=(0, 0, 0), font=font_time)
+                        
+                        overlay = Image.new('RGBA', (tw + 2 * box_padding, th + 2 * box_padding), (0, 0, 0, 160))
+                        collage.paste(overlay, (tx - box_padding, ty - box_padding), overlay)
                         draw.text((tx, ty), time_text, fill=(255, 255, 255), font=font_time)
             except Exception as e:
                 LOGGER.error(f"Error pasting screenshot {idx}: {e}")
                 draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(40, 40, 40))
                 draw.text((x + 10, y + 10), "Error", fill=(200, 50, 50), font=font_large)
         else:
-            # Empty cell - draw "No Image" text
-            draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(40, 40, 40), outline=(60, 60, 60))
+            # Empty cell - draw "No Image" text with refined style
+            draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(245, 245, 245), outline=(220, 220, 220))
             no_img_text = "No Image"
             bbox = draw.textbbox((0, 0), no_img_text, font=font_large)
             tw = bbox[2] - bbox[0]
             th = bbox[3] - bbox[1]
             tx = x + (cell_width - tw) // 2
             ty = y + (cell_height - th) // 2
-            draw.text((tx, ty), no_img_text, fill=(100, 100, 100), font=font_large)
+            draw.text((tx, ty), no_img_text, fill=(180, 180, 180), font=font_large)
     
     # Save collage
     collage_path = f"{ss_dir}/SS.{name_only}_collage.png"
