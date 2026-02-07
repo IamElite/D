@@ -1004,7 +1004,7 @@ class TaskConfig:
         elif self.screenshot_mode == "detailed":
             from .ext_utils.media_utils import take_ss_detailed as ss_func
         else:
-            ss_func = take_ss  # Default: image mode
+            from .ext_utils.media_utils import take_ss as ss_func
         
         if self.is_file:
             if (await get_document_type(dl_path))[0]:
