@@ -447,8 +447,8 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
         all_labels = [l for l, _ in meta_data]
         max_label_w = max([draw.textbbox((0, 0), l, font=font_small_bold)[2] for l in all_labels])
         
-        colon_x = label_x + max_label_w + 15
-        value_x = colon_x + 25
+        colon_x = label_x + max_label_w + 20
+        value_x = colon_x + 40
         
         for label, value in meta_data:
             draw.text((label_x, current_y), label, fill=(0, 0, 0), font=font_small_bold)
