@@ -382,7 +382,7 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     collage = Image.new("RGB", (collage_width, collage_height), color=(255, 255, 255))
     draw = ImageDraw.Draw(collage)
     
-    # Set font sizes based on collage width
+    # Calculate font sizes based on collage width
     large_size = max(24, collage_width // 40)
     small_size = max(18, collage_width // 60)
     time_size = max(18, cell_width // 18)
@@ -402,7 +402,7 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
     font_small_bold = get_font(small_size, bold=True)
     font_time = get_font(time_size)
     
-    # Draw header for detailed mode
+    # Draw header content and recalculate height if needed
     if mode == "detailed":
         # Multi-line metadata with bold labels
         meta_data = [
@@ -416,9 +416,21 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
         ]
         
         line_height = small_size + (small_size // 2)
-        current_y = 20
+        top_padding = 20
+        required_height = top_padding + (len(meta_data) * line_height) + 20
+        
+        # Adjust collage height if header needs more space
+        if required_height > header_height:
+            diff = required_height - header_height
+            header_height = required_height
+            collage_height += diff
+            collage = Image.new("RGB", (collage_width, collage_height), color=(255, 255, 255))
+            draw = ImageDraw.Draw(collage)
+
+        current_y = top_padding
         left_margin = 30
-        label_width = draw.textbbox((0, 0), "Format : ", font=font_small_bold)[2]
+        # Calculate label width dynamically from the longest label
+        label_width = max([draw.textbbox((0, 0), f"{l} ", font=font_small_bold)[2] for l, _ in meta_data])
         
         for label, value in meta_data:
             draw.text((left_margin, current_y), label, fill=(0, 0, 0), font=font_small_bold)
@@ -444,30 +456,35 @@ async def take_ss_collage(video_file, ss_nb, mode="image") -> str:
                     # Add timeline overlay for title/detailed modes
                     if mode in ("title", "detailed"):
                         time_text = _format_time(timestamps[idx])
-                        bbox = draw.textbbox((0, 0), time_text, font=font_time)
-                        tw = bbox[2] - bbox[0]
-                        th = bbox[3] - bbox[1]
+                        _, _, tw, th = draw.textbbox((0, 0), time_text, font=font_time)
                         
                         # Sleek semi-transparent background box
-                        box_padding = 5
-                        tx, ty = x + cell_width - tw - box_padding - 10, y + cell_height - th - box_padding - 10
+                        box_padding_h = 8
+                        box_padding_v = 4
+                        bw, bh = tw + 2 * box_padding_h, th + 2 * box_padding_v
                         
-                        overlay = Image.new('RGBA', (tw + 2 * box_padding, th + 2 * box_padding), (0, 0, 0, 160))
-                        collage.paste(overlay, (tx - box_padding, ty - box_padding), overlay)
-                        draw.text((tx, ty), time_text, fill=(255, 255, 255), font=font_time)
+                        # Position box at bottom-right of cell
+                        bx = x + cell_width - bw - 10
+                        by = y + cell_height - bh - 10
+                        
+                        overlay = Image.new('RGBA', (bw, bh), (0, 0, 0, 160))
+                        collage.paste(overlay, (bx, by), overlay)
+                        
+                        # Center text in box
+                        text_x = bx + box_padding_h
+                        text_y = by + box_padding_v - 2 # Minor adjustment for better centering
+                        draw.text((text_x, text_y), time_text, fill=(255, 255, 255), font=font_time)
             except Exception as e:
                 LOGGER.error(f"Error pasting screenshot {idx}: {e}")
-                draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(40, 40, 40))
+                draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(245, 245, 245))
                 draw.text((x + 10, y + 10), "Error", fill=(200, 50, 50), font=font_large)
         else:
             # Empty cell - draw "No Image" text with refined style
             draw.rectangle([x, y, x + cell_width, y + cell_height], fill=(245, 245, 245), outline=(220, 220, 220))
             no_img_text = "No Image"
-            bbox = draw.textbbox((0, 0), no_img_text, font=font_large)
-            tw = bbox[2] - bbox[0]
-            th = bbox[3] - bbox[1]
-            tx = x + (cell_width - tw) // 2
-            ty = y + (cell_height - th) // 2
+            _, _, ntw, nth = draw.textbbox((0, 0), no_img_text, font=font_large)
+            tx = x + (cell_width - ntw) // 2
+            ty = y + (cell_height - nth) // 2
             draw.text((tx, ty), no_img_text, fill=(180, 180, 180), font=font_large)
     
     # Save collage
