@@ -225,4 +225,5 @@ class BinConfig:
     ARIA2_NAME = "speeddemon"
     QBIT_NAME = "torrentgod"
     FFMPEG_NAME = "vidwarlock"
+    FFPROBE_NAME = "ffprobe"
     RCLONE_NAME = "cloudphantom"
