@@ -120,27 +120,38 @@
         }
 
         .pin-input-group {
-            position: relative;
-            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2.5rem 0;
         }
 
-        .pin-input-group input {
-            width: 100%;
+        .pin-digit {
+            width: 60px;
+            height: 70px;
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            letter-spacing: 4px;
-            transition: all 0.3s ease;
+            line-height: 70px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .pin-input-group input:focus {
+        .pin-digit:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.3);
+        }
+
+        #pinInput { 
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .btn-modern {
@@ -218,13 +229,36 @@
         .file-item:hover { background: rgba(255, 255, 255, 0.04); }
 
         .file-checkbox {
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
-            border: 2px solid var(--text-dim);
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid var(--glass-border);
+            background: var(--glass);
             cursor: pointer;
             margin-right: 1.25rem;
             flex-shrink: 0;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .file-checkbox:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .file-checkbox:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: white;
+            font-size: 12px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .file-icon { font-size: 1.25rem; margin-right: 1rem; flex-shrink: 0; }
@@ -279,7 +313,11 @@
             <h2 class="text-2xl font-bold mb-2">Access Secure Folder</h2>
             <p class="text-sm text-gray-400">Enter the verification PIN received on Telegram</p>
             <div class="pin-input-group">
-                <input type="text" id="pinInput" placeholder="••••" maxlength="4">
+                <input type="password" id="pinInput" maxlength="4">
+                <input type="text" class="pin-digit" maxlength="1" data-index="0">
+                <input type="text" class="pin-digit" maxlength="1" data-index="1">
+                <input type="text" class="pin-digit" maxlength="1" data-index="2">
+                <input type="text" class="pin-digit" maxlength="1" data-index="3">
             </div>
             <button id="submitPin" class="btn-modern"><i class="fas fa-unlock"></i><span>Unlock Files</span></button>
         </div>
@@ -340,9 +378,38 @@
         let currentPath = [];
         let allowEdit = false;
 
+        // PIN Digits Logic
+        const digits = document.querySelectorAll('.pin-digit');
+        const realInput = document.getElementById('pinInput');
+
+        digits.forEach((digit, idx) => {
+            digit.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (val) {
+                    if (idx < 3) digits[idx + 1].focus();
+                    updateRealInput();
+                }
+            });
+
+            digit.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !digit.value && idx > 0) {
+                    digits[idx - 1].focus();
+                }
+            });
+        });
+
+        function updateRealInput() {
+            let combined = '';
+            digits.forEach(d => combined += d.value);
+            realInput.value = combined;
+            if (combined.length === 4) verifyPin();
+        }
+
         if (urlParams.get('pin')) {
-            pinInput.value = urlParams.get('pin');
-            setTimeout(() => submitPin.click(), 500);
+            const pin = urlParams.get('pin');
+            realInput.value = pin;
+            pin.split('').forEach((char, i) => { if(digits[i]) digits[i].value = char; });
+            setTimeout(verifyPin, 500);
         }
 
         function formatBytes(bytes) {
