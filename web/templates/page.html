@@ -278,97 +278,177 @@
             transform: translateY(-3px);
         }
 
-        /* Floating Summary Pop-up */
-        #floatingSummary {
+        /* Professional Floating Selection Panel (FSP) */
+        .fsp-panel {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
             width: 320px;
-            z-index: 1000;
-            cursor: default;
+            z-index: 2000;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.25rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
             display: none;
             flex-direction: column;
-            animation: fadeIn 0.4s ease-out;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             user-select: none;
         }
 
-        .drag-handle {
-            height: 12px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 1rem 1rem 0 0;
+        .light .fsp-panel {
+            background: var(--glass-bg-light);
+            border-color: rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .fsp-panel.minimized {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            bottom: 2rem;
+            right: 2rem;
+            cursor: pointer;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fsp-header {
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             cursor: move;
+        }
+
+        .fsp-panel.minimized .fsp-header { display: none; }
+
+        .fsp-drag-indicator {
+            display: flex;
+            gap: 3px;
+        }
+
+        .fsp-drag-indicator span {
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+        }
+
+        .fsp-toggle-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s;
         }
 
-        .drag-handle::after {
-            content: '';
-            width: 30px;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
+        .fsp-panel.minimized .fsp-toggle-btn {
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
         }
 
-        .summary-content {
+        .fsp-body {
             padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        .type-badge {
-            display: inline-flex;
+        .fsp-panel.minimized .fsp-body { display: none; }
+
+        .fsp-folder-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fsp-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.5;
+            font-weight: 700;
+        }
+
+        .fsp-folder-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fsp-media-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .fsp-media-item {
+            display: flex;
             align-items: center;
-            gap: 0.4rem;
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.5rem;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
             font-size: 0.75rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .light .type-badge {
-            background: rgba(0, 0, 0, 0.05);
-            border-color: rgba(0, 0, 0, 0.1);
+        .fsp-footer {
+            padding: 1rem 1.25rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--glass-border);
         }
 
-        .stat-row {
+        .fsp-stat-line {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-top: 0.75rem;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
         }
 
-        .stat-value {
+        .fsp-stat-line:last-child { margin-bottom: 0; }
+
+        .fsp-stat-value {
             font-weight: 700;
-            color: var(--primary);
+            color: var(--accent);
         }
 
-        /* Responsive Improvements */
+        /* Responsive FSP */
         @media (max-width: 640px) {
-            .btn { width: 100%; padding: 0.8rem; }
-            .flex-wrap { gap: 0.75rem; }
-            .header-title { font-size: 1.5rem; text-align: center; }
-            #floatingSummary {
+            .fsp-panel {
+                width: calc(100% - 2rem);
+                max-width: 320px;
                 bottom: 1rem;
                 right: 1rem;
-                width: calc(100% - 2rem);
-                max-width: 340px;
+            }
+            .fsp-panel.minimized {
+                bottom: 1rem;
+                right: 1rem;
             }
         }
 
         /* Animations */
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+        .animate-fsp { animation: fadeIn 0.4s ease-out; }
     </style>
 </head>
 
@@ -438,29 +518,57 @@
         </div>
     </main>
 
-    <!-- Floating Selection Summary -->
-    <div id="floatingSummary" class="glass-card">
-        <div class="drag-handle" id="dragHandle"></div>
-        <div class="summary-content">
-            <div class="mb-3">
-                <div class="text-xs uppercase tracking-widest opacity-50 font-bold mb-1">Browsing Folder</div>
-                <div id="sumFolder" class="truncate font-semibold text-indigo-400">Root</div>
+    <!-- Professional Floating Selection Panel -->
+    <div id="fspPanel" class="fsp-panel minimized animate-fsp">
+        <div class="fsp-header" id="fspDragHandle">
+            <div class="fsp-drag-indicator">
+                <span></span><span></span><span></span>
             </div>
-            
-            <div class="flex flex-wrap gap-2 mb-4" id="sumTypes">
-                <!-- Badges will be injected here -->
+            <div class="fsp-toggle-btn" id="fspCollapseBtn">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+        
+        <div class="fsp-body">
+            <div class="fsp-folder-info">
+                <span class="fsp-label">Current Folder</span>
+                <span id="fspFolderName" class="fsp-folder-name">Root</span>
             </div>
 
-            <div class="space-y-2 border-t border-white border-opacity-10 pt-3">
-                <div class="stat-row">
-                    <span class="opacity-70">Selected Files</span>
-                    <span id="sumSelection" class="stat-value text-right">0 / 0</span>
+            <div class="fsp-media-grid">
+                <div class="fsp-media-item">
+                    <i class="fas fa-file-video text-sky-400"></i>
+                    <span id="fspVideoCount">0</span>
                 </div>
-                <div class="stat-row">
-                    <span class="opacity-70">Total Selection Size</span>
-                    <span id="sumSize" class="stat-value text-right">0 B / 0 B</span>
+                <div class="fsp-media-item">
+                    <i class="fas fa-file-audio text-fuchsia-400"></i>
+                    <span id="fspAudioCount">0</span>
+                </div>
+                <div class="fsp-media-item">
+                    <i class="fas fa-file-image text-emerald-400"></i>
+                    <span id="fspImageCount">0</span>
+                </div>
+                <div class="fsp-media-item">
+                    <i class="fas fa-file-alt text-slate-400"></i>
+                    <span id="fspOtherCount">0</span>
                 </div>
             </div>
+        </div>
+
+        <div class="fsp-footer">
+            <div class="fsp-stat-line">
+                <span class="opacity-60">Selected Files</span>
+                <span id="fspSelectedTotal" class="fsp-stat-value">0 / 0</span>
+            </div>
+            <div class="fsp-stat-line">
+                <span class="opacity-60">Total Size</span>
+                <span id="fspSizeTotal" class="fsp-stat-value">0 B / 0 B</span>
+            </div>
+        </div>
+        
+        <!-- Minimized State Trigger -->
+        <div id="fspExpandBtn" class="fsp-toggle-btn hidden">
+            <i class="fas fa-chart-pie"></i>
         </div>
     </div>
 
@@ -513,13 +621,18 @@
         const invertSelectionBtn = document.getElementById('invertSelectionBtn');
         const selectEverythingBtn = document.getElementById('selectEverythingBtn');
         
-        // Floating UI Elements
-        const floatingSummary = document.getElementById('floatingSummary');
-        const dragHandle = document.getElementById('dragHandle');
-        const sumFolder = document.getElementById('sumFolder');
-        const sumTypes = document.getElementById('sumTypes');
-        const sumSelection = document.getElementById('sumSelection');
-        const sumSize = document.getElementById('sumSize');
+        // FSP Elements
+        const fspPanel = document.getElementById('fspPanel');
+        const fspDragHandle = document.getElementById('fspDragHandle');
+        const fspExpandBtn = document.getElementById('fspExpandBtn');
+        const fspCollapseBtn = document.getElementById('fspCollapseBtn');
+        const fspFolderName = document.getElementById('fspFolderName');
+        const fspVideoCount = document.getElementById('fspVideoCount');
+        const fspAudioCount = document.getElementById('fspAudioCount');
+        const fspImageCount = document.getElementById('fspImageCount');
+        const fspOtherCount = document.getElementById('fspOtherCount');
+        const fspSelectedTotal = document.getElementById('fspSelectedTotal');
+        const fspSizeTotal = document.getElementById('fspSizeTotal');
 
         let currentFolder = null;
         let files = [];
@@ -534,50 +647,65 @@
             setTimeout(() => submitPin.click(), 0);
         }
 
-        // Draggable Logic for Floating Summary
+        // Minimized/Expanded Logic
+        function toggleFSP(maximize) {
+            if (maximize) {
+                fspPanel.classList.remove('minimized');
+                fspExpandBtn.classList.add('hidden');
+            } else {
+                fspPanel.classList.add('minimized');
+                fspExpandBtn.classList.remove('hidden');
+            }
+        }
+
+        fspExpandBtn.onclick = (e) => { e.stopPropagation(); toggleFSP(true); };
+        fspCollapseBtn.onclick = (e) => { e.stopPropagation(); toggleFSP(false); };
+        fspPanel.onclick = () => fspPanel.classList.contains('minimized') && toggleFSP(true);
+
+        // Draggable Logic for FSP (PC + Mobile)
         function initDraggable(el, handle) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            handle.onmousedown = dragMouseDown;
-            handle.ontouchstart = dragMouseDown;
+            handle.onmousedown = dragStart;
+            handle.ontouchstart = (e) => dragStart(e.touches[0]);
 
-            function dragMouseDown(e) {
-                e = e || window.event;
-                // Get the starting cursor/touch position
-                pos3 = e.clientX || (e.touches && e.touches[0].clientX);
-                pos4 = e.clientY || (e.touches && e.touches[0].clientY);
-                document.onmouseup = closeDragElement;
-                document.ontouchend = closeDragElement;
-                document.onmousemove = elementDrag;
-                document.ontouchmove = elementDrag;
+            function dragStart(e) {
+                if (el.classList.contains('minimized')) return;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = dragEnd;
+                document.ontouchend = dragEnd;
+                document.onmousemove = dragMove;
+                document.ontouchmove = (ev) => dragMove(ev.touches[0]);
             }
 
-            function elementDrag(e) {
-                e = e || window.event;
-                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            function dragMove(e) {
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
                 
-                // Calculate new position
-                pos1 = pos3 - clientX;
-                pos2 = pos4 - clientY;
-                pos3 = clientX;
-                pos4 = clientY;
+                let newTop = el.offsetTop - pos2;
+                let newLeft = el.offsetLeft - pos1;
                 
-                // Set the element's new position
-                el.style.top = (el.offsetTop - pos2) + "px";
-                el.style.left = (el.offsetLeft - pos1) + "px";
+                // Keep within viewport
+                const padding = 10;
+                newTop = Math.max(padding, Math.min(newTop, window.innerHeight - el.offsetHeight - padding));
+                newLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - el.offsetWidth - padding));
+
+                el.style.top = newTop + "px";
+                el.style.left = newLeft + "px";
                 el.style.bottom = "auto";
                 el.style.right = "auto";
             }
 
-            function closeDragElement() {
-                // stop moving when mouse button is released
+            function dragEnd() {
                 document.onmouseup = null;
                 document.onmousemove = null;
                 document.ontouchend = null;
                 document.ontouchmove = null;
             }
         }
-        initDraggable(floatingSummary, dragHandle);
+        initDraggable(fspPanel, fspDragHandle);
 
         function loadThemePreference() {
             const savedTheme = localStorage.getItem('darkMode');
@@ -745,32 +873,19 @@
             selectedSize.textContent = formatSize(stats.selSize);
             totalSize.textContent = formatSize(stats.totSize);
             
-            // Update Floating UI
-            sumFolder.textContent = currentFolder ? currentFolder.name : 'Root';
-            sumSelection.textContent = `${stats.selCount} / ${stats.totCount}`;
-            sumSize.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
-            
-            sumTypes.innerHTML = '';
-            const types = [
-                { id: 'video', label: 'Video', icon: 'fa-file-video', color: 'text-sky-400' },
-                { id: 'audio', label: 'Audio', icon: 'fa-file-audio', color: 'text-fuchsia-400' },
-                { id: 'image', label: 'Image', icon: 'fa-file-image', color: 'text-emerald-400' },
-                { id: 'document', label: 'Docs', icon: 'fa-file-alt', color: 'text-slate-400' }
-            ];
-
-            types.forEach(type => {
-                if (stats.typeCounts[type.id] > 0) {
-                    const badge = document.createElement('div');
-                    badge.className = 'type-badge';
-                    badge.innerHTML = `<i class="fas ${type.icon} ${type.color}"></i> ${stats.typeCounts[type.id]}`;
-                    sumTypes.appendChild(badge);
-                }
-            });
+            // Professional FSP panel update
+            fspFolderName.textContent = currentFolder ? currentFolder.name : 'Root';
+            fspVideoCount.textContent = stats.typeCounts.video;
+            fspAudioCount.textContent = stats.typeCounts.audio;
+            fspImageCount.textContent = stats.typeCounts.image;
+            fspOtherCount.textContent = stats.typeCounts.other;
+            fspSelectedTotal.textContent = `${stats.selCount} / ${stats.totCount}`;
+            fspSizeTotal.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
         }
 
         function calculateStats(nodes) {
             let selCount = 0, totCount = 0, selSize = 0, totSize = 0;
-            const typeCounts = { video: 0, audio: 0, image: 0, document: 0, other: 0 };
+            const typeCounts = { video: 0, audio: 0, image: 0, other: 0 };
             const queue = [...nodes];
             while (queue.length > 0) {
                 const node = queue.pop();
@@ -781,7 +896,6 @@
                     if (['mp4','mkv','avi','mov'].includes(ext)) type = 'video';
                     else if (['mp3','flac','wav','m4a'].includes(ext)) type = 'audio';
                     else if (['jpg','jpeg','png','gif','webp'].includes(ext)) type = 'image';
-                    else if (['pdf','doc','docx','txt'].includes(ext)) type = 'document';
                     
                     if (node.selected) { 
                         selCount++; selSize += node.size; 
@@ -933,7 +1047,7 @@
                     setTimeout(() => {
                         pinEntry.style.display = 'none';
                         fileManager.classList.remove('hidden');
-                        floatingSummary.style.display = 'flex';
+                        fspPanel.style.display = 'flex';
                         renderFileTree(files);
                         updateStats();
                     }, 400);
@@ -948,8 +1062,6 @@
         });
 
         themeToggle.addEventListener('change', toggleTheme);
-        const invertSelectionBtn = document.getElementById('invertSelectionBtn');
-        const selectEverythingBtn = document.getElementById('selectEverythingBtn');
 
         invertSelectionBtn.addEventListener('click', invertSelection);
         selectEverythingBtn.addEventListener('click', selectEverything);
