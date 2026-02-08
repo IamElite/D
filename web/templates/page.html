@@ -30,7 +30,6 @@
                         var(--bg-dark);
         }
 
-        /* Navbar/Header */
         header {
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(12px);
@@ -61,11 +60,8 @@
             text-decoration: none;
         }
 
-        .brand-logo i {
-            color: var(--primary);
-        }
+        .brand-logo i { color: var(--primary); }
 
-        /* Theme Toggle Customization */
         .theme-switch {
             background: var(--glass);
             border: 1px solid var(--glass-border);
@@ -93,7 +89,6 @@
             box-shadow: 0 0 15px var(--primary);
         }
 
-        /* Main Content */
         main {
             flex-grow: 1;
             padding: 2rem 1rem;
@@ -112,7 +107,6 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* PIN Entry */
         #pinEntry {
             text-align: center;
             max-width: 450px;
@@ -146,7 +140,6 @@
         .pin-input-group input:focus {
             outline: none;
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
@@ -171,7 +164,6 @@
             background: #2563eb;
         }
 
-        /* File Manager UI */
         .controls-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -194,20 +186,9 @@
             gap: 4px;
         }
 
-        .btn-control i {
-            font-size: 1.1rem;
-            margin-bottom: 2px;
-        }
-
         .btn-control:hover {
             background: rgba(255, 255, 255, 0.08);
-            border-color: var(--text-dim);
             transform: translateY(-2px);
-        }
-
-        .btn-control.active {
-            background: var(--primary);
-            border-color: var(--primary);
         }
 
         .stats-summary {
@@ -220,25 +201,10 @@
             border: 1px solid var(--glass-border);
         }
 
-        .stat-item {
-            text-align: center;
-        }
+        .stat-item { text-align: center; }
+        .stat-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); }
 
-        .stat-value {
-            display: block;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-dim);
-        }
-
-        /* File Tree */
         .file-item {
             display: flex;
             align-items: center;
@@ -249,9 +215,7 @@
             margin-bottom: 4px;
         }
 
-        .file-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-        }
+        .file-item:hover { background: rgba(255, 255, 255, 0.04); }
 
         .file-checkbox {
             width: 18px;
@@ -259,38 +223,18 @@
             border-radius: 4px;
             border: 2px solid var(--text-dim);
             cursor: pointer;
-            position: relative;
             margin-right: 1.25rem;
             flex-shrink: 0;
         }
 
-        .file-icon {
-            font-size: 1.25rem;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
+        .file-icon { font-size: 1.25rem; margin-right: 1rem; flex-shrink: 0; }
+        .file-details { flex-grow: 1; min-width: 0; cursor: pointer; }
+        .file-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .file-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; gap: 12px; margin-top: 2px; }
 
-        .file-details {
-            flex-grow: 1;
-            min-width: 0;
-            cursor: pointer;
-        }
-
-        .file-name {
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-        }
-
-        .file-meta {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            display: flex;
-            gap: 12px;
-            margin-top: 2px;
-        }
+        .action-btns { display: flex; gap: 10px; margin-left: 10px; }
+        .action-btn { color: var(--text-dim); transition: 0.2s; cursor: pointer; padding: 5px; }
+        .action-btn:hover { color: var(--primary); }
 
         .folder-back {
             color: var(--primary);
@@ -303,79 +247,17 @@
             margin-bottom: 1rem;
         }
 
-        /* Footer */
-        footer {
-            padding: 3rem 0;
-            border-top: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.5);
-            margin-top: auto;
-        }
+        footer { padding: 3rem 0; border-top: 1px solid var(--glass-border); background: rgba(15, 23, 42, 0.5); margin-top: auto; }
+        .footer-content { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        .social-btns { display: flex; gap: 1rem; }
+        .social-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--glass); display: flex; align-items: center; justify-content: center; color: var(--text-dim); transition: all 0.3s ease; border: 1px solid var(--glass-border); }
+        .social-btn:hover { color: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
 
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; padding: 1.5rem; }
+        .modal-content { background: #1e293b; border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .edit-input { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: white; margin-bottom: 20px; }
 
-        .social-btns {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .social-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--glass);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-dim);
-            transition: all 0.3s ease;
-            border: 1px solid var(--glass-border);
-        }
-
-        .social-btn:hover {
-            color: var(--primary);
-            border-color: var(--primary);
-            transform: translateY(-3px);
-        }
-
-        /* Modal Overhaul */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            z-index: 100;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
-
-        .modal-content {
-            background: #1e293b;
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 2rem;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-        }
-
-        /* Mobile specific adjustments */
-        @media (max-width: 640px) {
-            .controls-grid { grid-template-columns: repeat(2, 1fr); }
-            .brand-logo span { display: none; }
-            .header-content { padding: 0 1rem; }
-            header { padding: 1rem 0; }
-        }
-
+        @media (max-width: 640px) { .controls-grid { grid-template-columns: repeat(2, 1fr); } .brand-logo span { display: none; } }
     </style>
 </head>
 <body>
@@ -386,74 +268,41 @@
                 <span>Syntax Realm</span>
             </a>
             <div class="theme-switch" id="themeSwitch">
-                <div class="theme-icon" id="moonIcon">
-                    <i class="fas fa-moon"></i>
-                </div>
-                <div class="theme-icon" id="sunIcon">
-                    <i class="fas fa-sun"></i>
-                </div>
+                <div class="theme-icon" id="moonIcon"><i class="fas fa-moon"></i></div>
+                <div class="theme-icon" id="sunIcon"><i class="fas fa-sun"></i></div>
             </div>
         </div>
     </header>
 
     <main>
-        <!-- PIN Section -->
         <div id="pinEntry" class="glass-card">
             <h2 class="text-2xl font-bold mb-2">Access Secure Folder</h2>
             <p class="text-sm text-gray-400">Enter the verification PIN received on Telegram</p>
-            
             <div class="pin-input-group">
                 <input type="text" id="pinInput" placeholder="••••" maxlength="4">
             </div>
-
-            <button id="submitPin" class="btn-modern">
-                <i class="fas fa-unlock"></i>
-                <span>Unlock Files</span>
-            </button>
+            <button id="submitPin" class="btn-modern"><i class="fas fa-unlock"></i><span>Unlock Files</span></button>
         </div>
 
-        <!-- File Section -->
         <div id="fileManager" class="glass-card hidden">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold">Torrent Files</h2>
-                <button id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-blue-500/20">
-                    Submit Selection
-                </button>
+                <button id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg">Submit Selection</button>
             </div>
 
             <div class="stats-summary">
-                <div class="stat-item">
-                    <span class="stat-value" id="selectedCount">0</span>
-                    <span class="stat-label">Files Selected</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="selectedSize">0 B</span>
-                    <span class="stat-label">Total Size</span>
-                </div>
+                <div class="stat-item"><span class="stat-value" id="selectedCount">0</span><span class="stat-label">Files Selected</span></div>
+                <div class="stat-item"><span class="stat-value" id="selectedSize">0 B</span><span class="stat-label">Total Size</span></div>
             </div>
 
             <div class="controls-grid">
-                <button id="selectAllBtn" class="btn-control">
-                    <i class="fas fa-check-double"></i>
-                    <span>Select Page</span>
-                </button>
-                <button id="invertSelectionBtn" class="btn-control">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Invert</span>
-                </button>
-                <button id="selectEverythingBtn" class="btn-control">
-                    <i class="fas fa-globe"></i>
-                    <span>Select All</span>
-                </button>
-                <button id="refreshBtn" class="btn-control" onClick="location.reload()">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Refresh</span>
-                </button>
+                <button id="selectAllBtn" class="btn-control"><i class="fas fa-check-double"></i><span>Select Page</span></button>
+                <button id="invertSelectionBtn" class="btn-control"><i class="fas fa-exchange-alt"></i><span>Invert</span></button>
+                <button id="selectEverythingBtn" class="btn-control"><i class="fas fa-globe"></i><span>Select All</span></button>
+                <button id="refreshBtn" class="btn-control" onClick="location.reload()"><i class="fas fa-sync-alt"></i><span>Refresh</span></button>
             </div>
 
-            <div id="fileTreeContainer">
-                <div id="fileTree"></div>
-            </div>
+            <div id="fileTree"></div>
         </div>
     </main>
 
@@ -462,26 +311,20 @@
             <div class="social-btns">
                 <a href="https://t.me/SyntaxRealm" class="social-btn"><i class="fab fa-telegram-plane"></i></a>
                 <a href="https://t.me/SyntaxRealm" class="social-btn"><i class="fab fa-github"></i></a>
-                <a href="https://t.me/SyntaxRealm" class="social-btn"><i class="fas fa-globe"></i></a>
             </div>
             <p class="copyright">&copy; 2026 Syntax Realm &bull; Modern Mirror Service</p>
         </div>
     </footer>
 
-    <!-- Reusable Modal -->
     <div id="reusableModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
-            <div id="modalBody" class="mb-6"></div>
-            <div id="modalFooter" class="flex justify-end gap-3"></div>
+            <div id="modalBody"></div>
+            <div id="modalFooter" class="flex justify-end gap-3 mt-4"></div>
         </div>
     </div>
 
     <script>
-        // Core Logic (Refined for new UI)
-        const themeSwitch = document.getElementById('themeSwitch');
-        const sunIcon = document.getElementById('sunIcon');
-        const moonIcon = document.getElementById('moonIcon');
         const pinInput = document.getElementById('pinInput');
         const submitPin = document.getElementById('submitPin');
         const pinEntry = document.getElementById('pinEntry');
@@ -490,31 +333,18 @@
         const selectedCount = document.getElementById('selectedCount');
         const selectedSize = document.getElementById('selectedSize');
         const submitBtn = document.getElementById('submitBtn');
+        const modal = document.getElementById('reusableModal');
 
         const urlParams = new URLSearchParams(window.location.search);
+        let filesData = [];
+        let currentPath = [];
+        let allowEdit = false;
+
         if (urlParams.get('pin')) {
             pinInput.value = urlParams.get('pin');
             setTimeout(() => submitPin.click(), 500);
         }
 
-        // Theme Toggle
-        let isDarkMode = true;
-        themeSwitch.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            if (isDarkMode) {
-                moonIcon.classList.add('active');
-                sunIcon.classList.remove('active');
-                document.body.style.background = '#0f172a';
-            } else {
-                sunIcon.classList.add('active');
-                moonIcon.classList.remove('active');
-                document.body.style.background = '#f1f5f9';
-                document.body.style.color = '#0f172a';
-            }
-        });
-        moonIcon.classList.add('active');
-
-        // Stats calculation and formatting
         function formatBytes(bytes) {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -523,47 +353,44 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        let filesData = [];
-        let currentPath = [];
+        function calculateFolderSize(folder) {
+            let size = 0;
+            const scan = (nodes) => {
+                nodes.forEach(n => {
+                    if (n.type === 'file') size += (n.size || 0);
+                    if (n.children) scan(n.children);
+                });
+            };
+            if (folder.children) scan(folder.children);
+            return size;
+        }
 
         async function verifyPin() {
             const pin = pinInput.value;
             const gid = urlParams.get('gid');
-            
             try {
                 const response = await fetch(`/app/files/torrent?gid=${gid}&pin=${pin}`);
                 const data = await response.json();
-                
-                if (data.error) {
-                    alert(data.message || "Invalid PIN");
-                    return;
-                }
-
+                if (data.error) { alert(data.message || "Invalid PIN"); return; }
                 filesData = data.files;
+                allowEdit = gid.length > 20; // qBittorrent allows renaming
                 pinEntry.classList.add('hidden');
                 fileManager.classList.remove('hidden');
                 renderFiles(filesData);
                 updateStats();
-            } catch (err) {
-                console.error(err);
-                alert("Connection failed");
-            }
+            } catch (err) { alert("Connection failed"); }
         }
 
-        submitPin.addEventListener('click', verifyPin);
-        pinInput.addEventListener('keypress', (e) => e.key === 'Enter' && verifyPin());
+        submitPin.onclick = verifyPin;
+        pinInput.onkeypress = (e) => e.key === 'Enter' && verifyPin();
 
         function renderFiles(nodes) {
             fileTree.innerHTML = '';
-            
             if (currentPath.length > 0) {
                 const backRow = document.createElement('div');
                 backRow.className = 'folder-back';
                 backRow.innerHTML = '<i class="fas fa-arrow-left"></i> Go Back';
-                backRow.onclick = () => {
-                    currentPath.pop();
-                    renderFiles(getCurrentFolderFiles());
-                };
+                backRow.onclick = () => { currentPath.pop(); renderFiles(getCurrentFolderFiles()); };
                 fileTree.appendChild(backRow);
             }
 
@@ -574,11 +401,8 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'file-checkbox';
-                checkbox.checked = node.selected;
-                checkbox.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleSelection(node);
-                };
+                checkbox.checked = node.type === 'folder' ? areAllChildrenSelected(node) : node.selected;
+                checkbox.onclick = (e) => { e.stopPropagation(); toggleSelection(node); };
 
                 const icon = document.createElement('div');
                 icon.className = 'file-icon';
@@ -586,42 +410,57 @@
 
                 const details = document.createElement('div');
                 details.className = 'file-details';
+                const nodeSize = node.type === 'folder' ? calculateFolderSize(node) : (node.size || 0);
                 details.innerHTML = `
                     <span class="file-name">${node.name}</span>
                     <div class="file-meta">
-                        <span>${formatBytes(node.size || 0)}</span>
+                        <span>${formatBytes(nodeSize)}</span>
                         ${node.type === 'folder' ? `<span>${node.children ? node.children.length : 0} items</span>` : ''}
+                        ${node.progress !== undefined ? `<span>${node.progress}%</span>` : ''}
                     </div>
                 `;
 
+                const actions = document.createElement('div');
+                actions.className = 'action-btns';
+                if (allowEdit) {
+                    const editBtn = document.createElement('div');
+                    editBtn.className = 'action-btn';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                    editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(node); };
+                    actions.appendChild(editBtn);
+                }
+
                 if (node.type === 'folder') {
-                    details.onclick = () => {
-                        currentPath.push(node);
-                        renderFiles(node.children);
-                    };
+                    details.onclick = () => { currentPath.push(node); renderFiles(node.children); };
                 } else {
-                    details.onclick = () => {
-                        checkbox.click();
-                    };
+                    details.onclick = () => checkbox.click();
                 }
 
                 item.appendChild(checkbox);
                 item.appendChild(icon);
                 item.appendChild(details);
+                item.appendChild(actions);
                 fileTree.appendChild(item);
             });
         }
 
+        function areAllChildrenSelected(folder) {
+            if (!folder.children) return false;
+            return folder.children.every(c => c.type === 'folder' ? areAllChildrenSelected(c) : c.selected);
+        }
+
         function toggleSelection(node) {
-            node.selected = !node.selected;
-            if (node.type === 'folder' && node.children) {
-                const setChildren = (children, state) => {
-                    children.forEach(c => {
-                        c.selected = state;
-                        if (c.children) setChildren(c.children, state);
+            const newState = node.type === 'folder' ? !areAllChildrenSelected(node) : !node.selected;
+            if (node.type === 'folder') {
+                const setAll = (nodes, state) => {
+                    nodes.forEach(n => {
+                        n.selected = state;
+                        if (n.children) setAll(n.children, state);
                     });
                 };
-                setChildren(node.children, node.selected);
+                setAll(node.children, newState);
+            } else {
+                node.selected = newState;
             }
             updateStats();
             renderFiles(getCurrentFolderFiles());
@@ -632,14 +471,10 @@
         }
 
         function updateStats() {
-            let count = 0;
-            let size = 0;
+            let count = 0, size = 0;
             const scan = (nodes) => {
                 nodes.forEach(n => {
-                    if (n.type === 'file' && n.selected) {
-                        count++;
-                        size += n.size;
-                    }
+                    if (n.type === 'file' && n.selected) { count++; size += (n.size || 0); }
                     if (n.children) scan(n.children);
                 });
             };
@@ -648,31 +483,73 @@
             selectedSize.textContent = formatBytes(size);
         }
 
-        submitBtn.onclick = async () => {
-            const selected = [];
-            const unselected = [];
+        function openEditModal(node) {
+            document.getElementById('modalTitle').textContent = `Rename ${node.type}`;
+            document.getElementById('modalBody').innerHTML = `<input type="text" id="editLabel" class="edit-input" value="${node.name}">`;
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="bg-gray-600 px-4 py-2 rounded-lg" onclick="closeModal()">Cancel</button>
+                <button class="bg-blue-600 px-4 py-2 rounded-lg" onclick="saveRename('${node.id}')">Save</button>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { modal.style.display = 'none'; }
+
+        async function saveRename(nodeId) {
+            const newName = document.getElementById('editLabel').value.trim();
+            if (!newName) return;
+            // Find node and siblings/parents for path
+            const node = findNodeById(filesData, nodeId);
+            const oldPath = getFullPath(node);
+            const parent = findParent(filesData, nodeId);
+            const newPath = parent ? `${getFullPath(parent)}/${newName}` : newName;
             
+            try {
+                const response = await fetch(`/app/files/torrent?gid=${urlParams.get('gid')}&pin=${pinInput.value}&mode=rename`, {
+                    method: 'POST',
+                    body: JSON.stringify({ old_path: oldPath, new_path: newPath, type: node.type })
+                });
+                const res = await response.json();
+                alert(res.message);
+                if (!res.error) { node.name = newName; renderFiles(getCurrentFolderFiles()); closeModal(); }
+            } catch (err) { alert("Rename failed"); }
+        }
+
+        function findNodeById(nodes, id) {
+            for (let n of nodes) {
+                if (n.id === id) return n;
+                if (n.children) { let f = findNodeById(n.children, id); if (f) return f; }
+            }
+        }
+
+        function findParent(nodes, id) {
+            for (let n of nodes) {
+                if (n.children) {
+                    if (n.children.some(c => c.id === id)) return n;
+                    let f = findParent(n.children, id); if (f) return f;
+                }
+            }
+        }
+
+        function getFullPath(node) {
+            let path = [node.name];
+            let p = findParent(filesData, node.id);
+            while (p) { path.unshift(p.name); p = findParent(filesData, p.id); }
+            return path.join('/');
+        }
+
+        submitBtn.onclick = async () => {
+            const selected = [], unselected = [];
             const scan = (nodes) => {
                 nodes.forEach(n => {
-                    if (n.type === 'file') {
-                        if (n.selected) selected.push(n.id);
-                        else unselected.push(n.id);
-                    }
+                    if (n.type === 'file') { if (n.selected) selected.push(n.id); else unselected.push(n.id); }
                     if (n.children) scan(n.children);
                 });
             };
             scan(filesData);
-
-            if (selected.length === 0) {
-                alert("Please select at least one file");
-                return;
-            }
-
-            const pin = pinInput.value;
-            const gid = urlParams.get('gid');
-            
+            if (selected.length === 0) { alert("Please select at least one file"); return; }
             try {
-                const response = await fetch(`/app/files/torrent?gid=${gid}&pin=${pin}`, {
+                const response = await fetch(`/app/files/torrent?gid=${urlParams.get('gid')}&pin=${pinInput.value}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({selected, unselected})
@@ -680,31 +557,37 @@
                 const res = await response.json();
                 alert(res.message);
                 if (!res.error) window.close();
-            } catch (err) {
-                alert("Submission failed");
-            }
+            } catch (err) { alert("Submission failed"); }
         };
 
-        // Select All Logic
         document.getElementById('selectAllBtn').onclick = () => {
-            const files = getCurrentFolderFiles();
-            const allSelected = files.every(f => f.selected);
-            files.forEach(f => f.selected = !allSelected);
-            updateStats();
-            renderFiles(files);
+            const nodes = getCurrentFolderFiles();
+            const allSel = nodes.every(n => n.type === 'folder' ? areAllChildrenSelected(n) : n.selected);
+            nodes.forEach(n => {
+                if (n.type === 'folder') {
+                    const setAll = (nodes, state) => nodes.forEach(c => { c.selected = state; if (c.children) setAll(c.children, state); });
+                    setAll(n.children, !allSel);
+                } else n.selected = !allSel;
+            });
+            updateStats(); renderFiles(nodes);
+        };
+
+        document.getElementById('invertSelectionBtn').onclick = () => {
+            const nodes = getCurrentFolderFiles();
+            nodes.forEach(n => {
+                if (n.type === 'folder') {
+                    const invAll = (nodes) => nodes.forEach(c => { c.selected = !c.selected; if (c.children) invAll(c.children); });
+                    invAll(n.children);
+                } else n.selected = !n.selected;
+            });
+            updateStats(); renderFiles(nodes);
         };
 
         document.getElementById('selectEverythingBtn').onclick = () => {
-            const allSelected = filesData.every(f => f.selected);
-            const setAll = (nodes, state) => {
-                nodes.forEach(n => {
-                    n.selected = state;
-                    if (n.children) setAll(n.children, state);
-                });
-            };
-            setAll(filesData, !allSelected);
-            updateStats();
-            renderFiles(getCurrentFolderFiles());
+            const allSel = filesData.every(n => n.type === 'folder' ? areAllChildrenSelected(n) : n.selected);
+            const setAll = (nodes, state) => nodes.forEach(n => { n.selected = state; if (n.children) setAll(n.children, state); });
+            setAll(filesData, !allSel);
+            updateStats(); renderFiles(getCurrentFolderFiles());
         };
     </script>
 </body>
