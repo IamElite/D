@@ -278,72 +278,94 @@
             transform: translateY(-3px);
         }
 
+        /* Floating Summary Pop-up */
+        #floatingSummary {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 320px;
+            z-index: 1000;
+            cursor: default;
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out;
+            user-select: none;
+        }
+
+        .drag-handle {
+            height: 12px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem 1rem 0 0;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drag-handle::after {
+            content: '';
+            width: 30px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .summary-content {
+            padding: 1.25rem;
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .light .type-badge {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
         /* Responsive Improvements */
         @media (max-width: 640px) {
             .btn { width: 100%; padding: 0.8rem; }
             .flex-wrap { gap: 0.75rem; }
             .header-title { font-size: 1.5rem; text-align: center; }
-        }
-
-        /* Floating Selection Summary */
-        #selectionSummary {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 280px;
-            z-index: 90;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
-        }
-
-        #selectionSummary.active {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        .summary-content {
-            padding: 1rem;
-            border-radius: 1.25rem;
-        }
-
-        .path-crumbs {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.75rem;
-            opacity: 0.6;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .summary-stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-        }
-
-        .type-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.1);
-            margin-top: 4px;
-            margin-right: 4px;
+            #floatingSummary {
+                bottom: 1rem;
+                right: 1rem;
+                width: calc(100% - 2rem);
+                max-width: 340px;
+            }
         }
 
         /* Animations */
         @keyframes slideUp {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
@@ -416,6 +438,32 @@
         </div>
     </main>
 
+    <!-- Floating Selection Summary -->
+    <div id="floatingSummary" class="glass-card">
+        <div class="drag-handle" id="dragHandle"></div>
+        <div class="summary-content">
+            <div class="mb-3">
+                <div class="text-xs uppercase tracking-widest opacity-50 font-bold mb-1">Browsing Folder</div>
+                <div id="sumFolder" class="truncate font-semibold text-indigo-400">Root</div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 mb-4" id="sumTypes">
+                <!-- Badges will be injected here -->
+            </div>
+
+            <div class="space-y-2 border-t border-white border-opacity-10 pt-3">
+                <div class="stat-row">
+                    <span class="opacity-70">Selected Files</span>
+                    <span id="sumSelection" class="stat-value text-right">0 / 0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="opacity-70">Total Selection Size</span>
+                    <span id="sumSize" class="stat-value text-right">0 B / 0 B</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <div class="container mx-auto px-6">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-6">
@@ -434,21 +482,6 @@
             </div>
         </div>
     </footer>
-
-    <div id="selectionSummary" class="glass-card">
-        <div class="summary-content">
-            <div id="summaryPath" class="path-crumbs">Home</div>
-            <div class="summary-stat-row">
-                <span class="opacity-60">Selection</span>
-                <span id="summaryCount">0 / 0</span>
-            </div>
-            <div class="summary-stat-row">
-                <span class="opacity-60">Size</span>
-                <span id="summarySize">0 B / 0 B</span>
-            </div>
-            <div id="summaryTypes" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-white border-opacity-10"></div>
-        </div>
-    </div>
 
     <div id="reusableModal" class="modal">
         <div class="modal-content glass-card">
@@ -479,12 +512,14 @@
         const modalFooter = document.getElementById('modalFooter');
         const invertSelectionBtn = document.getElementById('invertSelectionBtn');
         const selectEverythingBtn = document.getElementById('selectEverythingBtn');
-
-        const selectionSummary = document.getElementById('selectionSummary');
-        const summaryPath = document.getElementById('summaryPath');
-        const summaryCount = document.getElementById('summaryCount');
-        const summarySize = document.getElementById('summarySize');
-        const summaryTypes = document.getElementById('summaryTypes');
+        
+        // Floating UI Elements
+        const floatingSummary = document.getElementById('floatingSummary');
+        const dragHandle = document.getElementById('dragHandle');
+        const sumFolder = document.getElementById('sumFolder');
+        const sumTypes = document.getElementById('sumTypes');
+        const sumSelection = document.getElementById('sumSelection');
+        const sumSize = document.getElementById('sumSize');
 
         let currentFolder = null;
         let files = [];
@@ -498,6 +533,51 @@
             pinInput.value = urlParams.pin;
             setTimeout(() => submitPin.click(), 0);
         }
+
+        // Draggable Logic for Floating Summary
+        function initDraggable(el, handle) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            handle.onmousedown = dragMouseDown;
+            handle.ontouchstart = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                // Get the starting cursor/touch position
+                pos3 = e.clientX || (e.touches && e.touches[0].clientX);
+                pos4 = e.clientY || (e.touches && e.touches[0].clientY);
+                document.onmouseup = closeDragElement;
+                document.ontouchend = closeDragElement;
+                document.onmousemove = elementDrag;
+                document.ontouchmove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                
+                // Calculate new position
+                pos1 = pos3 - clientX;
+                pos2 = pos4 - clientY;
+                pos3 = clientX;
+                pos4 = clientY;
+                
+                // Set the element's new position
+                el.style.top = (el.offsetTop - pos2) + "px";
+                el.style.left = (el.offsetLeft - pos1) + "px";
+                el.style.bottom = "auto";
+                el.style.right = "auto";
+            }
+
+            function closeDragElement() {
+                // stop moving when mouse button is released
+                document.onmouseup = null;
+                document.onmousemove = null;
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+        initDraggable(floatingSummary, dragHandle);
 
         function loadThemePreference() {
             const savedTheme = localStorage.getItem('darkMode');
@@ -538,22 +618,8 @@
             return total;
         }
 
-        function getBreadcrumbs(node) {
-            if (!node) return 'Home';
-            const path = [];
-            const getPath = (n) => {
-                path.unshift(n.name);
-                let p = findParent(files[0], n.id);
-                if (p) getPath(p);
-            };
-            getPath(node);
-            return path.join(' / ');
-        }
-
         function renderFileTree(nodes) {
             fileTree.innerHTML = '';
-            summaryPath.textContent = getBreadcrumbs(currentFolder);
-            
             if (currentFolder) {
                 const backBtn = document.createElement('div');
                 backBtn.className = 'file-tree-item folder text-indigo-400 hover:bg-indigo-500 hover:bg-opacity-10 cursor-pointer';
@@ -678,54 +744,53 @@
             totalCount.textContent = stats.totCount;
             selectedSize.textContent = formatSize(stats.selSize);
             totalSize.textContent = formatSize(stats.totSize);
-
-            // Update floating summary
-            summaryCount.textContent = `${stats.selCount} / ${stats.totCount}`;
-            summarySize.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
             
-            summaryTypes.innerHTML = '';
-            const typeConfig = [
-                { key: 'video', label: 'Videos', icon: 'fa-video', color: 'text-sky-400' },
-                { key: 'audio', label: 'Audio', icon: 'fa-music', color: 'text-fuchsia-400' },
-                { key: 'image', label: 'Images', icon: 'fa-image', color: 'text-emerald-400' },
-                { key: 'archive', label: 'Archives', icon: 'fa-file-archive', color: 'text-rose-400' }
+            // Update Floating UI
+            sumFolder.textContent = currentFolder ? currentFolder.name : 'Root';
+            sumSelection.textContent = `${stats.selCount} / ${stats.totCount}`;
+            sumSize.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
+            
+            sumTypes.innerHTML = '';
+            const types = [
+                { id: 'video', label: 'Video', icon: 'fa-file-video', color: 'text-sky-400' },
+                { id: 'audio', label: 'Audio', icon: 'fa-file-audio', color: 'text-fuchsia-400' },
+                { id: 'image', label: 'Image', icon: 'fa-file-image', color: 'text-emerald-400' },
+                { id: 'document', label: 'Docs', icon: 'fa-file-alt', color: 'text-slate-400' }
             ];
 
-            typeConfig.forEach(cfg => {
-                if (stats.types[cfg.key] > 0) {
-                    const pill = document.createElement('div');
-                    pill.className = `type-pill ${cfg.color}`;
-                    pill.innerHTML = `<i class="fas ${cfg.icon} mr-1"></i> ${stats.types[cfg.key]} ${cfg.label}`;
-                    summaryTypes.appendChild(pill);
+            types.forEach(type => {
+                if (stats.typeCounts[type.id] > 0) {
+                    const badge = document.createElement('div');
+                    badge.className = 'type-badge';
+                    badge.innerHTML = `<i class="fas ${type.icon} ${type.color}"></i> ${stats.typeCounts[type.id]}`;
+                    sumTypes.appendChild(badge);
                 }
             });
-
-            if (stats.selCount > 0) selectionSummary.classList.add('active');
-            else selectionSummary.classList.remove('active');
         }
 
         function calculateStats(nodes) {
             let selCount = 0, totCount = 0, selSize = 0, totSize = 0;
-            const types = { video: 0, audio: 0, image: 0, archive: 0, other: 0 };
-            
+            const typeCounts = { video: 0, audio: 0, image: 0, document: 0, other: 0 };
             const queue = [...nodes];
             while (queue.length > 0) {
                 const node = queue.pop();
                 if (node.type === 'file') {
                     totCount++; totSize += node.size;
                     const ext = node.name.split('.').pop().toLowerCase();
+                    let type = 'other';
+                    if (['mp4','mkv','avi','mov'].includes(ext)) type = 'video';
+                    else if (['mp3','flac','wav','m4a'].includes(ext)) type = 'audio';
+                    else if (['jpg','jpeg','png','gif','webp'].includes(ext)) type = 'image';
+                    else if (['pdf','doc','docx','txt'].includes(ext)) type = 'document';
+                    
                     if (node.selected) { 
                         selCount++; selSize += node.size; 
-                        if (['mp4','mkv','avi','mov','webm','flv','wmv','m4v'].includes(ext)) types.video++;
-                        else if (['mp3','flac','wav','m4a','ogg','aac','m4b'].includes(ext)) types.audio++;
-                        else if (['jpg','jpeg','png','gif','webp','bmp','tiff'].includes(ext)) types.image++;
-                        else if (['zip','rar','7z','tar','gz','iso','dmg'].includes(ext)) types.archive++;
-                        else types.other++;
+                        typeCounts[type]++;
                     }
                 }
                 if (node.children) queue.push(...node.children);
             }
-            return { selCount, totCount, selSize, totSize, types };
+            return { selCount, totCount, selSize, totSize, typeCounts };
         }
 
         function openFolder(folder) {
@@ -868,6 +933,7 @@
                     setTimeout(() => {
                         pinEntry.style.display = 'none';
                         fileManager.classList.remove('hidden');
+                        floatingSummary.style.display = 'flex';
                         renderFileTree(files);
                         updateStats();
                     }, 400);
@@ -882,8 +948,12 @@
         });
 
         themeToggle.addEventListener('change', toggleTheme);
+        const invertSelectionBtn = document.getElementById('invertSelectionBtn');
+        const selectEverythingBtn = document.getElementById('selectEverythingBtn');
+
         invertSelectionBtn.addEventListener('click', invertSelection);
         selectEverythingBtn.addEventListener('click', selectEverything);
+
         selectAllBtn.addEventListener('click', selectAll);
         submitBtn.addEventListener('click', submitData);
 
