@@ -3,507 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WZML-X | Syntax Realm</title>
-    <link rel="icon" href="https://files.catbox.moe/oh06q2.jpg" type="image/png">
+    <title>WZML-X By Syntax Realm</title>
+    <link rel="icon" href="https://i.postimg.cc/XvdvXTkS/photo-2024-12-27-11-46-15.jpg" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                        },
+                        accent: {
+                            DEFAULT: '#6366f1', // Indigo-500
+                            hover: '#4f46e5',   // Indigo-600
+                            glow: 'rgba(99, 102, 241, 0.5)'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --bg-slate: #1e293b;
-            --primary: #3b82f6;
-            --accent: #fb923c;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glow: rgba(59, 130, 246, 0.5);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-            overflow-x: hidden;
-            background: radial-gradient(circle at top right, #1e3a8a 0%, transparent 40%),
-                        radial-gradient(circle at bottom left, #431407 0%, transparent 40%),
-                        var(--bg-dark);
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-attachment: fixed;
         }
-
-        /* Particles Background */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.6;
-            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
-        }
-
-        /* Navbar */
-        .navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 100;
-            padding: 1.25rem 2rem;
-            background: rgba(15, 23, 42, 0.6);
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.4s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .navbar.scrolled {
-            padding: 0.75rem 2rem;
-            background: rgba(15, 23, 42, 0.9);
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: var(--text-main);
-            font-weight: 800;
-            font-size: 1.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .nav-brand span {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--text-dim);
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-link:hover {
-            color: var(--text-main);
-            transform: translateY(-1px);
-        }
-
-        /* Hero Section */
-        .hero {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 0 1rem;
-            position: relative;
-        }
-
-        .hero-logo-container {
-            position: relative;
-            margin-bottom: 2.5rem;
-        }
-
-        .hero-logo {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            border: 4px solid var(--glass-border);
-            padding: 5px;
-            background: var(--bg-slate);
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.2);
-            position: relative;
-            z-index: 2;
-            transition: all 0.5s ease;
-        }
-
-        .hero-logo-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px;
-            height: 220px;
-            background: var(--primary);
-            filter: blur(60px);
-            opacity: 0.3;
-            z-index: 1;
-            border-radius: 50%;
-            animation: pulse 4s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.3; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.5; }
-            100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.3; }
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            max-width: 900px;
-            background: linear-gradient(to bottom, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero .highlight {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            color: var(--text-dim);
-            font-size: 1.25rem;
-            max-width: 600px;
-            margin-bottom: 3rem;
-            line-height: 1.6;
-        }
-
-        .hero-btns {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 30px -10px rgba(59, 130, 246, 0.6);
-            background: #2563eb;
-        }
-
-        .btn-glass {
-            background: var(--glass);
-            color: var(--text-main);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-glass:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-3px);
-            border-color: rgba(255,255,255,0.3);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 100px 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            padding: 2.5rem;
-            border-radius: 24px;
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            text-align: left;
-            position: relative;
-            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.1), transparent 40%);
-            z-index: 0;
-            opacity: 0;
-            transition: opacity 0.5s;
+        .text-glow {
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
-
-        .feature-card:hover::before {
-            opacity: 1;
+        .btn-glow:hover {
+            box-shadow: 0 0 20px var(--accent-glow);
         }
-
-        .feature-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
-        }
-
-        .feature-card > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-        }
-
-        .feature-card p {
-            color: var(--text-dim);
-            line-height: 1.6;
-        }
-
-        /* Footer */
-        footer {
-            padding: 4rem 2rem;
-            border-top: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.5);
-            text-align: center;
-        }
-
-        .footer-logo {
-            font-weight: 800;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            display: block;
-            text-decoration: none;
-            color: var(--text-main);
-        }
-
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .social-link {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-dim);
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-        }
-
-        .social-link:hover {
-            color: var(--primary);
-            background: rgba(255,255,255,0.08);
-            transform: translateY(-5px);
-            border-color: var(--primary);
-        }
-
-        .copyright {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .navbar { padding: 1rem; }
-            .nav-links { display: none; }
-            .hero h1 { font-size: 2.5rem; }
-            .hero p { font-size: 1.1rem; }
-            .hero-btns { flex-direction: column; width: 100%; max-width: 300px; }
-            .hero-logo { width: 140px; height: 140px; }
-            .hero-logo-glow { width: 170px; height: 170px; }
-        }
-
     </style>
 </head>
-<body>
-    <canvas id="bg-canvas"></canvas>
+<body class="text-slate-200 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
 
-    <nav class="navbar" id="navbar">
-        <a href="/" class="nav-brand">
-            <i class="fas fa-bolt"></i> <span>Syntax Realm</span>
-        </a>
-        <div class="nav-links">
-            <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fab fa-telegram-plane"></i> Updates</a>
-            <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fas fa-headset"></i> Support</a>
-            <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fab fa-github"></i> source</a>
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo/Brand -->
+                <a href="https://t.me/SyntaxRealm" class="flex-shrink-0 group">
+                    <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400 group-hover:to-indigo-400 transition-all duration-300">
+                        Syntax Realm
+                    </span>
+                </a>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="https://t.me/SyntaxRealm" class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 hover:text-indigo-400 transition-all duration-300">Channel</a>
+                        <a href="https://t.me/SyntaxRealm" class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 hover:text-indigo-400 transition-all duration-300">Gateway</a>
+                        <a href="https://t.me/SyntaxRealm" class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 hover:text-indigo-400 transition-all duration-300">Support</a>
+                    </div>
+                </div>
+
+                <!-- GitHub Button -->
+                <div class="hidden md:block">
+                    <a href="https://t.me/SyntaxRealm" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 btn-glow transform hover:-translate-y-0.5">
+                        <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden glass-card" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="https://t.me/SyntaxRealm" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Channel</a>
+                <a href="https://t.me/SyntaxRealm" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Gateway</a>
+                <a href="https://t.me/SyntaxRealm" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Support</a>
+                <a href="https://t.me/SyntaxRealm" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">GitHub</a>
+            </div>
         </div>
     </nav>
 
-    <main>
-        <section class="hero">
-            <div class="hero-logo-container">
-                <div class="hero-logo-glow"></div>
-                <img src="https://files.catbox.moe/oh06q2.jpg" alt="Syntax Realm" class="hero-logo">
-            </div>
-            <h1>The Future of <span class="highlight">Seamless mirroring.</span></h1>
-            <p>Experience the ultimate Telegram Mirror & Leech bot. Powered by Syntax Realm, engineered for maximum performance and zero limits.</p>
-            <div class="hero-btns">
-                <a href="https://t.me/SyntaxRealm" class="btn btn-primary">
-                    <i class="fab fa-telegram-plane"></i> Get Started
-                </a>
-                <a href="#features" class="btn btn-glass">
-                    Explore Features
-                </a>
-            </div>
-        </section>
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center relative overflow-hidden px-4 sm:px-6 lg:px-8">
+        <!-- Background Orbs -->
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse-slow delay-1000"></div>
 
-        <section class="features" id="features">
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-rocket"></i></div>
-                <h3>Insane Speed</h3>
-                <p>High-performance mirrors powered by multi-threaded downloading and premium network architecture.</p>
+        <div class="relative z-10 text-center max-w-4xl mx-auto">
+            <!-- Logo -->
+            <div class="mx-auto mb-12 relative group animate-float">
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full blur opacity-40 group-hover:opacity-60 transition duration-500"></div>
+                <img src="https://files.catbox.moe/oh06q2.jpg" alt="Syntax Realm Logo" 
+                     class="relative w-48 h-48 sm:w-56 sm:h-56 rounded-full object-cover border-4 border-indigo-500/50 shadow-2xl mx-auto transform transition-transform duration-500 group-hover:scale-105">
             </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
-                <h3>Rock Solid</h3>
-                <p>99.9% uptime with robust error handling and automated task management for a worry-free experience.</p>
+
+            <!-- Headlines -->
+            <h1 class="text-4xl sm:text-6xl font-bold tracking-tight mb-6 text-glow">
+                Unleash <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">Seamless Mirroring.</span>
+            </h1>
+            <p class="text-xl sm:text-2xl text-slate-400 font-light mb-12 max-w-2xl mx-auto">
+                Zero Limits, Maximum Speed.<br>
+                <span class="text-indigo-400 font-medium">WZML-X</span> - The Ultimate Telegram Mirror & Leech Bot by <span class="font-bold text-slate-200">Syntax Realm</span>.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="https://t.me/SyntaxRealm" class="px-8 py-4 rounded-full bg-indigo-600 text-white font-semibold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Start Mirroring
+                </a>
+                <a href="https://t.me/SyntaxRealm" class="px-8 py-4 rounded-full glass-card text-white font-semibold text-lg hover:bg-white/10 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    Join Support
+                </a>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-infinity"></i></div>
-                <h3>No Limits</h3>
-                <p>Bypass restrictions and enjoy unlimited leeching, mirroring, and cloud transfers with ease.</p>
-            </div>
-        </section>
+        </div>
     </main>
 
-    <footer>
-        <a href="/" class="footer-logo">Syntax Realm</a>
-        <div class="social-links">
-            <a href="https://t.me/SyntaxRealm" class="social-link"><i class="fab fa-telegram-plane"></i></a>
-            <a href="https://t.me/SyntaxRealm" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="https://t.me/SyntaxRealm" class="social-link"><i class="fas fa-envelope"></i></a>
+    <!-- Footer -->
+    <footer class="glass-nav py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-slate-400 text-sm">
+                &copy; 2026 <span class="text-indigo-400 font-medium">Syntax Realm</span>. All rights reserved.
+            </p>
+            <div class="flex space-x-6">
+                <a href="#" class="text-slate-400 hover:text-indigo-400 transition-colors duration-300">
+                    <span class="sr-only">Telegram</span>
+                    <i class="fab fa-telegram-plane text-xl"></i>
+                </a>
+                <a href="#" class="text-slate-400 hover:text-indigo-400 transition-colors duration-300">
+                    <span class="sr-only">GitHub</span>
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+            </div>
         </div>
-        <p class="copyright">&copy; 2026 Syntax Realm. All rights reserved.</p>
     </footer>
 
+    <!-- FontAwesome for Icons in Footer (Optional if you use SVGs) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script>
-        // Navbar change background on scroll
-        window.addEventListener('scroll', () => {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
+        // Simple Mobile Menu Toggle
+        const btn = document.querySelector('button.md\\:hidden');
+        const menu = document.querySelector('#mobile-menu');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
         });
-
-        // Card Mouse Follow Effect
-        const cards = document.querySelectorAll('.feature-card');
-        cards.forEach(card => {
-            card.addEventListener('mousemove', e => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--mouse-x', `${x}px`);
-                card.style.setProperty('--mouse-y', `${y}px`);
-            });
-        });
-
-        // Advanced Parallax Starfield
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width, height, stars = [];
-
-        function init() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            stars = [];
-            // Three layers of stars for parallax
-            const layers = [
-                { count: 120, size: { min: 0.5, max: 1.2 }, speed: 0.2, color: 'rgba(255, 255, 255, 0.2)' },
-                { count: 60, size: { min: 1.2, max: 2.2 }, speed: 0.4, color: 'rgba(59, 130, 246, 0.3)' },
-                { count: 20, size: { min: 2.2, max: 3.5 }, speed: 0.7, color: 'rgba(251, 146, 60, 0.2)' }
-            ];
-
-            layers.forEach(layer => {
-                for (let i = 0; i < layer.count; i++) {
-                    stars.push({
-                        x: Math.random() * width,
-                        y: Math.random() * height,
-                        size: Math.random() * (layer.size.max - layer.size.min) + layer.size.min,
-                        speed: layer.speed,
-                        color: layer.color
-                    });
-                }
-            });
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
-            stars.forEach(star => {
-                ctx.fillStyle = star.color;
-                ctx.shadowBlur = star.size * 2;
-                ctx.shadowColor = star.color;
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fill();
-                
-                star.y += star.speed;
-                if (star.y > height) {
-                    star.y = -10;
-                    star.x = Math.random() * width;
-                }
-            });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', init);
-        init();
-        animate();
     </script>
 </body>
 </html>
