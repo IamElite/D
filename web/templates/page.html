@@ -278,177 +278,97 @@
             transform: translateY(-3px);
         }
 
-        /* Professional Floating Selection Panel (FSP) */
-        .fsp-panel {
+        /* Floating Summary Pop-up */
+        #floatingSummary {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
             width: 320px;
-            z-index: 2000;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 1.25rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            cursor: default;
             display: none;
             flex-direction: column;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeIn 0.4s ease-out;
             user-select: none;
         }
 
-        .light .fsp-panel {
-            background: var(--glass-bg-light);
-            border-color: rgba(0, 0, 0, 0.05);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .fsp-panel.minimized {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            bottom: 2rem;
-            right: 2rem;
-            cursor: pointer;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .fsp-header {
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: move;
-        }
-
-        .fsp-panel.minimized .fsp-header { display: none; }
-
-        .fsp-drag-indicator {
-            display: flex;
-            gap: 3px;
-        }
-
-        .fsp-drag-indicator span {
-            width: 4px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-        }
-
-        .fsp-toggle-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .fsp-panel.minimized .fsp-toggle-btn {
+        .drag-handle {
+            height: 12px;
             width: 100%;
-            height: 100%;
-            background: var(--primary);
-            color: white;
-            font-size: 1.25rem;
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
-        }
-
-        .fsp-body {
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .fsp-panel.minimized .fsp-body { display: none; }
-
-        .fsp-folder-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .fsp-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            opacity: 0.5;
-            font-weight: 700;
-        }
-
-        .fsp-folder-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .fsp-media-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
-
-        .fsp-media-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem 1rem 0 0;
+            cursor: move;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 0.75rem;
+            justify-content: center;
+        }
+
+        .drag-handle::after {
+            content: '';
+            width: 30px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .summary-content {
+            padding: 1.25rem;
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.5rem;
             font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .fsp-footer {
-            padding: 1rem 1.25rem;
-            background: rgba(0, 0, 0, 0.2);
-            border-top: 1px solid var(--glass-border);
+        .light .type-badge {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
         }
 
-        .fsp-stat-line {
+        .stat-row {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
-            margin-bottom: 0.25rem;
+            align-items: center;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
         }
 
-        .fsp-stat-line:last-child { margin-bottom: 0; }
-
-        .fsp-stat-value {
+        .stat-value {
             font-weight: 700;
-            color: var(--accent);
+            color: var(--primary);
         }
 
-        /* Responsive FSP */
+        /* Responsive Improvements */
         @media (max-width: 640px) {
-            .fsp-panel {
+            .btn { width: 100%; padding: 0.8rem; }
+            .flex-wrap { gap: 0.75rem; }
+            .header-title { font-size: 1.5rem; text-align: center; }
+            #floatingSummary {
+                bottom: 1rem;
+                right: 1rem;
                 width: calc(100% - 2rem);
-                max-width: 320px;
-                bottom: 1rem;
-                right: 1rem;
-            }
-            .fsp-panel.minimized {
-                bottom: 1rem;
-                right: 1rem;
+                max-width: 340px;
             }
         }
 
         /* Animations */
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-fsp { animation: fadeIn 0.4s ease-out; }
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
     </style>
 </head>
 
@@ -518,59 +438,217 @@
         </div>
     </main>
 
-    <!-- Professional Floating Selection Panel -->
-    <div id="fspPanel" class="fsp-panel minimized animate-fsp">
-        <div class="fsp-header" id="fspDragHandle">
-            <div class="fsp-drag-indicator">
-                <span></span><span></span><span></span>
-            </div>
-            <div class="fsp-toggle-btn" id="fspCollapseBtn">
-                <i class="fas fa-chevron-down"></i>
+    <!-- Floating Selection Summary -->
+    <!-- Floating Selection Panel -->
+    <div id="floatingPanel" class="floating-panel glass-card minimized">
+        <div class="floating-header" id="floatingHeader">
+            <div class="drag-handle-bar"></div>
+            <div class="header-content">
+                <span class="icon">📊</span>
+                <span class="title">Selection Analysis</span>
+                <span class="toggle-icon"><i class="fas fa-chevron-up"></i></span>
             </div>
         </div>
-        
-        <div class="fsp-body">
-            <div class="fsp-folder-info">
-                <span class="fsp-label">Current Folder</span>
-                <span id="fspFolderName" class="fsp-folder-name">Root</span>
+        <div class="floating-content">
+            <div class="panel-section">
+                <div class="label">Current Location</div>
+                <div id="fpFolder" class="value truncate text-indigo-400">Root</div>
+            </div>
+            
+            <div class="panel-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="fpSelected">0</div>
+                    <div class="stat-lbl">Selected</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="fpTotal">0</div>
+                    <div class="stat-lbl">Total Files</div>
+                </div>
             </div>
 
-            <div class="fsp-media-grid">
-                <div class="fsp-media-item">
-                    <i class="fas fa-file-video text-sky-400"></i>
-                    <span id="fspVideoCount">0</span>
-                </div>
-                <div class="fsp-media-item">
-                    <i class="fas fa-file-audio text-fuchsia-400"></i>
-                    <span id="fspAudioCount">0</span>
-                </div>
-                <div class="fsp-media-item">
-                    <i class="fas fa-file-image text-emerald-400"></i>
-                    <span id="fspImageCount">0</span>
-                </div>
-                <div class="fsp-media-item">
-                    <i class="fas fa-file-alt text-slate-400"></i>
-                    <span id="fspOtherCount">0</span>
+            <div class="panel-section">
+                <div class="label">Media Breakdown</div>
+                <div id="fpMedia" class="media-tags">
+                    <!-- Tags injected via JS -->
                 </div>
             </div>
-        </div>
 
-        <div class="fsp-footer">
-            <div class="fsp-stat-line">
-                <span class="opacity-60">Selected Files</span>
-                <span id="fspSelectedTotal" class="fsp-stat-value">0 / 0</span>
+            <div class="panel-footer">
+                <div class="summary-row">
+                    <span>Selection Size</span>
+                    <span id="fpSize" class="text-white font-bold">0 B</span>
+                </div>
+                <div class="summary-progress">
+                    <div id="fpProgressBar" class="progress-bar" style="width: 0%"></div>
+                </div>
             </div>
-            <div class="fsp-stat-line">
-                <span class="opacity-60">Total Size</span>
-                <span id="fspSizeTotal" class="fsp-stat-value">0 B / 0 B</span>
-            </div>
-        </div>
-        
-        <!-- Minimized State Trigger -->
-        <div id="fspExpandBtn" class="fsp-toggle-btn hidden">
-            <i class="fas fa-chart-pie"></i>
         </div>
     </div>
+
+    <style>
+        /* Floating Panel Scoped Styles */
+        .floating-panel {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 300px;
+            z-index: 9999;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .floating-panel.minimized {
+            height: 60px;
+            width: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+        }
+
+        .floating-panel.minimized .floating-content,
+        .floating-panel.minimized .title,
+        .floating-panel.minimized .drag-handle-bar,
+        .floating-panel.minimized .toggle-icon {
+            display: none;
+        }
+
+        .floating-panel.minimized .header-content {
+            padding: 0;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .floating-panel.minimized .icon {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .floating-header {
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            cursor: grab;
+            user-select: none;
+            touch-action: none; /* Prevent scroll on mobile */
+        }
+
+        .floating-header:active {
+            cursor: grabbing;
+        }
+
+        .drag-handle-bar {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 0 auto 0.5rem;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-content .title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-grow: 1;
+            margin-left: 0.5rem;
+        }
+
+        .floating-content {
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .panel-section {
+            margin-bottom: 1rem;
+        }
+
+        .panel-section .label {
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.05em;
+            opacity: 0.6;
+            margin-bottom: 0.25rem;
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+
+        .stat-lbl {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .media-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .media-tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .panel-footer {
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 0.75rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 640px) {
+            .floating-panel {
+                /* Initially positioned safely for mobile */
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+    </style>
 
     <footer>
         <div class="container mx-auto px-6">
@@ -621,18 +699,13 @@
         const invertSelectionBtn = document.getElementById('invertSelectionBtn');
         const selectEverythingBtn = document.getElementById('selectEverythingBtn');
         
-        // FSP Elements
-        const fspPanel = document.getElementById('fspPanel');
-        const fspDragHandle = document.getElementById('fspDragHandle');
-        const fspExpandBtn = document.getElementById('fspExpandBtn');
-        const fspCollapseBtn = document.getElementById('fspCollapseBtn');
-        const fspFolderName = document.getElementById('fspFolderName');
-        const fspVideoCount = document.getElementById('fspVideoCount');
-        const fspAudioCount = document.getElementById('fspAudioCount');
-        const fspImageCount = document.getElementById('fspImageCount');
-        const fspOtherCount = document.getElementById('fspOtherCount');
-        const fspSelectedTotal = document.getElementById('fspSelectedTotal');
-        const fspSizeTotal = document.getElementById('fspSizeTotal');
+        // Floating UI Elements
+        const floatingSummary = document.getElementById('floatingSummary');
+        const dragHandle = document.getElementById('dragHandle');
+        const sumFolder = document.getElementById('sumFolder');
+        const sumTypes = document.getElementById('sumTypes');
+        const sumSelection = document.getElementById('sumSelection');
+        const sumSize = document.getElementById('sumSize');
 
         let currentFolder = null;
         let files = [];
@@ -647,65 +720,50 @@
             setTimeout(() => submitPin.click(), 0);
         }
 
-        // Minimized/Expanded Logic
-        function toggleFSP(maximize) {
-            if (maximize) {
-                fspPanel.classList.remove('minimized');
-                fspExpandBtn.classList.add('hidden');
-            } else {
-                fspPanel.classList.add('minimized');
-                fspExpandBtn.classList.remove('hidden');
-            }
-        }
-
-        fspExpandBtn.onclick = (e) => { e.stopPropagation(); toggleFSP(true); };
-        fspCollapseBtn.onclick = (e) => { e.stopPropagation(); toggleFSP(false); };
-        fspPanel.onclick = () => fspPanel.classList.contains('minimized') && toggleFSP(true);
-
-        // Draggable Logic for FSP (PC + Mobile)
+        // Draggable Logic for Floating Summary
         function initDraggable(el, handle) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            handle.onmousedown = dragStart;
-            handle.ontouchstart = (e) => dragStart(e.touches[0]);
+            handle.onmousedown = dragMouseDown;
+            handle.ontouchstart = dragMouseDown;
 
-            function dragStart(e) {
-                if (el.classList.contains('minimized')) return;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = dragEnd;
-                document.ontouchend = dragEnd;
-                document.onmousemove = dragMove;
-                document.ontouchmove = (ev) => dragMove(ev.touches[0]);
+            function dragMouseDown(e) {
+                e = e || window.event;
+                // Get the starting cursor/touch position
+                pos3 = e.clientX || (e.touches && e.touches[0].clientX);
+                pos4 = e.clientY || (e.touches && e.touches[0].clientY);
+                document.onmouseup = closeDragElement;
+                document.ontouchend = closeDragElement;
+                document.onmousemove = elementDrag;
+                document.ontouchmove = elementDrag;
             }
 
-            function dragMove(e) {
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
+            function elementDrag(e) {
+                e = e || window.event;
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
                 
-                let newTop = el.offsetTop - pos2;
-                let newLeft = el.offsetLeft - pos1;
+                // Calculate new position
+                pos1 = pos3 - clientX;
+                pos2 = pos4 - clientY;
+                pos3 = clientX;
+                pos4 = clientY;
                 
-                // Keep within viewport
-                const padding = 10;
-                newTop = Math.max(padding, Math.min(newTop, window.innerHeight - el.offsetHeight - padding));
-                newLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - el.offsetWidth - padding));
-
-                el.style.top = newTop + "px";
-                el.style.left = newLeft + "px";
+                // Set the element's new position
+                el.style.top = (el.offsetTop - pos2) + "px";
+                el.style.left = (el.offsetLeft - pos1) + "px";
                 el.style.bottom = "auto";
                 el.style.right = "auto";
             }
 
-            function dragEnd() {
+            function closeDragElement() {
+                // stop moving when mouse button is released
                 document.onmouseup = null;
                 document.onmousemove = null;
                 document.ontouchend = null;
                 document.ontouchmove = null;
             }
         }
-        initDraggable(fspPanel, fspDragHandle);
+        initDraggable(floatingSummary, dragHandle);
 
         function loadThemePreference() {
             const savedTheme = localStorage.getItem('darkMode');
@@ -873,46 +931,11 @@
             selectedSize.textContent = formatSize(stats.selSize);
             totalSize.textContent = formatSize(stats.totSize);
             
-            // Professional FSP panel update
-            fspFolderName.textContent = currentFolder ? currentFolder.name : 'Root';
-            fspVideoCount.textContent = stats.typeCounts.video;
-            fspAudioCount.textContent = stats.typeCounts.audio;
-            fspImageCount.textContent = stats.typeCounts.image;
-            fspOtherCount.textContent = stats.typeCounts.other;
-            fspSelectedTotal.textContent = `${stats.selCount} / ${stats.totCount}`;
-            fspSizeTotal.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
-        }
-
-        function calculateStats(nodes) {
-            let selCount = 0, totCount = 0, selSize = 0, totSize = 0;
-            const typeCounts = { video: 0, audio: 0, image: 0, other: 0 };
-            const queue = [...nodes];
-            while (queue.length > 0) {
-                const node = queue.pop();
-                if (node.type === 'file') {
-                    totCount++; totSize += node.size;
-                    const ext = node.name.split('.').pop().toLowerCase();
-                    let type = 'other';
-                    if (['mp4','mkv','avi','mov'].includes(ext)) type = 'video';
-                    else if (['mp3','flac','wav','m4a'].includes(ext)) type = 'audio';
-                    else if (['jpg','jpeg','png','gif','webp'].includes(ext)) type = 'image';
-                    
-                    if (node.selected) { 
-                        selCount++; selSize += node.size; 
-                        typeCounts[type]++;
-                    }
-                }
-                if (node.children) queue.push(...node.children);
+            // Update Floating UI
+            if (typeof updateFloatingPanelStats === 'function') {
+                updateFloatingPanelStats();
             }
-            return { selCount, totCount, selSize, totSize, typeCounts };
         }
-
-        function openFolder(folder) {
-            currentFolder = folder;
-            renderFileTree(folder.children);
-            updateStats();
-        }
-
         function goBack() {
             if (!currentFolder) return;
             const parent = findParent(files[0], currentFolder.id);
@@ -1047,7 +1070,7 @@
                     setTimeout(() => {
                         pinEntry.style.display = 'none';
                         fileManager.classList.remove('hidden');
-                        fspPanel.style.display = 'flex';
+                        document.getElementById('floatingPanel').classList.remove('hidden'); // Ensure panel is visible
                         renderFileTree(files);
                         updateStats();
                     }, 400);
@@ -1062,6 +1085,7 @@
         });
 
         themeToggle.addEventListener('change', toggleTheme);
+        // Removed duplicate declarations of invertSelectionBtn and selectEverythingBtn
 
         invertSelectionBtn.addEventListener('click', invertSelection);
         selectEverythingBtn.addEventListener('click', selectEverything);
@@ -1081,8 +1105,178 @@
             selectEverythingBtn.innerHTML = allSel ? '<i class="fas fa-times-circle"></i> Deselect All' : '<i class="fas fa-globe"></i> Select All';
         }
 
+        // Floating Panel Logic
+        const floatingPanel = document.getElementById('floatingPanel');
+        const floatingHeader = document.getElementById('floatingHeader');
+        
+        let isPanelOpen = false;
+        let isDragging = false;
+        let panelState = {
+            x: 0,
+            y: 0,
+            initialX: 0,
+            initialY: 0,
+            xOffset: 0,
+            yOffset: 0
+        };
+
+        const fpFolder = document.getElementById('fpFolder');
+        const fpSelected = document.getElementById('fpSelected');
+        const fpTotal = document.getElementById('fpTotal');
+        const fpMedia = document.getElementById('fpMedia');
+        const fpSize = document.getElementById('fpSize');
+        const fpProgressBar = document.getElementById('fpProgressBar');
+
+        function dragStart(e) {
+            if (e.type === "touchstart") {
+                panelState.initialX = e.touches[0].clientX - panelState.xOffset;
+                panelState.initialY = e.touches[0].clientY - panelState.yOffset;
+            } else {
+                panelState.initialX = e.clientX - panelState.xOffset;
+                panelState.initialY = e.clientY - panelState.yOffset;
+            }
+
+            if (e.target === floatingHeader || floatingHeader.contains(e.target) || floatingPanel.classList.contains('minimized')) {
+                isDragging = true;
+            }
+        }
+
+        function dragEnd(e) {
+            panelState.initialX = panelState.x;
+            panelState.initialY = panelState.y;
+            setTimeout(() => { isDragging = false; }, 50);
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                let currentX, currentY;
+
+                if (e.type === "touchmove") {
+                    currentX = e.touches[0].clientX - panelState.initialX;
+                    currentY = e.touches[0].clientY - panelState.initialY;
+                } else {
+                    currentX = e.clientX - panelState.initialX;
+                    currentY = e.clientY - panelState.initialY;
+                }
+
+                panelState.xOffset = currentX;
+                panelState.yOffset = currentY;
+
+                setTranslate(currentX, currentY, floatingPanel);
+            }
+        }
+
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+        }
+
+        function togglePanel() {
+            if (isDragging) return;
+            isPanelOpen = !isPanelOpen;
+            if (isPanelOpen) {
+                floatingPanel.classList.remove('minimized');
+                floatingPanel.querySelector('.header-content .icon').textContent = '📊';
+            } else {
+                floatingPanel.classList.add('minimized');
+                floatingPanel.querySelector('.header-content .icon').textContent = '📊';
+            }
+        }
+
+        floatingPanel.addEventListener("touchstart", dragStart, false);
+        floatingPanel.addEventListener("touchend", dragEnd, false);
+        floatingPanel.addEventListener("touchmove", drag, false);
+
+        floatingPanel.addEventListener("mousedown", dragStart, false);
+        floatingPanel.addEventListener("mouseup", dragEnd, false);
+        floatingPanel.addEventListener("mousemove", drag, false);
+
+        floatingPanel.addEventListener("click", (e) => {
+            if (floatingPanel.classList.contains('minimized') || floatingHeader.contains(e.target)) {
+                togglePanel();
+            }
+        });
+
+        function updateFloatingPanelStats() {
+            const stats = calculateStats(files);
+            
+            fpFolder.textContent = currentFolder ? currentFolder.name : 'Root Folder';
+            fpSelected.textContent = stats.selCount;
+            fpTotal.textContent = stats.totCount;
+            fpSize.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
+
+            const percentage = stats.totSize > 0 ? (stats.selSize / stats.totSize) * 100 : 0;
+            fpProgressBar.style.width = `${percentage}%`;
+
+            fpMedia.innerHTML = '';
+            const typeConfig = [
+                { id: 'video', label: 'Video', color: 'text-sky-400' },
+                { id: 'audio', label: 'Audio', color: 'text-fuchsia-400' },
+                { id: 'image', label: 'Img', color: 'text-emerald-400' },
+                { id: 'document', label: 'Doc', color: 'text-slate-400' },
+                { id: 'other', label: 'Other', color: 'text-gray-400' }
+            ];
+
+            let hasMedia = false;
+            typeConfig.forEach(t => {
+                const count = stats.typeCounts ? stats.typeCounts[t.id] : 0;
+                if (count > 0) {
+                    hasMedia = true;
+                    fpMedia.innerHTML += `
+                        <div class="media-tag">
+                            <i class="fas fa-circle ${t.color} text-[6px]"></i>
+                            ${t.label}: ${count}
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasMedia) {
+                fpMedia.innerHTML = '<span class="opacity-50 text-[10px]">No files selected</span>';
+            }
+        }
+
+        function calculateStats(nodes) {
+            let selCount = 0;
+            let totCount = 0;
+            let selSize = 0;
+            let totSize = 0;
+            let typeCounts = {};
+
+            function traverse(list) {
+                list.forEach(node => {
+                    if (node.type === 'folder') {
+                        if (node.children) traverse(node.children);
+                    } else {
+                        totCount++;
+                        totSize += node.size;
+                        
+                        // Parse extension for type counting
+                        const ext = node.name.split('.').pop().toLowerCase();
+                        let type = 'other';
+                        if (['mp4','mkv','avi','mov'].includes(ext)) type = 'video';
+                        else if (['mp3','flac','wav','m4a'].includes(ext)) type = 'audio';
+                        else if (['jpg','jpeg','png','gif','webp'].includes(ext)) type = 'image';
+                        else if (['pdf','doc','docx','txt'].includes(ext)) type = 'document';
+                        
+                        // Initialize type count in 'total' context if needed? 
+                        // Actually, requirements often want just "Selected Media Breakdown".
+                        // The previous UI showed "Media Breakdown" which usually implies "Selected".
+                        // Let's assume typeCounts is for *selected* files based on the UI context.
+                        
+                        if (node.selected) {
+                            selCount++;
+                            selSize += node.size;
+                            typeCounts[type] = (typeCounts[type] || 0) + 1;
+                        }
+                    }
+                });
+            }
+            traverse(nodes);
+            return { selCount, totCount, selSize, totSize, typeCounts };
+        }
+
         loadThemePreference();
     </script>
 </body>
-
 </html>
