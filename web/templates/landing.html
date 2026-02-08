@@ -1,509 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WZML-X | Syntax Realm</title>
-    <link rel="icon" href="https://files.catbox.moe/oh06q2.jpg" type="image/png">
+    <link rel="icon" href="https://i.postimg.cc/XvdvXTkS/photo-2024-12-27-11-46-15.jpg" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
     <style>
         :root {
+            --primary: #6366f1;
+            --accent: #ef8354;
             --bg-dark: #0f172a;
-            --bg-slate: #1e293b;
-            --primary: #3b82f6;
-            --accent: #fb923c;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glow: rgba(59, 130, 246, 0.5);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            --bg-light: #f8fafc;
+            --glass-dark: rgba(255, 255, 255, 0.05);
+            --glass-light: rgba(255, 255, 255, 0.7);
+            --text-dark: #f8fafc;
+            --text-light: #0f172a;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
+            font-family: 'Poppins', 'Nunito', sans-serif;
+            transition: background-color 0.5s ease;
+            margin: 0;
+            padding: 0;
             overflow-x: hidden;
-            background: radial-gradient(circle at top right, #1e3a8a 0%, transparent 40%),
-                        radial-gradient(circle at bottom left, #431407 0%, transparent 40%),
-                        var(--bg-dark);
-        }
-
-        /* Particles Background */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.6;
-            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
-        }
-
-        /* Navbar */
-        .navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 100;
-            padding: 1.25rem 2rem;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.4s ease;
-        }
-
-        .navbar.scrolled {
-            padding: 0.75rem 2rem;
-            background: rgba(15, 23, 42, 0.9);
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: var(--text-main);
-            font-weight: 800;
-            font-size: 1.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .nav-brand span {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--text-dim);
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-link:hover {
-            color: var(--text-main);
-            transform: translateY(-1px);
-        }
-
-        /* Hero Section */
-        .hero {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 0 1rem;
-            position: relative;
         }
 
-        .hero-logo-container {
-            position: relative;
-            margin-bottom: 2.5rem;
+        body.dark {
+            background: var(--bg-dark);
+            color: var(--text-dark);
         }
 
-        .hero-logo {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            border: 4px solid var(--glass-border);
-            padding: 5px;
-            background: var(--bg-slate);
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.2);
-            position: relative;
-            z-index: 2;
-            transition: all 0.5s ease;
+        body.light {
+            background: var(--bg-light);
+            color: var(--text-light);
         }
 
-        .hero-logo-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px;
-            height: 220px;
-            background: var(--primary);
-            filter: blur(60px);
-            opacity: 0.3;
-            z-index: 1;
-            border-radius: 50%;
-            animation: pulse 4s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.3; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.5; }
-            100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.3; }
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            max-width: 900px;
-            background: linear-gradient(to bottom, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero .highlight {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            color: var(--text-dim);
-            font-size: 1.25rem;
-            max-width: 600px;
-            margin-bottom: 3rem;
-            line-height: 1.6;
-        }
-
-        .hero-btns {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 30px -10px rgba(59, 130, 246, 0.6);
-            background: #2563eb;
-        }
-
-        .btn-glass {
-            background: var(--glass);
-            color: var(--text-main);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-glass:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-3px);
-            border-color: rgba(255,255,255,0.3);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 100px 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            padding: 2.5rem;
-            border-radius: 24px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            text-align: left;
-            position: relative;
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
             overflow: hidden;
         }
 
-        .feature-card::before {
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            filter: blur(80px);
+            opacity: 0.15;
+            border-radius: 50%;
+            animation: move 20s infinite alternate;
+        }
+
+        .blob-1 { background: var(--primary); top: -10%; left: -10%; }
+        .blob-2 { background: var(--accent); bottom: -10%; right: -10%; animation-delay: -5s; }
+
+        @keyframes move {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(100px, 100px) scale(1.2); }
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            z-index: 100;
+            padding: 1.25rem 0;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        body.light nav {
+            background: rgba(255, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-link {
+            position: relative;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .nav-link::after {
             content: '';
             position: absolute;
-            inset: 0;
-            background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.1), transparent 40%);
-            z-index: 0;
-            opacity: 0;
-            transition: opacity 0.5s;
+            bottom: -5px; left: 0;
+            width: 0; height: 2px;
+            background: var(--accent);
+            transition: width 0.3s;
         }
 
-        .feature-card:hover::before {
-            opacity: 1;
-        }
+        .nav-link:hover::after { width: 100%; }
 
-        .feature-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
-        }
-
-        .feature-card > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 16px;
+        /* Hero Section */
+        .hero {
+            flex-grow: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-        }
-
-        .feature-card p {
-            color: var(--text-dim);
-            line-height: 1.6;
-        }
-
-        /* Footer */
-        footer {
-            padding: 4rem 2rem;
-            border-top: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.5);
+            padding-top: 80px;
             text-align: center;
         }
 
-        .footer-logo {
-            font-weight: 800;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            display: block;
-            text-decoration: none;
-            color: var(--text-main);
+        .hero-card {
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 2rem;
+            max-width: 800px;
+            margin: 0 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.8s ease-out;
         }
 
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+        body.light .hero-card {
+            background: var(--glass-light);
+            border-color: rgba(0, 0, 0, 0.05);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        .social-link {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .hero-logo {
+            width: 140px;
+            height: 140px;
+            border-radius: 2.5rem;
+            margin: 0 auto 2rem;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+            border: 4px solid var(--accent);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .hero-logo:hover { transform: rotate(10deg) scale(1.1); }
+
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Custom Switch */
+        .switch-container {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 32px;
+        }
+
+        .switch-container input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "🌙";
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-dim);
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
+            font-size: 14px;
+            height: 24px;
+            width: 24px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
         }
 
-        .social-link:hover {
-            color: var(--primary);
-            background: rgba(255,255,255,0.08);
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before {
+            transform: translateX(28px);
+            content: "☀️";
+        }
+
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .feature-item {
+            padding: 1.5rem;
+            border-radius: 1.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.06);
             transform: translateY(-5px);
-            border-color: var(--primary);
         }
 
-        .copyright {
-            color: var(--text-dim);
-            font-size: 0.9rem;
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .navbar { padding: 1rem; }
-            .nav-links { display: none; }
-            .hero h1 { font-size: 2.5rem; }
-            .hero p { font-size: 1.1rem; }
-            .hero-btns { flex-direction: column; width: 100%; max-width: 300px; }
-            .hero-logo { width: 140px; height: 140px; }
-            .hero-logo-glow { width: 170px; height: 170px; }
+        body.light .text-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #4f46e5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
     </style>
 </head>
-<body>
-    <canvas id="bg-canvas"></canvas>
 
-    <nav class="navbar" id="navbar">
-        <a href="/" class="nav-brand">
-            <i class="fas fa-bolt"></i> <span>Syntax Realm</span>
-        </a>
-        <div class="nav-links">
-            <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fab fa-telegram-plane"></i> Updates</a>
-            <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fas fa-headset"></i> Support</a>
-            <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fab fa-github"></i> source</a>
+<body class="dark">
+    <div class="bg-gradient">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <nav>
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🚀</span>
+                <span class="text-xl font-bold tracking-tight">WZML-X</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-8">
+                <a href="https://t.me/SyntaxRealm" class="nav-link">Telegram</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="https://t.me/SyntaxRealm" class="nav-link">Support</a>
+                <label class="switch-container">
+                    <input type="checkbox" id="themeToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="md:hidden">
+                <label class="switch-container scale-75">
+                    <input type="checkbox" id="themeToggleMobile" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
     </nav>
 
-    <main>
-        <section class="hero">
-            <div class="hero-logo-container">
-                <div class="hero-logo-glow"></div>
-                <img src="https://files.catbox.moe/oh06q2.jpg" alt="Syntax Realm" class="hero-logo">
-            </div>
-            <h1>The Future of <span class="highlight">Seamless mirroring.</span></h1>
-            <p>Experience the ultimate Telegram Mirror & Leech bot. Powered by Syntax Realm, engineered for maximum performance and zero limits.</p>
-            <div class="hero-btns">
-                <a href="https://t.me/SyntaxRealm" class="btn btn-primary">
-                    <i class="fab fa-telegram-plane"></i> Get Started
+    <main class="hero">
+        <div class="hero-card">
+            <img src="https://files.catbox.moe/oh06q2.jpg" alt="Logo" class="hero-logo">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+                <span class="text-gradient">Unlimited Power.</span><br>
+                <span class="text-indigo-400">Zero Compromise.</span>
+            </h1>
+            <p class="text-lg md:text-xl opacity-70 mb-10 max-w-2xl mx-auto">
+                Experience the world's most advanced Telegram Mirror & Leech engine. Designed for speed, built for reliability, and optimized for YOU.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                <a href="https://t.me/SyntaxRealm" class="btn-glow bg-indigo-600 px-8 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2">
+                    <i class="fab fa-telegram-plane"></i> Join Telegram
                 </a>
-                <a href="#features" class="btn btn-glass">
-                    Explore Features
+                <a href="/app" class="bg-white bg-opacity-10 px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 border border-white border-opacity-10 hover:bg-opacity-20 transition-all">
+                    <i class="fas fa-play"></i> Get Started
                 </a>
             </div>
-        </section>
 
-        <section class="features" id="features">
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-rocket"></i></div>
-                <h3>Insane Speed</h3>
-                <p>High-performance mirrors powered by multi-threaded downloading and premium network architecture.</p>
+            <div id="features" class="feature-grid">
+                <div class="feature-item">
+                    <i class="fas fa-bolt text-amber-400 text-2xl mb-4"></i>
+                    <h3 class="font-bold mb-2">Supersonic Speed</h3>
+                    <p class="text-sm opacity-60">Optimized multithreading for maximum throughput.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-shield-alt text-emerald-400 text-2xl mb-4"></i>
+                    <h3 class="font-bold mb-2">Rock Solid</h3>
+                    <p class="text-sm opacity-60">High availability infrastructure with zero downtime.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-magic text-fuchsia-400 text-2xl mb-4"></i>
+                    <h3 class="font-bold mb-2">Smart UI</h3>
+                    <p class="text-sm opacity-60">Beautiful glassmorphism interface across all devices.</p>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
-                <h3>Rock Solid</h3>
-                <p>99.9% uptime with robust error handling and automated task management for a worry-free experience.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-infinity"></i></div>
-                <h3>No Limits</h3>
-                <p>Bypass restrictions and enjoy unlimited leeching, mirroring, and cloud transfers with ease.</p>
-            </div>
-        </section>
+        </div>
     </main>
 
     <footer>
-        <a href="/" class="footer-logo">Syntax Realm</a>
-        <div class="social-links">
-            <a href="https://t.me/SyntaxRealm" class="social-link"><i class="fab fa-telegram-plane"></i></a>
-            <a href="https://t.me/SyntaxRealm" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="https://t.me/SyntaxRealm" class="social-link"><i class="fas fa-envelope"></i></a>
+        <div class="container mx-auto px-6">
+            <div class="mb-6 flex justify-center gap-6">
+                <a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i class="fab fa-github text-xl"></i></a>
+                <a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i class="fab fa-telegram text-xl"></i></a>
+            </div>
+            <p class="text-sm opacity-50">&copy; 2026 Syntax Realm. All rights reserved.</p>
         </div>
-        <p class="copyright">&copy; 2026 Syntax Realm. All rights reserved.</p>
     </footer>
 
     <script>
-        // Navbar change background on scroll
-        window.addEventListener('scroll', () => {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
+        const themeToggles = [document.getElementById('themeToggle'), document.getElementById('themeToggleMobile')];
+        const body = document.body;
+
+        function setTheme(isDark) {
+            body.classList.toggle('dark', isDark);
+            body.classList.toggle('light', !isDark);
+            themeToggles.forEach(t => t && (t.checked = isDark));
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        themeToggles.forEach(t => {
+            if (t) {
+                t.addEventListener('change', () => setTheme(t.checked));
             }
         });
 
-        // Card Mouse Follow Effect
-        const cards = document.querySelectorAll('.feature-card');
-        cards.forEach(card => {
-            card.addEventListener('mousemove', e => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--mouse-x', `${x}px`);
-                card.style.setProperty('--mouse-y', `${y}px`);
-            });
-        });
-
-        // Advanced Parallax Starfield
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width, height, stars = [];
-
-        function init() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            stars = [];
-            // Three layers of stars for parallax
-            const layers = [
-                { count: 120, size: { min: 0.5, max: 1.2 }, speed: 0.2, color: 'rgba(255, 255, 255, 0.2)' },
-                { count: 60, size: { min: 1.2, max: 2.2 }, speed: 0.4, color: 'rgba(59, 130, 246, 0.3)' },
-                { count: 20, size: { min: 2.2, max: 3.5 }, speed: 0.7, color: 'rgba(251, 146, 60, 0.2)' }
-            ];
-
-            layers.forEach(layer => {
-                for (let i = 0; i < layer.count; i++) {
-                    stars.push({
-                        x: Math.random() * width,
-                        y: Math.random() * height,
-                        size: Math.random() * (layer.size.max - layer.size.min) + layer.size.min,
-                        speed: layer.speed,
-                        color: layer.color
-                    });
-                }
-            });
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
-            stars.forEach(star => {
-                ctx.fillStyle = star.color;
-                ctx.shadowBlur = star.size * 2;
-                ctx.shadowColor = star.color;
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fill();
-                
-                star.y += star.speed;
-                if (star.y > height) {
-                    star.y = -10;
-                    star.x = Math.random() * width;
-                }
-            });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', init);
-        init();
-        animate();
+        // Initialize theme
+        const savedTheme = localStorage.getItem('darkMode');
+        setTheme(savedTheme !== null ? savedTheme === 'true' : true);
     </script>
 </body>
+
 </html>

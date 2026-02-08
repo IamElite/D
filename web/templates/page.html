@@ -1,661 +1,782 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Torrent Selector | Syntax Realm</title>
+    <title>Torrent Selector</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap');
+
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --primary: #3b82f6;
-            --accent: #fb923c;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.03);
+            --bg-dark: #111827;
+            --bg-light: #f3f4f6;
+            --primary: #6366f1;
+            --accent: #ef8354;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-bg-light: rgba(255, 255, 255, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --text-dark: #f9fafb;
+            --text-light: #1f2937;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
+            font-family: 'Poppins', 'Nunito', sans-serif;
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            background: radial-gradient(circle at top right, #1e3a8a 0%, transparent 40%),
-                        var(--bg-dark);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            background-attachment: fixed;
+        }
+
+        body.dark {
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            color: var(--text-dark);
+        }
+
+        body.light {
+            background: radial-gradient(circle at top left, #f3f4f6, #e5e7eb);
+            color: var(--text-light);
+        }
+
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .light .glass-card {
+            background: var(--glass-bg-light);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
         }
 
         header {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--glass-border);
             padding: 1.5rem 0;
             position: sticky;
             top: 0;
-            z-index: 50;
+            z-index: 100;
         }
 
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
+        .light header {
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
-        .brand-logo {
-            font-weight: 800;
-            font-size: 1.5rem;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .brand-logo i { color: var(--primary); }
-
-        .theme-switch {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            padding: 5px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .theme-icon {
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .theme-icon.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 0 15px var(--primary);
-        }
-
-        main {
-            flex-grow: 1;
-            padding: 2rem 1rem;
-            max-width: 1000px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        #pinEntry {
-            text-align: center;
-            max-width: 450px;
-            margin: 4rem auto;
-            animation: slideUp 0.6s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .pin-input-group {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin: 2.5rem 0;
-        }
-
-        .pin-digit {
-            width: 60px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid var(--glass-border);
-            border-radius: 16px;
-            color: white;
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            line-height: 70px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .pin-digit:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: rgba(59, 130, 246, 0.1);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.3);
-        }
-
-        #pinInput { 
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .btn-modern {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 12px;
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.75rem;
             font-weight: 600;
-            font-size: 1rem;
-            background: var(--primary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
             color: white;
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.23);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: inherit;
+        }
+
+        .light .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 54px;
+            height: 28px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .file-tree-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 0.75rem;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .file-tree-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .light .file-tree-item:hover {
+            background: rgba(0,0,0,0.03);
+            border-color: rgba(0,0,0,0.05);
+        }
+
+        .icon {
+            margin-right: 12px;
+            font-size: 1.4rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            width: 24px;
         }
 
-        .btn-modern:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.5);
-            background: #2563eb;
+        .folder {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--accent);
         }
 
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .btn-control {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            padding: 0.75rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-main);
-            transition: all 0.2s ease;
+        .file-info {
             display: flex;
             flex-direction: column;
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .size-info {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             align-items: center;
-            gap: 4px;
+            justify-content: center;
         }
 
-        .btn-control:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-        }
-
-        .stats-summary {
-            background: rgba(0,0,0,0.2);
-            border-radius: 16px;
-            padding: 1.25rem;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-around;
-            border: 1px solid var(--glass-border);
-        }
-
-        .stat-item { text-align: center; }
-        .stat-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--primary); }
-        .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); }
-
-        .file-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--glass-border);
-            transition: all 0.2s ease;
-            border-radius: 12px;
-            margin-bottom: 4px;
-        }
-
-        .file-item:hover { background: rgba(255, 255, 255, 0.04); }
-
-        .file-checkbox {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 22px;
-            height: 22px;
-            border-radius: 6px;
-            border: 2px solid var(--glass-border);
-            background: var(--glass);
-            cursor: pointer;
-            margin-right: 1.25rem;
-            flex-shrink: 0;
-            position: relative;
-            transition: all 0.2s ease;
-        }
-
-        .file-checkbox:checked {
-            background: var(--primary);
-            border-color: var(--primary);
-            box-shadow: 0 0 10px var(--primary);
-        }
-
-        .file-checkbox:checked::after {
-            content: '\f00c';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
+        .modal-content {
+            background: #1e293b;
             color: white;
-            font-size: 12px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            padding: 2rem;
+            border-radius: 1.25rem;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
         }
 
-        .file-icon { font-size: 1.25rem; margin-right: 1rem; flex-shrink: 0; }
-        .file-details { flex-grow: 1; min-width: 0; cursor: pointer; }
-        .file-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-        .file-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; gap: 12px; margin-top: 2px; }
+        .modal.active .modal-content { transform: scale(1); }
 
-        .action-btns { display: flex; gap: 10px; margin-left: 10px; }
-        .action-btn { color: var(--text-dim); transition: 0.2s; cursor: pointer; padding: 5px; }
-        .action-btn:hover { color: var(--primary); }
+        .light .modal-content {
+            background: white;
+            color: #1f2937;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
 
-        .folder-back {
-            color: var(--primary);
-            font-weight: 600;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            display: flex;
+        .pin-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: all 0.3s;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .pin-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .light .pin-input {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            color: #111827;
+        }
+
+        footer {
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid var(--glass-border);
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .social-button {
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 1rem;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 0.75rem;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        footer { padding: 3rem 0; border-top: 1px solid var(--glass-border); background: rgba(15, 23, 42, 0.5); margin-top: auto; }
-        .footer-content { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-        .social-btns { display: flex; gap: 1rem; }
-        .social-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--glass); display: flex; align-items: center; justify-content: center; color: var(--text-dim); transition: all 0.3s ease; border: 1px solid var(--glass-border); }
-        .social-btn:hover { color: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
+        .social-button:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; padding: 1.5rem; }
-        .modal-content { background: #1e293b; border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .edit-input { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: white; margin-bottom: 20px; }
+        /* Responsive Improvements */
+        @media (max-width: 640px) {
+            .btn { width: 100%; padding: 0.8rem; }
+            .flex-wrap { gap: 0.75rem; }
+            .header-title { font-size: 1.5rem; text-align: center; }
+        }
 
-        @media (max-width: 640px) { .controls-grid { grid-template-columns: repeat(2, 1fr); } .brand-logo span { display: none; } }
+        /* Animations */
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
     </style>
 </head>
-<body>
+
+<body class="dark">
     <header>
-        <div class="header-content">
-            <a href="/" class="brand-logo">
-                <i class="fas fa-bolt"></i>
-                <span>Syntax Realm</span>
-            </a>
-            <div class="theme-switch" id="themeSwitch">
-                <div class="theme-icon" id="moonIcon"><i class="fas fa-moon"></i></div>
-                <div class="theme-icon" id="sunIcon"><i class="fas fa-sun"></i></div>
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <span class="text-3xl">📂</span> Torrent Manager
+                </h1>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center">
+                        <span id="themeIcon" class="mr-3 text-xl">🌙</span>
+                        <label class="switch">
+                            <input type="checkbox" id="themeToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
-    <main>
-        <div id="pinEntry" class="glass-card">
-            <h2 class="text-2xl font-bold mb-2">Access Secure Folder</h2>
-            <p class="text-sm text-gray-400">Enter the verification PIN received on Telegram</p>
-            <div class="pin-input-group">
-                <input type="password" id="pinInput" maxlength="4">
-                <input type="text" class="pin-digit" maxlength="1" data-index="0">
-                <input type="text" class="pin-digit" maxlength="1" data-index="1">
-                <input type="text" class="pin-digit" maxlength="1" data-index="2">
-                <input type="text" class="pin-digit" maxlength="1" data-index="3">
+    <main class="flex-grow container mx-auto p-6">
+        <div id="pinEntry" class="glass-card p-8 mb-6 max-w-md mx-auto animate-slide-up">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2">Secure Access</h2>
+                <p class="text-sm opacity-60">Enter the authorized PIN from Telegram</p>
             </div>
-            <button id="submitPin" class="btn-modern"><i class="fas fa-unlock"></i><span>Unlock Files</span></button>
+            <input type="password" id="pinInput"
+                class="pin-input mb-6" placeholder="••••">
+            <button id="submitPin" class="btn btn-primary w-full py-3">
+                <i class="fas fa-lock-open"></i> Unlock Access
+            </button>
         </div>
 
-        <div id="fileManager" class="glass-card hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">Torrent Files</h2>
-                <button id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg">Submit Selection</button>
+        <div id="fileManager" class="glass-card p-6 hidden animate-slide-up">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <button id="selectAllBtn" class="btn btn-secondary">
+                    <i class="fas fa-check-double"></i> Select Local
+                </button>
+                <button id="invertSelectionBtn" class="btn btn-secondary">
+                    <i class="fas fa-exchange-alt"></i> Invert
+                </button>
+                <button id="selectEverythingBtn" class="btn btn-secondary">
+                    <i class="fas fa-globe"></i> Select All
+                </button>
+                <button id="submitBtn" class="btn btn-primary">
+                    <i class="fas fa-cloud-upload-alt"></i> Start Download
+                </button>
             </div>
 
-            <div class="stats-summary">
-                <div class="stat-item"><span class="stat-value" id="selectedCount">0</span><span class="stat-label">Files Selected</span></div>
-                <div class="stat-item"><span class="stat-value" id="selectedSize">0 B</span><span class="stat-label">Total Size</span></div>
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-black bg-opacity-20">
+                <div class="flex items-center gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-xs uppercase tracking-wider opacity-60">Selected</span>
+                        <span class="font-bold"><span id="selectedCount">0</span> / <span id="totalCount">0</span> files</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs uppercase tracking-wider opacity-60">Total Size</span>
+                        <span class="font-bold"><span id="selectedSize">0 B</span> / <span id="totalSize">0 B</span></span>
+                    </div>
+                </div>
             </div>
 
-            <div class="controls-grid">
-                <button id="selectAllBtn" class="btn-control"><i class="fas fa-check-double"></i><span>Select Page</span></button>
-                <button id="invertSelectionBtn" class="btn-control"><i class="fas fa-exchange-alt"></i><span>Invert</span></button>
-                <button id="selectEverythingBtn" class="btn-control"><i class="fas fa-globe"></i><span>Select All</span></button>
-                <button id="refreshBtn" class="btn-control" onClick="location.reload()"><i class="fas fa-sync-alt"></i><span>Refresh</span></button>
-            </div>
-
-            <div id="fileTree"></div>
+            <div id="fileTree" class="space-y-1"></div>
         </div>
     </main>
 
     <footer>
-        <div class="footer-content">
-            <div class="social-btns">
-                <a href="https://t.me/SyntaxRealm" class="social-btn"><i class="fab fa-telegram-plane"></i></a>
-                <a href="https://t.me/SyntaxRealm" class="social-btn"><i class="fab fa-github"></i></a>
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-6">
+                <div>
+                    <p class="font-semibold text-lg">Syntax Realm</p>
+                    <p class="text-sm opacity-50">&copy; 2026. Premium Mirroring Service.</p>
+                </div>
+                <div class="flex gap-4">
+                    <a href="https://t.me/SyntaxRealm" target="_blank" class="social-button">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://t.me/SyntaxRealm" target="_blank" class="social-button">
+                        <i class="fab fa-telegram-plane"></i>
+                    </a>
+                </div>
             </div>
-            <p class="copyright">&copy; 2026 Syntax Realm &bull; Modern Mirror Service</p>
         </div>
     </footer>
 
     <div id="reusableModal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
+        <div class="modal-content glass-card">
+            <h2 id="modalTitle" class="text-xl font-bold mb-6 flex items-center gap-2"></h2>
             <div id="modalBody"></div>
-            <div id="modalFooter" class="flex justify-end gap-3 mt-4"></div>
+            <div id="modalFooter" class="mt-8 flex justify-end gap-3"></div>
         </div>
     </div>
 
     <script>
-        const pinInput = document.getElementById('pinInput');
-        const submitPin = document.getElementById('submitPin');
-        const pinEntry = document.getElementById('pinEntry');
-        const fileManager = document.getElementById('fileManager');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const body = document.body;
         const fileTree = document.getElementById('fileTree');
         const selectedCount = document.getElementById('selectedCount');
+        const totalCount = document.getElementById('totalCount');
         const selectedSize = document.getElementById('selectedSize');
+        const totalSize = document.getElementById('totalSize');
+        const selectAllBtn = document.getElementById('selectAllBtn');
         const submitBtn = document.getElementById('submitBtn');
-        const modal = document.getElementById('reusableModal');
+        const pinEntry = document.getElementById('pinEntry');
+        const pinInput = document.getElementById('pinInput');
+        const submitPin = document.getElementById('submitPin');
+        const fileManager = document.getElementById('fileManager');
+        const reusableModal = document.getElementById('reusableModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalFooter = document.getElementById('modalFooter');
+        const invertSelectionBtn = document.getElementById('invertSelectionBtn');
+        const selectEverythingBtn = document.getElementById('selectEverythingBtn');
 
-        const urlParams = new URLSearchParams(window.location.search);
-        let filesData = [];
-        let currentPath = [];
+        let currentFolder = null;
+        let files = [];
         let allowEdit = false;
 
-        // PIN Digits Logic
-        const digits = document.querySelectorAll('.pin-digit');
-        const realInput = document.getElementById('pinInput');
-
-        digits.forEach((digit, idx) => {
-            digit.addEventListener('input', (e) => {
-                const val = e.target.value;
-                if (val) {
-                    if (idx < 3) digits[idx + 1].focus();
-                    updateRealInput();
-                }
-            });
-
-            digit.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && !digit.value && idx > 0) {
-                    digits[idx - 1].focus();
-                }
-            });
+        const urlParams = new Proxy(new URLSearchParams(window.location.search), {
+            get: (searchParams, prop) => searchParams.get(prop),
         });
 
-        function updateRealInput() {
-            let combined = '';
-            digits.forEach(d => combined += d.value);
-            realInput.value = combined;
-            if (combined.length === 4) verifyPin();
+        if (urlParams.pin) {
+            pinInput.value = urlParams.pin;
+            setTimeout(() => submitPin.click(), 0);
         }
 
-        if (urlParams.get('pin')) {
-            const pin = urlParams.get('pin');
-            realInput.value = pin;
-            pin.split('').forEach((char, i) => { if(digits[i]) digits[i].value = char; });
-            setTimeout(verifyPin, 500);
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('darkMode');
+            const isDark = savedTheme !== null ? savedTheme === 'true' : true;
+            body.classList.toggle('dark', isDark);
+            body.classList.toggle('light', !isDark);
+            themeToggle.checked = isDark;
+            themeIcon.textContent = isDark ? '🌙' : '☀️';
         }
 
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        function toggleTheme() {
+            body.classList.toggle('dark');
+            body.classList.toggle('light');
+            const isDark = body.classList.contains('dark');
+            themeIcon.textContent = isDark ? '🌙' : '☀️';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        function formatSize(size) {
+            if (size === 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let i = 0;
+            while (size >= 1024 && i < units.length - 1) {
+                size /= 1024;
+                i++;
+            }
+            return `${size.toFixed(2)} ${units[i]}`;
         }
 
         function calculateFolderSize(folder) {
-            let size = 0;
-            const scan = (nodes) => {
-                nodes.forEach(n => {
-                    if (n.type === 'file') size += (n.size || 0);
-                    if (n.children) scan(n.children);
-                });
-            };
-            if (folder.children) scan(folder.children);
-            return size;
+            let total = 0;
+            const queue = [folder];
+            while (queue.length > 0) {
+                const node = queue.pop();
+                if (node.type === 'file') total += node.size;
+                else if (node.children) queue.push(...node.children);
+            }
+            return total;
         }
 
-        async function verifyPin() {
-            const pin = pinInput.value;
-            const gid = urlParams.get('gid');
-            try {
-                const response = await fetch(`/app/files/torrent?gid=${gid}&pin=${pin}`);
-                const data = await response.json();
-                if (data.error) { alert(data.message || "Invalid PIN"); return; }
-                filesData = data.files;
-                allowEdit = gid.length > 20; // qBittorrent allows renaming
-                pinEntry.classList.add('hidden');
-                fileManager.classList.remove('hidden');
-                renderFiles(filesData);
-                updateStats();
-            } catch (err) { alert("Connection failed"); }
-        }
-
-        submitPin.onclick = verifyPin;
-        pinInput.onkeypress = (e) => e.key === 'Enter' && verifyPin();
-
-        function renderFiles(nodes) {
+        function renderFileTree(nodes) {
             fileTree.innerHTML = '';
-            if (currentPath.length > 0) {
-                const backRow = document.createElement('div');
-                backRow.className = 'folder-back';
-                backRow.innerHTML = '<i class="fas fa-arrow-left"></i> Go Back';
-                backRow.onclick = () => { currentPath.pop(); renderFiles(getCurrentFolderFiles()); };
-                fileTree.appendChild(backRow);
+            if (currentFolder) {
+                const backBtn = document.createElement('div');
+                backBtn.className = 'file-tree-item folder text-indigo-400 hover:bg-indigo-500 hover:bg-opacity-10 cursor-pointer';
+                backBtn.innerHTML = `
+                    <span class="icon"><i class="fas fa-arrow-left"></i></span>
+                    <div class="file-info"><div class="file-name">Back to previous folder</div></div>
+                `;
+                backBtn.onclick = goBack;
+                fileTree.appendChild(backBtn);
             }
 
             nodes.forEach(node => {
                 const item = document.createElement('div');
-                item.className = 'file-item';
+                item.className = `file-tree-item ${node.type === 'folder' ? 'folder' : ''}`;
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.className = 'file-checkbox';
-                checkbox.checked = node.type === 'folder' ? areAllChildrenSelected(node) : node.selected;
-                checkbox.onclick = (e) => { e.stopPropagation(); toggleSelection(node); };
-
-                const icon = document.createElement('div');
-                icon.className = 'file-icon';
-                icon.innerHTML = node.type === 'folder' ? '<i class="fas fa-folder text-blue-400"></i>' : '<i class="fas fa-file-alt text-gray-400"></i>';
-
-                const details = document.createElement('div');
-                details.className = 'file-details';
-                const nodeSize = node.type === 'folder' ? calculateFolderSize(node) : (node.size || 0);
-                details.innerHTML = `
-                    <span class="file-name">${node.name}</span>
-                    <div class="file-meta">
-                        <span>${formatBytes(nodeSize)}</span>
-                        ${node.type === 'folder' ? `<span>${node.children ? node.children.length : 0} items</span>` : ''}
-                        ${node.progress !== undefined ? `<span>${node.progress}%</span>` : ''}
-                    </div>
-                `;
-
-                const actions = document.createElement('div');
-                actions.className = 'action-btns';
-                if (allowEdit) {
-                    const editBtn = document.createElement('div');
-                    editBtn.className = 'action-btn';
-                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                    editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(node); };
-                    actions.appendChild(editBtn);
-                }
+                checkbox.className = 'mr-4 w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer';
+                checkbox.checked = node.selected;
+                checkbox.onclick = (e) => e.stopPropagation();
+                checkbox.onchange = () => toggleFile(node);
 
                 if (node.type === 'folder') {
-                    details.onclick = () => { currentPath.push(node); renderFiles(node.children); };
-                } else {
-                    details.onclick = () => checkbox.click();
+                    if (areAllChildrenSelected(node)) {
+                        checkbox.checked = true;
+                    } else if (areSomeChildrenSelected(node)) {
+                        checkbox.indeterminate = true;
+                    }
                 }
 
+                const icon = document.createElement('span');
+                icon.className = 'icon';
+                if (node.type === 'folder') {
+                    icon.innerHTML = '<i class="fas fa-folder text-amber-400"></i>';
+                } else {
+                    const ext = node.name.split('.').pop().toLowerCase();
+                    let iconClass = 'fa-file';
+                    if (['mp4','mkv','avi','mov'].includes(ext)) iconClass = 'fa-file-video text-sky-400';
+                    else if (['mp3','flac','wav','m4a'].includes(ext)) iconClass = 'fa-file-audio text-fuchsia-400';
+                    else if (['jpg','jpeg','png','gif','webp'].includes(ext)) iconClass = 'fa-file-image text-emerald-400';
+                    else if (['zip','rar','7z','tar','gz'].includes(ext)) iconClass = 'fa-file-archive text-rose-400';
+                    else if (['pdf','doc','docx','txt'].includes(ext)) iconClass = 'fa-file-alt text-slate-400';
+                    icon.innerHTML = `<i class="fas ${iconClass}"></i>`;
+                }
+
+                const info = document.createElement('div');
+                info.className = 'file-info cursor-pointer';
+                info.innerHTML = `
+                    <div class="file-name">${node.name}</div>
+                    <div class="size-info">${formatSize(node.type === 'folder' ? calculateFolderSize(node) : node.size)}${node.progress !== undefined ? ` • Progress: ${node.progress}%` : ''}</div>
+                `;
+
+                if (allowEdit) {
+                    const editBtn = document.createElement('span');
+                    editBtn.innerHTML = ' • <i class="fas fa-pen-nib"></i> Rename';
+                    editBtn.className = 'ml-2 text-xs opacity-40 hover:opacity-100 transition-opacity';
+                    editBtn.onclick = (e) => { e.stopPropagation(); openEditFileNameModal(node); };
+                    info.querySelector('.size-info').appendChild(editBtn);
+                }
+
+                item.onclick = () => node.type === 'folder' ? openFolder(node) : toggleFile(node);
                 item.appendChild(checkbox);
                 item.appendChild(icon);
-                item.appendChild(details);
-                item.appendChild(actions);
+                item.appendChild(info);
                 fileTree.appendChild(item);
             });
+            updateSelectAllButtonText();
+            updateSelectEverythingButtonText();
         }
 
         function areAllChildrenSelected(folder) {
-            if (!folder.children) return false;
             return folder.children.every(c => c.type === 'folder' ? areAllChildrenSelected(c) : c.selected);
         }
 
-        function toggleSelection(node) {
-            const newState = node.type === 'folder' ? !areAllChildrenSelected(node) : !node.selected;
-            if (node.type === 'folder') {
-                const setAll = (nodes, state) => {
-                    nodes.forEach(n => {
-                        n.selected = state;
-                        if (n.children) setAll(n.children, state);
-                    });
-                };
-                setAll(node.children, newState);
-            } else {
-                node.selected = newState;
-            }
-            updateStats();
-            renderFiles(getCurrentFolderFiles());
+        function areSomeChildrenSelected(folder) {
+            return folder.children.some(c => c.type === 'folder' ? areSomeChildrenSelected(c) : c.selected);
         }
 
-        function getCurrentFolderFiles() {
-            return currentPath.length > 0 ? currentPath[currentPath.length - 1].children : filesData;
+        function toggleFile(node) {
+            if (node.type === 'folder') {
+                const isSelected = !areAllChildrenSelected(node);
+                toggleFolder(node, isSelected);
+            } else {
+                node.selected = !node.selected;
+            }
+            updateParentFolders(node);
+            updateStats();
+            renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
+        function toggleFolder(folder, isSelected) {
+            const queue = [folder];
+            while (queue.length > 0) {
+                const node = queue.pop();
+                node.selected = isSelected;
+                if (node.children) queue.push(...node.children);
+            }
+        }
+
+        function updateParentFolders(node) {
+            let parent = findParent(files[0], node.id);
+            while (parent) {
+                parent.selected = areAllChildrenSelected(parent);
+                parent = findParent(files[0], parent.id);
+            }
+        }
+
+        function findParent(root, id) {
+            if (root.children) {
+                for (const child of root.children) {
+                    if (child.id === id) return root;
+                    const found = findParent(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
         }
 
         function updateStats() {
-            let count = 0, size = 0;
-            const scan = (nodes) => {
-                nodes.forEach(n => {
-                    if (n.type === 'file' && n.selected) { count++; size += (n.size || 0); }
-                    if (n.children) scan(n.children);
-                });
-            };
-            scan(filesData);
-            selectedCount.textContent = count;
-            selectedSize.textContent = formatBytes(size);
+            const stats = calculateStats(files);
+            selectedCount.textContent = stats.selCount;
+            totalCount.textContent = stats.totCount;
+            selectedSize.textContent = formatSize(stats.selSize);
+            totalSize.textContent = formatSize(stats.totSize);
         }
 
-        function openEditModal(node) {
-            document.getElementById('modalTitle').textContent = `Rename ${node.type}`;
-            document.getElementById('modalBody').innerHTML = `<input type="text" id="editLabel" class="edit-input" value="${node.name}">`;
-            document.getElementById('modalFooter').innerHTML = `
-                <button class="bg-gray-600 px-4 py-2 rounded-lg" onclick="closeModal()">Cancel</button>
-                <button class="bg-blue-600 px-4 py-2 rounded-lg" onclick="saveRename('${node.id}')">Save</button>
-            `;
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() { modal.style.display = 'none'; }
-
-        async function saveRename(nodeId) {
-            const newName = document.getElementById('editLabel').value.trim();
-            if (!newName) return;
-            // Find node and siblings/parents for path
-            const node = findNodeById(filesData, nodeId);
-            const oldPath = getFullPath(node);
-            const parent = findParent(filesData, nodeId);
-            const newPath = parent ? `${getFullPath(parent)}/${newName}` : newName;
-            
-            try {
-                const response = await fetch(`/app/files/torrent?gid=${urlParams.get('gid')}&pin=${pinInput.value}&mode=rename`, {
-                    method: 'POST',
-                    body: JSON.stringify({ old_path: oldPath, new_path: newPath, type: node.type })
-                });
-                const res = await response.json();
-                alert(res.message);
-                if (!res.error) { node.name = newName; renderFiles(getCurrentFolderFiles()); closeModal(); }
-            } catch (err) { alert("Rename failed"); }
-        }
-
-        function findNodeById(nodes, id) {
-            for (let n of nodes) {
-                if (n.id === id) return n;
-                if (n.children) { let f = findNodeById(n.children, id); if (f) return f; }
-            }
-        }
-
-        function findParent(nodes, id) {
-            for (let n of nodes) {
-                if (n.children) {
-                    if (n.children.some(c => c.id === id)) return n;
-                    let f = findParent(n.children, id); if (f) return f;
+        function calculateStats(nodes) {
+            let selCount = 0, totCount = 0, selSize = 0, totSize = 0;
+            const queue = [...nodes];
+            while (queue.length > 0) {
+                const node = queue.pop();
+                if (node.type === 'file') {
+                    totCount++; totSize += node.size;
+                    if (node.selected) { selCount++; selSize += node.size; }
                 }
+                if (node.children) queue.push(...node.children);
             }
+            return { selCount, totCount, selSize, totSize };
         }
 
-        function getFullPath(node) {
-            let path = [node.name];
-            let p = findParent(filesData, node.id);
-            while (p) { path.unshift(p.name); p = findParent(filesData, p.id); }
-            return path.join('/');
+        function openFolder(folder) {
+            currentFolder = folder;
+            renderFileTree(folder.children);
+            updateStats();
         }
 
-        submitBtn.onclick = async () => {
-            const selected = [], unselected = [];
-            const scan = (nodes) => {
+        function goBack() {
+            if (!currentFolder) return;
+            const parent = findParent(files[0], currentFolder.id);
+            currentFolder = parent || null;
+            renderFileTree(currentFolder ? currentFolder.children : files);
+            updateStats();
+        }
+
+        function selectAll() {
+            const nodes = currentFolder ? currentFolder.children : files;
+            const allSelected = nodes.every(n => n.type === 'folder' ? areAllChildrenSelected(n) : n.selected);
+            nodes.forEach(n => {
+                if (n.type === 'folder') toggleFolder(n, !allSelected);
+                else n.selected = !allSelected;
+            });
+            updateStats();
+            renderFileTree(nodes);
+        }
+
+        function invertSelection() {
+            const nodes = currentFolder ? currentFolder.children : files;
+            const invert = (nodes) => {
                 nodes.forEach(n => {
-                    if (n.type === 'file') { if (n.selected) selected.push(n.id); else unselected.push(n.id); }
-                    if (n.children) scan(n.children);
+                    n.selected = !n.selected;
+                    if (n.children) invert(n.children);
                 });
+            }
+            invert(nodes);
+            updateStats();
+            renderFileTree(nodes);
+        }
+
+        function selectEverything() {
+            const selAll = files.every(n => n.type === 'folder' ? areAllChildrenSelected(n) : n.selected);
+            const recursiveSet = (nodes, val) => {
+                nodes.forEach(n => {
+                    n.selected = val;
+                    if (n.children) recursiveSet(n.children, val);
+                });
+            }
+            recursiveSet(files, !selAll);
+            updateStats();
+            renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
+        function openEditFileNameModal(node) {
+            modalTitle.innerHTML = `<i class="fas fa-edit"></i> Rename ${node.type === 'folder' ? 'Folder' : 'File'}`;
+            modalBody.innerHTML = `
+                <div class="mb-2 text-sm opacity-60">New Name:</div>
+                <input type="text" id="editNameInput" class="pin-input text-left tracking-normal" value="${node.name}">
+            `;
+            modalFooter.innerHTML = `
+                <button id="saveNameBtn" class="btn btn-primary">Save Changes</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            `;
+            const input = document.getElementById('editNameInput');
+            document.getElementById('saveNameBtn').onclick = () => {
+                const newName = input.value.trim();
+                if (newName && newName !== node.name) {
+                    const getPath = (n) => {
+                        let p = findParent(files[0], n.id);
+                        return p ? getPath(p) + '/' + n.name : n.name;
+                    }
+                    const oldPath = getPath(node);
+                    const parentPath = oldPath.substring(0, oldPath.lastIndexOf('/'));
+                    const newPath = parentPath ? parentPath + '/' + newName : newName;
+                    
+                    fetch(`/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=rename`, {
+                        method: 'POST',
+                        body: JSON.stringify({ old_path: oldPath, new_path: newPath })
+                    }).then(res => {
+                        if (res.ok) { node.name = newName; renderFileTree(currentFolder ? currentFolder.children : files); }
+                        else alert('Failed to rename. Server error.');
+                    });
+                }
+                closeModal();
             };
-            scan(filesData);
-            if (selected.length === 0) { alert("Please select at least one file"); return; }
-            try {
-                const response = await fetch(`/app/files/torrent?gid=${urlParams.get('gid')}&pin=${pinInput.value}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({selected, unselected})
-                });
-                const res = await response.json();
-                alert(res.message);
-                if (!res.error) window.close();
-            } catch (err) { alert("Submission failed"); }
-        };
+            openModal();
+            input.focus();
+        }
 
-        document.getElementById('selectAllBtn').onclick = () => {
-            const nodes = getCurrentFolderFiles();
+        function openModal() {
+            reusableModal.style.display = 'flex';
+            setTimeout(() => reusableModal.classList.add('active'), 10);
+        }
+
+        function closeModal() {
+            reusableModal.classList.remove('active');
+            setTimeout(() => reusableModal.style.display = 'none', 300);
+        }
+
+        function submitData() {
+            if (calculateStats(files).selCount === 0) {
+                modalTitle.innerHTML = '<i class="fas fa-exclamation-triangle text-amber-500"></i> Selection Empty';
+                modalBody.innerHTML = '<p>Please select at least one file to download.</p>';
+                modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Okay</button>';
+                openModal(); return;
+            }
+            modalTitle.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            modalBody.innerHTML = `<p>Sending selection to server. Please wait...</p>`;
+            modalFooter.innerHTML = '';
+            openModal();
+            fetch(`/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=selection`, {
+                method: 'POST',
+                body: JSON.stringify(files)
+            }).then(res => {
+                closeModal();
+                modalTitle.innerHTML = res.ok ? '<i class="fas fa-check-circle text-emerald-500"></i> Success!' : '<i class="fas fa-times-circle text-rose-500"></i> Error';
+                modalBody.innerHTML = `<p>${res.ok ? 'Your download selection has been accepted.' : 'Failed to submit selection. Please try again.'}</p>`;
+                modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Close</button>';
+                openModal();
+            });
+        }
+
+        pinInput.addEventListener('keypress', (e) => (e.key === 'Enter') && submitPin.click());
+        submitPin.addEventListener('click', () => {
+            if (!pinInput.value) return;
+            submitPin.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
+            fetch(`/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=get`).then(res => {
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                return res.json();
+            }).then(data => {
+                if (data.error) {
+                    modalTitle.innerText = data.error;
+                    modalBody.innerText = data.message;
+                    modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Try Again</button>';
+                    openModal();
+                    submitPin.innerHTML = '<i class="fas fa-lock-open"></i> Unlock Access';
+                } else {
+                    files = data.files; allowEdit = data.engine === "qbittorrent";
+                    pinEntry.style.opacity = '0';
+                    setTimeout(() => {
+                        pinEntry.style.display = 'none';
+                        fileManager.classList.remove('hidden');
+                        renderFileTree(files);
+                        updateStats();
+                    }, 400);
+                }
+            }).catch(err => {
+                modalTitle.innerText = 'Connection Failed';
+                modalBody.innerText = err.message;
+                modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Retry</button>';
+                openModal();
+                submitPin.innerHTML = '<i class="fas fa-lock-open"></i> Unlock Access';
+            });
+        });
+
+        themeToggle.addEventListener('change', toggleTheme);
+        invertSelectionBtn.addEventListener('click', invertSelection);
+        selectEverythingBtn.addEventListener('click', selectEverything);
+        selectAllBtn.addEventListener('click', selectAll);
+        submitBtn.addEventListener('click', submitData);
+
+        function updateSelectAllButtonText() {
+            const nodes = currentFolder ? currentFolder.children : files;
             const allSel = nodes.every(n => n.type === 'folder' ? areAllChildrenSelected(n) : n.selected);
-            nodes.forEach(n => {
-                if (n.type === 'folder') {
-                    const setAll = (nodes, state) => nodes.forEach(c => { c.selected = state; if (c.children) setAll(c.children, state); });
-                    setAll(n.children, !allSel);
-                } else n.selected = !allSel;
-            });
-            updateStats(); renderFiles(nodes);
-        };
+            selectAllBtn.innerHTML = allSel ? '<i class="fas fa-times"></i> Deselect Local' : '<i class="fas fa-check-double"></i> Select Local';
+        }
 
-        document.getElementById('invertSelectionBtn').onclick = () => {
-            const nodes = getCurrentFolderFiles();
-            nodes.forEach(n => {
-                if (n.type === 'folder') {
-                    const invAll = (nodes) => nodes.forEach(c => { c.selected = !c.selected; if (c.children) invAll(c.children); });
-                    invAll(n.children);
-                } else n.selected = !n.selected;
-            });
-            updateStats(); renderFiles(nodes);
-        };
+        function updateSelectEverythingButtonText() {
+            const stats = calculateStats(files);
+            const allSel = stats.selCount === stats.totCount && stats.totCount > 0;
+            selectEverythingBtn.innerHTML = allSel ? '<i class="fas fa-times-circle"></i> Deselect All' : '<i class="fas fa-globe"></i> Select All';
+        }
 
-        document.getElementById('selectEverythingBtn').onclick = () => {
-            const allSel = filesData.every(n => n.type === 'folder' ? areAllChildrenSelected(n) : n.selected);
-            const setAll = (nodes, state) => nodes.forEach(n => { n.selected = state; if (n.children) setAll(n.children, state); });
-            setAll(filesData, !allSel);
-            updateStats(); renderFiles(getCurrentFolderFiles());
-        };
+        loadThemePreference();
     </script>
 </body>
+
 </html>
