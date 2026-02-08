@@ -285,6 +285,61 @@
             .header-title { font-size: 1.5rem; text-align: center; }
         }
 
+        /* Floating Selection Summary */
+        #selectionSummary {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 280px;
+            z-index: 90;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        #selectionSummary.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .summary-content {
+            padding: 1rem;
+            border-radius: 1.25rem;
+        }
+
+        .path-crumbs {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            opacity: 0.6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .summary-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .type-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 4px;
+            margin-right: 4px;
+        }
+
         /* Animations */
         @keyframes slideUp {
             from { transform: translateY(20px); opacity: 0; }
@@ -380,6 +435,21 @@
         </div>
     </footer>
 
+    <div id="selectionSummary" class="glass-card">
+        <div class="summary-content">
+            <div id="summaryPath" class="path-crumbs">Home</div>
+            <div class="summary-stat-row">
+                <span class="opacity-60">Selection</span>
+                <span id="summaryCount">0 / 0</span>
+            </div>
+            <div class="summary-stat-row">
+                <span class="opacity-60">Size</span>
+                <span id="summarySize">0 B / 0 B</span>
+            </div>
+            <div id="summaryTypes" class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-white border-opacity-10"></div>
+        </div>
+    </div>
+
     <div id="reusableModal" class="modal">
         <div class="modal-content glass-card">
             <h2 id="modalTitle" class="text-xl font-bold mb-6 flex items-center gap-2"></h2>
@@ -409,6 +479,12 @@
         const modalFooter = document.getElementById('modalFooter');
         const invertSelectionBtn = document.getElementById('invertSelectionBtn');
         const selectEverythingBtn = document.getElementById('selectEverythingBtn');
+
+        const selectionSummary = document.getElementById('selectionSummary');
+        const summaryPath = document.getElementById('summaryPath');
+        const summaryCount = document.getElementById('summaryCount');
+        const summarySize = document.getElementById('summarySize');
+        const summaryTypes = document.getElementById('summaryTypes');
 
         let currentFolder = null;
         let files = [];
@@ -462,8 +538,22 @@
             return total;
         }
 
+        function getBreadcrumbs(node) {
+            if (!node) return 'Home';
+            const path = [];
+            const getPath = (n) => {
+                path.unshift(n.name);
+                let p = findParent(files[0], n.id);
+                if (p) getPath(p);
+            };
+            getPath(node);
+            return path.join(' / ');
+        }
+
         function renderFileTree(nodes) {
             fileTree.innerHTML = '';
+            summaryPath.textContent = getBreadcrumbs(currentFolder);
+            
             if (currentFolder) {
                 const backBtn = document.createElement('div');
                 backBtn.className = 'file-tree-item folder text-indigo-400 hover:bg-indigo-500 hover:bg-opacity-10 cursor-pointer';
@@ -588,20 +678,54 @@
             totalCount.textContent = stats.totCount;
             selectedSize.textContent = formatSize(stats.selSize);
             totalSize.textContent = formatSize(stats.totSize);
+
+            // Update floating summary
+            summaryCount.textContent = `${stats.selCount} / ${stats.totCount}`;
+            summarySize.textContent = `${formatSize(stats.selSize)} / ${formatSize(stats.totSize)}`;
+            
+            summaryTypes.innerHTML = '';
+            const typeConfig = [
+                { key: 'video', label: 'Videos', icon: 'fa-video', color: 'text-sky-400' },
+                { key: 'audio', label: 'Audio', icon: 'fa-music', color: 'text-fuchsia-400' },
+                { key: 'image', label: 'Images', icon: 'fa-image', color: 'text-emerald-400' },
+                { key: 'archive', label: 'Archives', icon: 'fa-file-archive', color: 'text-rose-400' }
+            ];
+
+            typeConfig.forEach(cfg => {
+                if (stats.types[cfg.key] > 0) {
+                    const pill = document.createElement('div');
+                    pill.className = `type-pill ${cfg.color}`;
+                    pill.innerHTML = `<i class="fas ${cfg.icon} mr-1"></i> ${stats.types[cfg.key]} ${cfg.label}`;
+                    summaryTypes.appendChild(pill);
+                }
+            });
+
+            if (stats.selCount > 0) selectionSummary.classList.add('active');
+            else selectionSummary.classList.remove('active');
         }
 
         function calculateStats(nodes) {
             let selCount = 0, totCount = 0, selSize = 0, totSize = 0;
+            const types = { video: 0, audio: 0, image: 0, archive: 0, other: 0 };
+            
             const queue = [...nodes];
             while (queue.length > 0) {
                 const node = queue.pop();
                 if (node.type === 'file') {
                     totCount++; totSize += node.size;
-                    if (node.selected) { selCount++; selSize += node.size; }
+                    const ext = node.name.split('.').pop().toLowerCase();
+                    if (node.selected) { 
+                        selCount++; selSize += node.size; 
+                        if (['mp4','mkv','avi','mov','webm','flv','wmv','m4v'].includes(ext)) types.video++;
+                        else if (['mp3','flac','wav','m4a','ogg','aac','m4b'].includes(ext)) types.audio++;
+                        else if (['jpg','jpeg','png','gif','webp','bmp','tiff'].includes(ext)) types.image++;
+                        else if (['zip','rar','7z','tar','gz','iso','dmg'].includes(ext)) types.archive++;
+                        else types.other++;
+                    }
                 }
                 if (node.children) queue.push(...node.children);
             }
-            return { selCount, totCount, selSize, totSize };
+            return { selCount, totCount, selSize, totSize, types };
         }
 
         function openFolder(folder) {
