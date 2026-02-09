@@ -111,7 +111,7 @@ async def handle_torrent(request: Request):
             }
         )
 
-    if not (pin := params.get("pin", "").strip()):
+    if not (pin := params.get("pin")):
         return JSONResponse(
             {
                 "files": [],

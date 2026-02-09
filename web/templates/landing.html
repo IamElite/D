@@ -1,350 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WZML-X | Syntax Realm</title>
+    <title>WZML-X By Syntax Realm</title>
     <link rel="icon" href="https://i.postimg.cc/XvdvXTkS/photo-2024-12-27-11-46-15.jpg" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
+            --bg-color: #181c24;
+            --primary: #4f5d75;
             --accent: #ef8354;
-            --bg-dark: #0f172a;
-            --bg-light: #f8fafc;
-            --glass-dark: rgba(255, 255, 255, 0.05);
-            --glass-light: rgba(255, 255, 255, 0.7);
-            --text-dark: #f8fafc;
-            --text-light: #0f172a;
+            --glass: rgba(255,255,255,0.13);
+            --glass-border: rgba(255,255,255,0.18);
+            --text-color: #f7f7fa;
+            --shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
         }
-
         body {
-            font-family: 'Poppins', 'Nunito', sans-serif;
-            transition: background-color 0.5s ease;
+            font-family: 'Poppins', 'Nunito', Arial, sans-serif;
+            background: linear-gradient(120deg, #232946 0%, #181c24 100%);
+            color: var(--text-color);
+            min-height: 100vh;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
         }
 
-        body.dark {
-            background: var(--bg-dark);
-            color: var(--text-dark);
-        }
-
-        body.light {
-            background: var(--bg-light);
-            color: var(--text-light);
-        }
-
-        /* Animated Background */
-        .bg-gradient {
+        .navbar {
+            width: 100vw;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            overflow: hidden;
+            top: 0; left: 0;
+            z-index: 10;
+            background: rgba(255,255,255,0.10);
+            border-bottom: 1.5px solid rgba(255,255,255,0.18);
+            box-shadow: 0 4px 24px 0 rgba(31,38,135,0.10);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            transition: all 0.3s ease;
         }
 
-        .blob {
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            filter: blur(80px);
-            opacity: 0.15;
-            border-radius: 50%;
-            animation: move 20s infinite alternate;
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.7rem 2.2rem;
         }
 
-        .blob-1 { background: var(--primary); top: -10%; left: -10%; }
-        .blob-2 { background: var(--accent); bottom: -10%; right: -10%; animation-delay: -5s; }
-
-        @keyframes move {
-            from { transform: translate(0, 0) scale(1); }
-            to { transform: translate(100px, 100px) scale(1.2); }
+        .nav-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            margin-right: 0.7rem;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 15px rgba(239, 131, 84, 0.6);
+            cursor: pointer;
         }
 
-        /* Navbar */
-        nav {
-            position: fixed;
-            top: 0; left: 0; width: 100%;
-            z-index: 100;
-            padding: 1.25rem 0;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(15, 23, 42, 0.6);
-        }
-
-        body.light nav {
-            background: rgba(255, 255, 255, 0.6);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        .nav-links {
+            display: flex;
+            gap: 1.1rem;
         }
 
         .nav-link {
-            position: relative;
+            color: var(--text-color);
+            text-decoration: none;
             font-weight: 600;
-            transition: color 0.3s;
+            font-size: 1rem;
+            padding: 0.4rem 1.1rem;
+            border-radius: 1.2rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
         }
 
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -5px; left: 0;
-            width: 0; height: 2px;
-            background: var(--accent);
-            transition: width 0.3s;
+        .nav-link:hover {
+            background-color: var(--accent);
+            color: #232946;
+            box-shadow: 0 10px 30px rgba(239, 131, 84, 0.4);
+            transform: translateY(-3px) scale(1.05);
+            text-shadow: 0 0 15px rgba(239, 131, 84, 0.6);
         }
 
-        .nav-link:hover::after { width: 100%; }
-
-        /* Hero Section */
-        .hero {
-            flex-grow: 1;
+        .main-hero {
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding-top: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            margin-top: 7.5rem;
+            width: 100vw;
+            max-width: 650px;
             text-align: center;
-        }
-
-        .hero-card {
-            background: var(--glass-dark);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 3rem;
-            border-radius: 2rem;
-            max-width: 800px;
-            margin: 0 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: slideUp 0.8s ease-out;
-        }
-
-        body.light .hero-card {
-            background: var(--glass-light);
-            border-color: rgba(0, 0, 0, 0.05);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(40px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            padding: 0 1.5rem;
+            opacity: 0;
+            animation: fadeIn 1s forwards 0.5s;
         }
 
         .hero-logo {
-            width: 140px;
-            height: 140px;
-            border-radius: 2.5rem;
-            margin: 0 auto 2rem;
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
-            border: 4px solid var(--accent);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .hero-logo:hover { transform: rotate(10deg) scale(1.1); }
-
-        .btn-glow {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-glow:hover {
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
-            transform: translateY(-2px);
-        }
-
-        /* Custom Switch */
-        .switch-container {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 32px;
-        }
-
-        .switch-container input { opacity: 0; width: 0; height: 0; }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #334155;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "🌙";
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            height: 24px;
-            width: 24px;
-            left: 4px; bottom: 4px;
-            background-color: white;
-            transition: .4s;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1.5rem;
+            border: 3px solid var(--accent);
+            background: #232946;
+            box-shadow: 0 2px 16px rgba(239, 131, 84, 0.10);
+            animation: bounce 1.5s infinite alternate;
+            cursor: pointer;
         }
 
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before {
-            transform: translateX(28px);
-            content: "☀️";
+        .hero-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+            animation: slideIn 1.5s ease-out;
+            text-shadow: 0 0 15px rgba(239, 131, 84, 0.5);
+            cursor: pointer;
         }
 
-        footer {
-            padding: 3rem 0;
-            text-align: center;
-            opacity: 0.7;
+        .hero-highlight {
+            color: var(--accent);
         }
 
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
+        .hero-sub {
+            font-size: 1.1rem;
+            color: var(--primary);
         }
 
-        .feature-item {
-            padding: 1.5rem;
-            border-radius: 1.25rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        .feature-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            transform: translateY(-5px);
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
-        .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
         }
 
-        body.light .text-gradient {
-            background: linear-gradient(135deg, #1e293b 0%, #4f46e5 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        @keyframes gradientTransition {
+            0% {
+                background: linear-gradient(120deg, #232946 0%, #181c24 100%);
+            }
+            50% {
+                background: linear-gradient(120deg, #ef8354 0%, #232946 100%);
+            }
+            100% {
+                background: linear-gradient(120deg, #232946 0%, #181c24 100%);
+            }
         }
+
+        @media (max-width: 700px) {
+            .nav-content { padding: 0.7rem 1rem; }
+            .hero-content { margin-top: 6rem; }
+            .hero-content h1 { font-size: 1.8rem; }
+        }
+
+        @media (max-width: 400px) {
+            .nav-title { font-size: 1.2rem; }
+            .nav-by { font-size: 0.9rem; }
+        }
+
     </style>
 </head>
-
-<body class="dark">
-    <div class="bg-gradient">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
-
-    <nav>
-        <div class="container mx-auto px-6 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <span class="text-3xl">🚀</span>
-                <span class="text-xl font-bold tracking-tight">WZML-X</span>
-            </div>
-            
-            <div class="hidden md:flex items-center gap-8">
-                <a href="https://t.me/SyntaxRealm" class="nav-link">Telegram</a>
-                <a href="#features" class="nav-link">Features</a>
-                <a href="https://t.me/SyntaxRealm" class="nav-link">Support</a>
-                <label class="switch-container">
-                    <input type="checkbox" id="themeToggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <div class="md:hidden">
-                <label class="switch-container scale-75">
-                    <input type="checkbox" id="themeToggleMobile" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+<body>
+    <nav class="navbar">
+      <div class="nav-content">
+        <a href="https://t.me/SyntaxRealm">
+          <span class="nav-title">Syntax Realm</span> 
+        </a>
+        <div class="nav-links">
+          <a href="https://t.me/SyntaxRealm1" class="nav-link"><i class="fab fa-telegram-plane"></i> Channel</a>
+          <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fas fa-book"></i> Gateway</a>
+          <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fas fa-comments"></i> Support</a>
+          <a href="https://t.me/SyntaxRealm" class="nav-link"><i class="fab fa-github"></i> GitHub</a>
         </div>
+      </div>
     </nav>
 
-    <main class="hero">
-        <div class="hero-card">
-            <img src="https://files.catbox.moe/oh06q2.jpg" alt="Logo" class="hero-logo">
-            <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
-                <span class="text-gradient">Unlimited Power.</span><br>
-                <span class="text-indigo-400">Zero Compromise.</span>
-            </h1>
-            <p class="text-lg md:text-xl opacity-70 mb-10 max-w-2xl mx-auto">
-                Experience the world's most advanced Telegram Mirror & Leech engine. Designed for speed, built for reliability, and optimized for YOU.
-            </p>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                <a href="https://t.me/SyntaxRealm" class="btn-glow bg-indigo-600 px-8 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2">
-                    <i class="fab fa-telegram-plane"></i> Join Telegram
-                </a>
-                <a href="/app" class="bg-white bg-opacity-10 px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 border border-white border-opacity-10 hover:bg-opacity-20 transition-all">
-                    <i class="fas fa-play"></i> Get Started
-                </a>
-            </div>
-
-            <div id="features" class="feature-grid">
-                <div class="feature-item">
-                    <i class="fas fa-bolt text-amber-400 text-2xl mb-4"></i>
-                    <h3 class="font-bold mb-2">Supersonic Speed</h3>
-                    <p class="text-sm opacity-60">Optimized multithreading for maximum throughput.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-shield-alt text-emerald-400 text-2xl mb-4"></i>
-                    <h3 class="font-bold mb-2">Rock Solid</h3>
-                    <p class="text-sm opacity-60">High availability infrastructure with zero downtime.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-magic text-fuchsia-400 text-2xl mb-4"></i>
-                    <h3 class="font-bold mb-2">Smart UI</h3>
-                    <p class="text-sm opacity-60">Beautiful glassmorphism interface across all devices.</p>
-                </div>
-            </div>
-        </div>
+    <main class="main-hero">
+      <div class="hero-content">
+        <a href="https://t.me/SyntaxRealm">
+          <img src="https://files.catbox.moe/oh06q2.jpg" alt="Syntax Realm Logo" class="hero-logo"> 
+        </a>
+        <h1>Unleash Seamless Mirroring.<br><span class="hero-highlight">Zero Limits, Maximum Speed.</span></h1>
+        <p class="hero-sub">The Ultimate Telegram Mirror & Leech Bot by <b>Syntax Realm</b></p>
+      </div>
     </main>
 
-    <footer>
-        <div class="container mx-auto px-6">
-            <div class="mb-6 flex justify-center gap-6">
-                <a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i class="fab fa-github text-xl"></i></a>
-                <a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i class="fab fa-telegram text-xl"></i></a>
-            </div>
-            <p class="text-sm opacity-50">&copy; 2026 Syntax Realm. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <script>
-        const themeToggles = [document.getElementById('themeToggle'), document.getElementById('themeToggleMobile')];
-        const body = document.body;
-
-        function setTheme(isDark) {
-            body.classList.toggle('dark', isDark);
-            body.classList.toggle('light', !isDark);
-            themeToggles.forEach(t => t && (t.checked = isDark));
-            localStorage.setItem('darkMode', isDark);
-        }
-
-        themeToggles.forEach(t => {
-            if (t) {
-                t.addEventListener('change', () => setTheme(t.checked));
-            }
-        });
-
-        // Initialize theme
-        const savedTheme = localStorage.getItem('darkMode');
-        setTheme(savedTheme !== null ? savedTheme === 'true' : true);
-    </script>
 </body>
-
 </html>
