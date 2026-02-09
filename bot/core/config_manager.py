@@ -9,7 +9,7 @@ class Config:
     BASE_URL_PORT = 80
     BOT_TOKEN = ""
     HELPER_TOKENS = ""
-    BOT_MAX_TASKS = 20
+    BOT_MAX_TASKS = 0
     BOT_PM = False
     CMD_SUFFIX = ""
     CUSTOM_BOT_HEADER = "Syntax Realm"
@@ -69,7 +69,7 @@ class Config:
     LEECH_SPLIT_SIZE = 2097152000
     MEDIA_GROUP = False
     HYBRID_LEECH = True
-    HYPER_THREADS = 16  # Max Speed Mode
+    HYPER_THREADS = 20  # Max Speed Mode
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0

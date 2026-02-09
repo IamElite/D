@@ -373,46 +373,35 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
             timestamps.append(cap_time)
             cap_time += interval
 
-    # Batch screenshots extraction to save RAM/CPU
-    batch_size = 5
-    for i in range(0, len(timestamps), batch_size):
-        batch_times = timestamps[i : i + batch_size]
-        batch_cmds = []
-        for j, cap_time in enumerate(batch_times):
-            idx = i + j
-            output = f"{temp_dir}/SS_{idx:02}.png"
-            if mode == "image":
-                output = f"{ss_dir}/SS.{name_only}_{idx:02}.png"
-            
-            # Optimization: Downscale in ffmpeg to save RAM (4K RAW frames are massive)
-            # 1280 is enough for grid cells
-            scale_filter = "scale=1280:-1"
-            
-            cmd = [
-                "taskset", "-c", f"{cores}",
-                BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
-                "-ss", f"{cap_time}", "-i", video_file,
-                "-vf", scale_filter,
-                "-q:v", "1", "-frames:v", "1", "-threads", f"{threads}",
-                output,
-            ]
-            batch_cmds.append(cmd_exec(cmd))
+    import gc
+    # Sequential extraction to strictly limit RAM usage (Heroku friendly)
+    for i, cap_time in enumerate(timestamps):
+        output = f"{temp_dir}/SS_{i:02}.png"
+        if mode == "image":
+            output = f"{ss_dir}/SS.{name_only}_{i:02}.png"
+        
+        # Optimization: Downscale in ffmpeg to save RAM (4K RAW frames are massive)
+        scale_filter = "scale=1280:-1"
+        
+        cmd = [
+            "taskset", "-c", f"{cores}",
+            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+            "-ss", f"{cap_time}", "-i", video_file,
+            "-vf", scale_filter,
+            "-q:v", "1", "-frames:v", "1", "-threads", f"{threads}",
+            output,
+        ]
         
         try:
-            results = await wait_for(gather(*batch_cmds), timeout=120)
-            if any(res[2] != 0 for res in results):
-                LOGGER.error(f"Error creating screenshots batch. Path: {video_file}")
-                # Don't fail immediately, try to continue if some succeeded
+            await wait_for(cmd_exec(cmd), timeout=60)
+            if i % 10 == 0:
+                gc.collect() # Periodically clean up memory
         except Exception as e:
-            LOGGER.error(f"Error creating screenshots batch. Error: {e}")
+            LOGGER.error(f"Error creating screenshot {i}. Error: {e}")
 
     if mode == "image":
         await rmtree(temp_dir, ignore_errors=True)
         return ss_dir
-
-    # Check if we actually got any screenshots
-    existing_ss = [f for f in await sync_to_async(lambda: [x for x in (temp_dir if mode != "image" else ss_dir) if x.startswith("SS_")])] # This is a bit simplified, but we need to check
-    # Actually, let's just use the count we expect
     
     # Calculate grid layout
     rows, cols = _get_grid_size(ss_nb, orientation)
@@ -588,8 +577,10 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
     collage_path = f"{ss_dir}/SS.{name_only}_collage.png"
     collage.save(collage_path, "PNG", quality=95)
     
-    # Clean up temp directory
+    # Clean up
+    collage.close()
     await rmtree(temp_dir, ignore_errors=True)
+    gc.collect()
     
     LOGGER.info(f"Collage created: {collage_path} ({rows}x{cols} grid, {ss_nb} screenshots)")
     return ss_dir
