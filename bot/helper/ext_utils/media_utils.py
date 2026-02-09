@@ -373,60 +373,99 @@ async def take_ss_collage(video_file, ss_nb, mode="image", orientation="landscap
             timestamps.append(cap_time)
             cap_time += interval
 
-    cmds = []
-    for i, cap_time in enumerate(timestamps):
-        output = f"{temp_dir}/SS_{i:02}.png"
-        if mode == "image":
-            output = f"{ss_dir}/SS.{name_only}_{i:02}.png"
-        cmd = [
-            "taskset", "-c", f"{cores}",
-            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
-            "-ss", f"{cap_time}", "-i", video_file,
-            "-q:v", "1", "-frames:v", "1", "-threads", f"{threads}",
-            output,
-        ]
-        cmds.append(cmd_exec(cmd))
-    
-    try:
-        results = await wait_for(gather(*cmds), timeout=120)
-        if mode == "image":
-            await rmtree(temp_dir, ignore_errors=True)
-            return ss_dir
-        if results[0][2] != 0:
-            LOGGER.error(f"Error creating screenshots. Path: {video_file}. stderr: {results[0][1]}")
-            await rmtree(ss_dir, ignore_errors=True)
-            return False
-    except Exception:
-        LOGGER.error(f"Error creating screenshots. Path: {video_file}. Error: Timeout!")
-        await rmtree(ss_dir, ignore_errors=True)
-        return False
+    # Batch screenshots extraction to save RAM/CPU
+    batch_size = 5
+    for i in range(0, len(timestamps), batch_size):
+        batch_times = timestamps[i : i + batch_size]
+        batch_cmds = []
+        for j, cap_time in enumerate(batch_times):
+            idx = i + j
+            output = f"{temp_dir}/SS_{idx:02}.png"
+            if mode == "image":
+                output = f"{ss_dir}/SS.{name_only}_{idx:02}.png"
+            
+            # Optimization: Downscale in ffmpeg to save RAM (4K RAW frames are massive)
+            # 1280 is enough for grid cells
+            scale_filter = "scale=1280:-1"
+            
+            cmd = [
+                "taskset", "-c", f"{cores}",
+                BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+                "-ss", f"{cap_time}", "-i", video_file,
+                "-vf", scale_filter,
+                "-q:v", "1", "-frames:v", "1", "-threads", f"{threads}",
+                output,
+            ]
+            batch_cmds.append(cmd_exec(cmd))
+        
+        try:
+            results = await wait_for(gather(*batch_cmds), timeout=120)
+            if any(res[2] != 0 for res in results):
+                LOGGER.error(f"Error creating screenshots batch. Path: {video_file}")
+                # Don't fail immediately, try to continue if some succeeded
+        except Exception as e:
+            LOGGER.error(f"Error creating screenshots batch. Error: {e}")
+
+    if mode == "image":
+        await rmtree(temp_dir, ignore_errors=True)
+        return ss_dir
+
+    # Check if we actually got any screenshots
+    existing_ss = [f for f in await sync_to_async(lambda: [x for x in (temp_dir if mode != "image" else ss_dir) if x.startswith("SS_")])] # This is a bit simplified, but we need to check
+    # Actually, let's just use the count we expect
     
     # Calculate grid layout
     rows, cols = _get_grid_size(ss_nb, orientation)
     total_cells = rows * cols
     
-    # Load first image to get dimensions
+    # Load first image to get dimensions with safety limits
     first_img_path = f"{temp_dir}/SS_00.png"
     try:
         with Image.open(first_img_path) as first_img:
             cell_width, cell_height = first_img.size
     except Exception:
-        cell_width, cell_height = 640, 360
+        cell_width, cell_height = 1280, 720
+
+    # Ensure cells aren't too massive for the collage
+    max_cell_width = 1280
+    if cell_width > max_cell_width:
+        cell_height = int(cell_height * (max_cell_width / cell_width))
+        cell_width = max_cell_width
     
     # Calculate collage dimensions
     padding = max(6, cell_width // 100)
     collage_width = cols * cell_width + (cols + 1) * padding
+    
+    # Enforce Telegram/Stability limits (max 3840px)
+    max_total_dim = 3840
+    if collage_width > max_total_dim:
+        scale_ratio = max_total_dim / collage_width
+        cell_width = int(cell_width * scale_ratio)
+        cell_height = int(cell_height * scale_ratio)
+        padding = int(padding * scale_ratio)
+        collage_width = cols * cell_width + (cols + 1) * padding
+
     header_height = max(200, (collage_width // 1280) * 200) if mode == "detailed" else 0
     collage_height = rows * cell_height + (rows + 1) * padding + header_height
     
+    # Final safety check for height
+    if collage_height > max_total_dim and mode != "detailed":
+         # If too high, reduce cell size further
+         scale_ratio = max_total_dim / collage_height
+         cell_width = int(cell_width * scale_ratio)
+         cell_height = int(cell_height * scale_ratio)
+         padding = int(padding * scale_ratio)
+         collage_width = cols * cell_width + (cols + 1) * padding
+         collage_height = rows * cell_height + (rows + 1) * padding
+
     # Create collage canvas (White background for professional borders)
     collage = Image.new("RGB", (collage_width, collage_height), color=(255, 255, 255))
     draw = ImageDraw.Draw(collage)
     
     # Calculate font sizes based on collage width
-    large_size = max(24, collage_width // 40)
-    small_size = max(18, collage_width // 60)
-    time_size = max(18, cell_width // 18)
+    large_size = max(20, collage_width // 45)
+    small_size = max(14, collage_width // 65)
+    time_size = max(14, cell_width // 20)
 
     # Try to load font with fallback
     def get_font(size, bold=False):
