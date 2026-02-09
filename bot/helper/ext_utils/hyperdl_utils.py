@@ -40,19 +40,17 @@ class HyperTGDownload:
         self.download_dir = "downloads/"
         self.directory = None
         # Resource Scaling based on Config
-        if Config.HIGH_PERFORMANCE_MODE:
+        if Config.HIGH_PERFORMANCE_MODE and not Config.IS_HEROKU:
             self.num_parts = Config.HYPER_THREADS or max(8, len(self.clients))
             self.chunk_size = 4 * 1024 * 1024 # 4MB (High Speed)
         else:
-            self.num_parts = 4 # Conservative threads
-            self.chunk_size = 1024 * 1024 # 1MB (Low RAM)
+            self.num_parts = min(4, Config.HYPER_THREADS) if Config.HYPER_THREADS else 4 # Conservative threads
+            self.chunk_size = 1024 * 1024 # 1MB (Low RAM / Heroku)
             
         self.cache_file_ref = {}
         self.cache_last_access = {}
         self.cache_max_size = 100
         self._processed_bytes = 0
-        self.file_size = 0
-        self.chunk_size = 4 * 1024 * 1024  # 4MB chunks for high-bandwidth servers
         self.file_name = ""
         self._cancel_event = Event()
         self.session_pool = {}
@@ -449,7 +447,7 @@ class HyperTGDownload:
                     try:
                         async with aiopen(part_file_path, "rb") as part_file:
                             while True:
-                                chunk = await part_file.read(16 * 1024 * 1024)  # 16MB buffer for faster merge
+                                chunk = await part_file.read(2 * 1024 * 1024)  # 2MB buffer for lower ram
                                 if not chunk:
                                     break
                                 await temp_file.write(chunk)

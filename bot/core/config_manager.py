@@ -9,7 +9,7 @@ class Config:
     BASE_URL_PORT = 80
     BOT_TOKEN = ""
     HELPER_TOKENS = ""
-    BOT_MAX_TASKS = 20
+    BOT_MAX_TASKS = 0
     BOT_PM = False
     CMD_SUFFIX = ""
     CUSTOM_BOT_HEADER = "Syntax Realm"
@@ -111,9 +111,9 @@ class Config:
     USER_SESSION_STRING = ""
     USER_TRANSMISSION = True
     USE_SERVICE_ACCOUNTS = False
-    WEB_PINCODE = True
+    WEB_PINCODE = False
     YT_DLP_OPTIONS = {}
-    HIGH_PERFORMANCE_MODE = True  # Toggle for High Speed (True) vs Eco Mode (False)
+    HIGH_PERFORMANCE_MODE = False  # Toggle for High Speed (True) vs Eco Mode (False)
 
     @classmethod
     def get(cls, key):
