@@ -712,12 +712,11 @@
         let files = [];
         let allowEdit = false;
 
-        const urlParams = new Proxy(new URLSearchParams(window.location.search), {
-            get: (searchParams, prop) => searchParams.get(prop),
-        });
+        const urlParams = new URLSearchParams(window.location.search);
+        const gid = urlParams.get('gid');
 
-        if (urlParams.pin) {
-            pinInput.value = urlParams.pin;
+        if (urlParams.has('pin')) {
+            pinInput.value = urlParams.get('pin');
             setTimeout(() => submitPin.click(), 0);
         }
 
@@ -1004,7 +1003,12 @@
                     const parentPath = oldPath.substring(0, oldPath.lastIndexOf('/'));
                     const newPath = parentPath ? parentPath + '/' + newName : newName;
                     
-                    fetch(`/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=rename`, {
+                    const searchParams = new URLSearchParams({
+                        gid: gid,
+                        pin: pinInput.value.trim(),
+                        mode: 'rename'
+                    });
+                    fetch(`/app/files/torrent?${searchParams.toString()}`, {
                         method: 'POST',
                         body: JSON.stringify({ old_path: oldPath, new_path: newPath })
                     }).then(res => {
@@ -1039,7 +1043,12 @@
             modalBody.innerHTML = `<p>Sending selection to server. Please wait...</p>`;
             modalFooter.innerHTML = '';
             openModal();
-            fetch(`/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=selection`, {
+            const searchParams = new URLSearchParams({
+                gid: gid,
+                pin: pinInput.value.trim(),
+                mode: 'selection'
+            });
+            fetch(`/app/files/torrent?${searchParams.toString()}`, {
                 method: 'POST',
                 body: JSON.stringify(files)
             }).then(res => {
@@ -1053,9 +1062,18 @@
 
         pinInput.addEventListener('keypress', (e) => (e.key === 'Enter') && submitPin.click());
         submitPin.addEventListener('click', () => {
-            if (!pinInput.value) return;
+            const pin = pinInput.value.trim();
+            if (!pin) return;
+            if (!gid) {
+                modalTitle.innerText = 'Missing GID';
+                modalBody.innerText = 'GID is missing from the URL. Please re-open the link from Telegram.';
+                modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Okay</button>';
+                openModal();
+                return;
+            }
             submitPin.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
-            fetch(`/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=get`).then(res => {
+            const searchParams = new URLSearchParams({ gid, pin, mode: 'get' });
+            fetch(`/app/files/torrent?${searchParams.toString()}`).then(res => {
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 return res.json();
             }).then(data => {
