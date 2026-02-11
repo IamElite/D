@@ -1052,10 +1052,10 @@ async def get_menu(option, message, user_id, edit_mode=True):
 ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
 ╰ <b>Description</b> → {user_settings_text[option][1]}
 """
-    if option == "THUMBNAIL" and await aiopath.exists(thumb_path):
+    if option == "THUMBNAIL" and await aiopath.exists(file_dict["THUMBNAIL"]):
         if edit_mode:
             await delete_message(message)
-        await send_message(message.chat.id if hasattr(message, "chat") else message, text, buttons.build_menu(2), photo=thumb_path)
+        await send_message(message.chat.id if hasattr(message, "chat") else message, text, buttons.build_menu(2), photo=file_dict["THUMBNAIL"])
     else:
         if edit_mode and (message.photo or message.document):
             await delete_message(message)
