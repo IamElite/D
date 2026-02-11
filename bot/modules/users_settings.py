@@ -1043,7 +1043,7 @@ async def get_menu(option, message, user_id, edit_mode=True):
     desc = user_settings_text[option][1]
     kwargs = {"disable_web_page_preview": True}
     if option == "THUMBNAIL" and val == "<b>Exists</b>" and Config.BASE_URL:
-        desc = f"<a href=\"{Config.BASE_URL.rstrip('/')}/thumbnails/{user_id}.jpg\">&#8203;</a>{desc}"
+        desc = f"<a href=\"{Config.BASE_URL.rstrip('/')}/thumbnails/{user_id}.jpg?{int(time())}\">&#8203;</a>{desc}"
         kwargs["disable_web_page_preview"] = False
 
     text = f"""⌬ <b><u>Menu Settings :</u></b>
