@@ -1116,7 +1116,6 @@ def gcloud(url):
             )
 
         gofile_links = findall(r'https://pdlk\.site/g/[^"\']+', html)
-        if gofile_links:
 
         headers = {
             "User-Agent": user_agent,
