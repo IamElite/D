@@ -2,7 +2,7 @@ from asyncio import sleep
 from functools import partial
 from html import escape
 from io import BytesIO
-from os import getcwd
+from os import getcwd, path as ospath
 from re import sub
 from time import time
 
@@ -14,7 +14,7 @@ from pyrogram.handlers import MessageHandler
 
 from bot.helper.ext_utils.status_utils import get_readable_file_size
 
-from .. import auth_chats, excluded_extensions, sudo_users, user_data
+from .. import LOGGER, auth_chats, excluded_extensions, sudo_users, user_data
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_utils import (
@@ -908,6 +908,7 @@ async def add_file(_, message, ftype, rfunc, forced_user_id=None):
         des_dir = f"{cpath}/cookies.txt"
         await message.download(file_name=des_dir)
     await delete_message(message)
+    LOGGER.info(f"User {user_id} updated {ftype}. Path: {ospath.abspath(des_dir)}")
     update_user_ldata(user_id, ftype, des_dir)
     await rfunc()
     await database.update_user_doc(user_id, ftype, des_dir)
