@@ -1175,37 +1175,7 @@ def gcloud(url):
                 "ERROR: Direct download link not found in gcloud.sbs final AJAX response"
             )
 
-        result = f"<code>{download_url}</code>"
-
-        if gofile_links:
-            g_links = []
-            for g_link in gofile_links:
-                try:
-                    # Follow redirects until we get to Gofile or a final URL
-                    g_res = session.get(
-                        g_link, headers={"User-Agent": user_agent}, allow_redirects=True
-                    )
-                    final_g_url = g_res.url
-                    if "gofile.io" in final_g_url or "workers.dev" in final_g_url:
-                        # Try to bypass Gofile
-                        try:
-                            g_direct = gofile(final_g_url)
-                            if isinstance(g_direct, tuple):
-                                 g_links.append(f"<b>Gofile:</b>\n{g_direct[0]}")
-                            else:
-                                 g_links.append(f"<b>Gofile:</b>\n{g_direct}")
-                        except Exception as e:
-                            LOGGER.error(f"gcloud: Gofile bypass failed for {final_g_url}: {e}")
-                            g_links.append(f"<b>Gofile (Share):</b> <code>{final_g_url}</code>\n(Bypass failed: {e})")
-                    else:
-                        g_links.append(f"<code>{final_g_url}</code>")
-                except Exception as e:
-                    LOGGER.error(f"gcloud: Failed to resolve {g_link}: {e}")
-                    g_links.append(f"<code>{g_link}</code>")
-            
-            result += f"\n\n<b>Alternative Links:</b>\n" + "\n\n".join(g_links)
-
-        return result
+        return download_url
 
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e}")
