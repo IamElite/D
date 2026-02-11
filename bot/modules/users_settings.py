@@ -829,9 +829,15 @@ async def handle_direct_update(message):
 
     if key == "THUMBNAIL":
         if message.reply_to_message and (message.reply_to_message.photo or message.reply_to_message.document):
-            await add_file(None, message.reply_to_message, "THUMBNAIL", partial(get_menu, "THUMBNAIL", message, user_id, False))
+            path = await create_thumb(message.reply_to_message, user_id)
             await delete_message(message)
-            return
+            update_user_ldata(user_id, key, path)
+            await database.update_user_doc(user_id, key, path)
+            await get_menu(key, message, user_id, False)
+        else:
+            await get_menu(key, message, user_id, False)
+            await delete_message(message)
+        return
 
     if not value and message.reply_to_message:
         value = message.reply_to_message.text or message.reply_to_message.caption
