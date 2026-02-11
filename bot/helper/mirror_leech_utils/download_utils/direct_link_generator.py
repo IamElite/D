@@ -1343,27 +1343,32 @@ def gofile(url):
         __url = "https://gofile.io/dist/js/config.js"
         try:
             __res = session.get(__url, headers=headers).text
+            wt = "4fd6sg89d7s6"
+            api_server = "api"
             if wt_match := search(r'appdata\.wt\s*[:=]\s*["\']([^"\']+)["\']', __res):
                 wt = wt_match.group(1)
-            else:
-                wt = "4fd6sg89d7s6"
-            __res = session.get(f"https://api.gofile.io/accounts/website?wt={wt}", headers=headers).json()
+            if api_match := search(r'appdata\.apiServer\s*[:=]\s*["\']([^"\']+)["\']', __res):
+                api_server = api_match.group(1)
+            
+            headers["X-Website-Token"] = wt
+            __res = session.get(f"https://{api_server}.gofile.io/accounts/website", headers=headers).json()
             if __res["status"] != "ok":
-                __res = session.post("https://api.gofile.io/accounts", json={"websiteToken": wt}, headers=headers).json()
+                __res = session.post(f"https://{api_server}.gofile.io/accounts", json={"websiteToken": wt}, headers=headers).json()
             if __res["status"] != "ok":
                 raise DirectDownloadLinkException("ERROR: Failed to get token.")
-            return __res["data"]["token"]
+            return __res["data"]["token"], wt, api_server
         except Exception as e:
             raise e
 
     def __fetch_links(session, _id, folderPath=""):
-        _url = f"https://api.gofile.io/contents/{_id}?wt=4fd6sg89d7s6&cache=true"
+        _url = f"https://{api_server}.gofile.io/contents/{_id}?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1"
         headers = {
             "User-Agent": user_agent,
             "Accept-Encoding": "gzip, deflate, br",
             "Accept": "*/*",
             "Connection": "keep-alive",
             "Authorization": "Bearer " + token,
+            "X-Website-Token": wt,
             "Referer": "https://gofile.io/",
             "Origin": "https://gofile.io",
         }
@@ -1419,10 +1424,10 @@ def gofile(url):
     details = {"contents": [], "title": "", "total_size": 0}
     with Session() as session:
         try:
-            token = __get_token(session)
+            token, wt, api_server = __get_token(session)
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-        details["header"] = f"Authorization: Bearer {token}"
+        details["header"] = f"Authorization: Bearer {token}\r\nCookie: accountToken={token}"
         try:
             __fetch_links(session, _id)
         except Exception as e:
