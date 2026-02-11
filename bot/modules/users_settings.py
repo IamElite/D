@@ -1041,24 +1041,20 @@ async def get_menu(option, message, user_id, edit_mode=True):
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
     desc = user_settings_text[option][1]
-    pre_text = ""
-    extra_kwargs = {}
+    kwargs = {"disable_web_page_preview": True}
     if option == "THUMBNAIL" and val == "<b>Exists</b>" and Config.BASE_URL:
-        public_url = f"{Config.BASE_URL.rstrip('/')}/thumbnails/{user_id}.jpg"
-        pre_text = f"<a href=\"{public_url}\">&#8203;</a>"
-        extra_kwargs["disable_web_page_preview"] = False
+        desc = f"<a href=\"{Config.BASE_URL.rstrip('/')}/thumbnails/{user_id}.jpg\">&#8203;</a>{desc}"
+        kwargs["disable_web_page_preview"] = False
 
-    text = f"""{pre_text}⌬ <b><u>Menu Settings :</u></b>
+    text = f"""⌬ <b><u>Menu Settings :</u></b>
 
 ╭ <b>Option</b> → {option}
 ┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
 ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
 ╰ <b>Description</b> → {desc}
 """
-    if edit_mode:
-        await edit_message(message, text, buttons.build_menu(2), **extra_kwargs)
-    else:
-        await send_message(message, text, buttons.build_menu(2), **extra_kwargs)
+    func = edit_message if edit_mode else send_message
+    await func(message, text, buttons.build_menu(2), **kwargs)
 
 
 async def event_handler(client, query, pfunc, rfunc, photo=False, document=False):
