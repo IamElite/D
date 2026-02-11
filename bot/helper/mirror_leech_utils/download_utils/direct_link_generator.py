@@ -7,7 +7,7 @@ from os import path as ospath
 from re import findall, match, search
 from requests import Session, post, get, RequestException
 from requests.adapters import HTTPAdapter
-from time import sleep
+from time import sleep, time
 from urllib.parse import parse_qs, urlparse, quote
 from urllib3.util.retry import Retry
 from uuid import uuid4
@@ -18,6 +18,7 @@ from ...ext_utils.exceptions import DirectDownloadLinkException
 from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from ...ext_utils.links_utils import is_share_link
 from ...ext_utils.status_utils import speed_string_to_bytes
+from bot import LOGGER
 
 user_agent = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
@@ -225,8 +226,10 @@ def direct_link_generator(link):
         return uploadee(link)
     elif "uploadhaven" in domain:
         return uploadhaven(link)
-    elif "gofile.io" in domain:
+    elif "gofile.io" in domain or "pdlk.site" in domain:
         return gofile(link)
+    elif "gcloud.sbs" in domain:
+        return gcloud(link)
     elif "send.cm" in domain:
         return send_cm(link)
     elif "tmpsend.com" in domain:
@@ -1093,6 +1096,134 @@ def gdtot(url):
     return sharer_scraper(final_url)
 
 
+def gcloud(url):
+    """
+    Generate a direct download link for gcloud.sbs URLs.
+    @param url: URL from gcloud.sbs
+    @return: Direct download link and Gofile link if found
+    """
+    LOGGER.info(f"Bypassing gcloud.sbs: {url}")
+    session = Session()
+    try:
+        res = session.get(url, headers={"User-Agent": user_agent}, allow_redirects=True)
+        res.raise_for_status()
+
+        html = res.text
+        if csrf_match := search(r"window\.CSRF_TOKEN = '([^']+)';", html):
+            csrf_token = csrf_match.group(1)
+            LOGGER.info(f"gcloud: Found CSRF Token: {csrf_token}")
+        else:
+            raise DirectDownloadLinkException(
+                "ERROR: CSRF token not found for gcloud.sbs"
+            )
+
+        gofile_links = findall(r'https://pdlk\.site/g/[^"\']+', html)
+        if gofile_links:
+            LOGGER.info(f"gcloud: Found {len(gofile_links)} potential Gofile links")
+
+        headers = {
+            "User-Agent": user_agent,
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRF-Token": csrf_token,
+            "Referer": res.url,
+        }
+
+        # Step 1: Get access_token
+        LOGGER.info(f"gcloud: Getting access_token from {res.url}")
+        step1_res = session.get(res.url, headers=headers)
+        step1_res.raise_for_status()
+        try:
+            step1_data = step1_res.json()
+        except:
+            raise DirectDownloadLinkException("ERROR: Failed to parse AJAX Step 1 response")
+            
+        if not step1_data.get("success") or "data" not in step1_data:
+             raise DirectDownloadLinkException("ERROR: AJAX Step 1 was not successful")
+             
+        access_token = step1_data["data"].get("access_token")
+        LOGGER.info(f"gcloud: Got Access Token: {access_token[:10]}...")
+
+        # Step 2: Get secure links (ids)
+        LOGGER.info("gcloud: Fetching secure link IDs")
+        secure_url = f"{res.url}&get_secure_links=1&access_token={access_token}"
+        step2_res = session.get(secure_url, headers=headers)
+        step2_res.raise_for_status()
+        try:
+            step2_data = step2_res.json()
+        except:
+            raise DirectDownloadLinkException("ERROR: Failed to parse AJAX Step 2 response")
+
+        gphotos_id = step2_data.get("gphotos_id")
+        gp_id = step2_data.get("gp_id")
+        
+        if not gphotos_id or not gp_id:
+             raise DirectDownloadLinkException("ERROR: Failed to get IDs from gcloud.sbs AJAX Step 2")
+        LOGGER.info(f"gcloud: Got IDs - GPhotos: {gphotos_id}, GP: {gp_id}")
+
+        # Step 3: Get final download_url
+        timestamp = int(time() * 1000)
+        instant_url = f"https://gcloud.sbs/instant/{gphotos_id}/{gp_id}"
+        ajax_url = f"{instant_url}?ajax=1&_t={timestamp}"
+        LOGGER.info(f"gcloud: Fetching final download URL from {instant_url}")
+
+        ajax_res = session.get(ajax_url, headers=headers)
+        ajax_res.raise_for_status()
+
+        try:
+            data = ajax_res.json()
+        except Exception:
+            raise DirectDownloadLinkException(
+                "ERROR: Failed to parse final AJAX response from gcloud.sbs"
+            )
+
+        download_url = data.get("download_url")
+
+        if not download_url:
+            raise DirectDownloadLinkException(
+                "ERROR: Direct download link not found in gcloud.sbs final AJAX response"
+            )
+
+        LOGGER.info(f"gcloud: Successfully bypassed. Link: {download_url[:50]}...")
+        result = f"<code>{download_url}</code>"
+
+        if gofile_links:
+            g_links = []
+            for g_link in gofile_links:
+                try:
+                    LOGGER.info(f"gcloud: Resolving Gofile redirect for {g_link}")
+                    # Follow redirects until we get to Gofile or a final URL
+                    g_res = session.get(
+                        g_link, headers={"User-Agent": user_agent}, allow_redirects=True
+                    )
+                    final_g_url = g_res.url
+                    if "gofile.io" in final_g_url:
+                        LOGGER.info(f"gcloud: Found Gofile share link: {final_g_url}. Bypassing...")
+                        # Try to bypass Gofile
+                        try:
+                            g_direct = gofile(final_g_url)
+                            if isinstance(g_direct, tuple):
+                                 g_links.append(f"<b>Gofile:</b>\n{g_direct[0]}")
+                            else:
+                                 g_links.append(f"<b>Gofile:</b>\n{g_direct}")
+                        except Exception as e:
+                            LOGGER.error(f"gcloud: Gofile bypass failed for {final_g_url}: {e}")
+                            g_links.append(f"<b>Gofile (Share):</b> <code>{final_g_url}</code>\n(Bypass failed: {e})")
+                    else:
+                        LOGGER.info(f"gcloud: Resolved to non-Gofile URL: {final_g_url}")
+                        g_links.append(f"<code>{final_g_url}</code>")
+                except Exception as e:
+                    LOGGER.error(f"gcloud: Failed to resolve {g_link}: {e}")
+                    g_links.append(f"<code>{g_link}</code>")
+            
+            result += f"\n\n<b>Alternative Links:</b>\n" + "\n\n".join(g_links)
+
+        return result
+
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e}")
+
+
+
 def sharer_scraper(url):
     cget = create_scraper().request
     try:
@@ -1320,6 +1451,11 @@ def linkBox(url: str):
 
 
 def gofile(url):
+    """
+    Generate a direct download link for Gofile URLs.
+    @param url: Gofile or pdlk.site URL
+    @return: Direct download link
+    """
     try:
         if "::" in url:
             _password = url.split("::")[-1]
@@ -1327,7 +1463,6 @@ def gofile(url):
             url = url.split("::")[-2]
         else:
             _password = ""
-        _id = url.split("/")[-1]
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
 
@@ -1341,6 +1476,7 @@ def gofile(url):
             "Origin": "https://gofile.io",
         }
         __url = "https://gofile.io/dist/js/config.js"
+        LOGGER.info(f"gofile: Getting wt from {__url}")
         try:
             __res = session.get(__url, headers=headers).text
             wt = "4fd6sg89d7s6"
@@ -1350,18 +1486,23 @@ def gofile(url):
             if api_match := search(r'appdata\.apiServer\s*[:=]\s*["\']([^"\']+)["\']', __res):
                 api_server = api_match.group(1)
             
+            LOGGER.info(f"gofile: Using wt: {wt[:5]}..., apiServer: {api_server}")
             headers["X-Website-Token"] = wt
             __res = session.get(f"https://{api_server}.gofile.io/accounts/website", headers=headers).json()
             if __res["status"] != "ok":
+                LOGGER.info("gofile: Token status not ok, trying to create account...")
                 __res = session.post(f"https://{api_server}.gofile.io/accounts", json={"websiteToken": wt}, headers=headers).json()
             if __res["status"] != "ok":
+                LOGGER.error(f"gofile: Failed to get account token - Response: {__res}")
                 raise DirectDownloadLinkException("ERROR: Failed to get token.")
             return __res["data"]["token"], wt, api_server
         except Exception as e:
+            LOGGER.error(f"gofile: Exception during token acquisition: {e}")
             raise e
 
     def __fetch_links(session, _id, folderPath=""):
         _url = f"https://{api_server}.gofile.io/contents/{_id}?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1"
+        LOGGER.info(f"gofile: Fetching contents for {_id} from {api_server}")
         headers = {
             "User-Agent": user_agent,
             "Accept-Encoding": "gzip, deflate, br",
@@ -1377,19 +1518,25 @@ def gofile(url):
         try:
             _json = session.get(_url, headers=headers).json()
         except Exception as e:
+            LOGGER.error(f"gofile: Failed to fetch contents for {_id}: {e}")
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-        if _json["status"] in "error-passwordRequired":
-            raise DirectDownloadLinkException(
-                f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(url)}"
-            )
-        if _json["status"] in "error-passwordWrong":
-            raise DirectDownloadLinkException("ERROR: This password is wrong !")
-        if _json["status"] in "error-notFound":
-            raise DirectDownloadLinkException(
-                "ERROR: File not found on gofile's server"
-            )
-        if _json["status"] in "error-notPublic":
-            raise DirectDownloadLinkException("ERROR: This folder is not public")
+        
+        status = _json.get("status")
+        if status != "ok":
+             LOGGER.error(f"gofile: API Error for {_id} - Status: {status}")
+             if status in "error-passwordRequired":
+                 raise DirectDownloadLinkException(
+                     f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(url)}"
+                 )
+             if status in "error-passwordWrong":
+                 raise DirectDownloadLinkException("ERROR: This password is wrong !")
+             if status in "error-notFound":
+                 raise DirectDownloadLinkException(
+                     "ERROR: File not found on gofile's server"
+                 )
+             if status in "error-notPublic":
+                 raise DirectDownloadLinkException("ERROR: This folder is not public")
+             raise DirectDownloadLinkException(f"ERROR: Gofile API returned {status}")
 
         data = _json["data"]
 
@@ -1424,6 +1571,24 @@ def gofile(url):
     details = {"contents": [], "title": "", "total_size": 0}
     with Session() as session:
         try:
+            # Follow redirects to handle pdlk.site or other wrappers
+            res = session.get(url, headers={"User-Agent": user_agent}, allow_redirects=True)
+            url = res.url
+            if "gofile.io" not in url:
+                # Check for Gofile link in HTML (pdlk.site worker flow)
+                if g_match := search(r'https?://gofile\.io/d/([\w-]+)', res.text):
+                    url = g_match.group(0)
+                    _id = g_match.group(1)
+                    LOGGER.info(f"gofile: Extracted true Gofile link from HTML: {url}")
+                else:
+                    _id = url.split("/")[-1]
+            else:
+                _id = url.split("/")[-1]
+            LOGGER.info(f"gofile: Resolved input to {url} (ID: {_id})")
+        except Exception as e:
+            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+
+        try:
             token, wt, api_server = __get_token(session)
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
@@ -1432,8 +1597,10 @@ def gofile(url):
             __fetch_links(session, _id)
         except Exception as e:
             raise DirectDownloadLinkException(e)
+    
     if len(details["contents"]) == 1:
         return (details["contents"][0]["url"], details["header"])
+    
     return details
 
 
