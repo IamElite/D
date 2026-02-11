@@ -833,6 +833,9 @@ async def handle_direct_update(message):
             await delete_message(message)
             return
 
+    if not value and message.reply_to_message:
+        value = message.reply_to_message.text or message.reply_to_message.caption
+
     if not value:
         await get_menu(key, message, user_id, False)
         await delete_message(message)
