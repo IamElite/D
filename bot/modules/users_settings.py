@@ -1044,15 +1044,18 @@ async def get_menu(option, message, user_id, edit_mode=True):
     val = user_dict.get(option)
     if option in file_dict and await aiopath.exists(file_dict[option]):
         val = "<b>Exists</b>"
+        if option == "THUMBNAIL":
+            val = "⬆️ Preview Above ⬆️"
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
+    
     text = f"""⌬ <b><u>Menu Settings :</u></b>
-
-╭ <b>Option</b> → {option}
-┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
-┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
-╰ <b>Description</b> → {user_settings_text[option][1]}
-"""
+ 
+ ╭ <b>Option</b> → {option}
+ ┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
+ ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
+ ╰ <b>Description</b> → {user_settings_text[option][1]}
+ """
     thumbpath = file_dict["THUMBNAIL"]
     if option == "THUMBNAIL" and await aiopath.exists(thumbpath):
         if edit_mode and message.photo:
