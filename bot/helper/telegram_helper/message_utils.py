@@ -70,18 +70,19 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
             except Exception:
                 LOGGER.error("Error while sending photo", exc_info=True)
                 return
+        disable_web_page_preview = kwargs.pop("disable_web_page_preview", True)
         if isinstance(message, int):
             return await TgClient.bot.send_message(
                 chat_id=message,
                 text=text,
-                disable_web_page_preview=kwargs.get("disable_web_page_preview", True),
+                disable_web_page_preview=disable_web_page_preview,
                 disable_notification=True,
                 reply_markup=buttons,
             )
         return await message.reply(
             text=text,
             quote=True,
-            disable_web_page_preview=kwargs.get("disable_web_page_preview", True),
+            disable_web_page_preview=disable_web_page_preview,
             disable_notification=True,
             reply_markup=buttons,
             **kwargs,
