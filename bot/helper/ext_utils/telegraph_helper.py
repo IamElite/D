@@ -7,9 +7,6 @@ from ... import LOGGER
 from ...core.config_manager import Config
 
 
-from aiohttp import ClientSession
-
-
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):
         self._telegraph = Telegraph(domain="graph.org")
@@ -81,25 +78,6 @@ class TelegraphHelper:
                 content=content,
             )
         return
-
-    @staticmethod
-    async def upload_to_telegraph(file_path):
-        try:
-            async with ClientSession() as session:
-                with open(file_path, "rb") as f:
-                    async with session.post(
-                        "https://graph.org/upload", data={"file": f}
-                    ) as response:
-                        if response.status == 200:
-                            res = await response.json()
-                            if isinstance(res, list) and res:
-                                return f"https://graph.org{res[0]['src']}"
-                            LOGGER.error(f"Telegraph Upload Failed: Invalid Response {res}")
-                        else:
-                            LOGGER.error(f"Telegraph Upload Failed: Status {response.status}")
-        except Exception as e:
-            LOGGER.error(f"Telegraph Upload Failed: {e}")
-        return None
 
 
 telegraph = TelegraphHelper(Config.AUTHOR_NAME, Config.AUTHOR_URL)
