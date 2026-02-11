@@ -80,6 +80,15 @@ class TelegraphHelper:
         return
 
 
+    @staticmethod
+    async def upload_to_telegraph(file_path):
+        try:
+            return await telegraph.upload_file(file_path)
+        except Exception as e:
+            LOGGER.error(f"Telegraph Upload Failed: {e}")
+            return None
+
+
 telegraph = TelegraphHelper(Config.AUTHOR_NAME, Config.AUTHOR_URL)
 
 print(__name__)

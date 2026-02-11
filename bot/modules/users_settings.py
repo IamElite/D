@@ -24,6 +24,7 @@ from ..helper.ext_utils.bot_utils import (
 )
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.media_utils import create_thumb
+from ..helper.ext_utils.telegraph_helper import telegraph
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import (
     delete_message,
@@ -756,12 +757,7 @@ async def get_user_settings(from_user, stype="main"):
 async def update_user_settings(query, stype="main"):
     handler_dict[query.from_user.id] = False
     msg, button = await get_user_settings(query.from_user, stype)
-    
-    if query.message.photo:
-        await delete_message(query.message)
-        await send_message(query.message.chat.id, msg, button)
-    else:
-        await edit_message(query.message, msg, button)
+    await edit_message(query.message, msg, button)
 
 
 
@@ -835,10 +831,13 @@ async def handle_direct_update(message):
     if key == "THUMBNAIL":
         if message.reply_to_message and (message.reply_to_message.photo or message.reply_to_message.document):
             path = await create_thumb(message.reply_to_message, user_id)
-            await delete_message(message)
             update_user_ldata(user_id, key, path)
             await database.update_user_doc(user_id, key, path)
-            await get_menu(key, message, user_id, False)
+            link = await telegraph.upload_to_telegraph(path)
+            update_user_ldata(user_id, "THUMBNAIL_URL", link)
+            await database.update_user_data(user_id)
+            await delete_message(message)
+            await send_message(message, f'<a href="{link}">&#8203;</a><b>Thumbnail Updated Successfully</b>', disable_web_page_preview=False)
         else:
             await get_menu(key, message, user_id, False)
             await delete_message(message)
@@ -916,6 +915,9 @@ async def add_file(_, message, ftype, rfunc):
         await message.download(file_name=des_dir)
     await delete_message(message)
     update_user_ldata(user_id, ftype, des_dir)
+    if ftype == "THUMBNAIL":
+        link = await telegraph.upload_to_telegraph(des_dir)
+        update_user_ldata(user_id, "THUMBNAIL_URL", link)
     await rfunc()
     await database.update_user_doc(user_id, ftype, des_dir)
 
@@ -1044,34 +1046,34 @@ async def get_menu(option, message, user_id, edit_mode=True):
     val = user_dict.get(option)
     if option in file_dict and await aiopath.exists(file_dict[option]):
         val = "<b>Exists</b>"
-        if option == "THUMBNAIL":
-            val = "⬆️ Preview Above ⬆️"
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
-    
+    thumb_preview = f'<a href="{user_dict.get("THUMBNAIL_URL", "")}">&#8203;</a>' if option == "THUMBNAIL" and user_dict.get("THUMBNAIL_URL") else ""
     text = f"""⌬ <b><u>Menu Settings :</u></b>
- 
- ╭ <b>Option</b> → {option}
- ┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
- ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
- ╰ <b>Description</b> → {user_settings_text[option][1]}
- """
-    thumbpath = file_dict["THUMBNAIL"]
-    if option == "THUMBNAIL" and await aiopath.exists(thumbpath):
-        if edit_mode and message.photo:
-            await edit_message(message, text, buttons.build_menu(2))
-        else:
-            if edit_mode:
-                await delete_message(message)
-            await send_message(message, text, buttons.build_menu(2), photo=thumbpath)
+{thumb_preview}
+╭ <b>Option</b> → {option}
+┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
+┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
+╰ <b>Description</b> → {user_settings_text[option][1]}
+"""
+    if option == "THUMBNAIL" and not user_dict.get("THUMBNAIL_URL") and await aiopath.exists(file_dict[option]):
+        link = await telegraph.upload_to_telegraph(file_dict[option])
+        if link:
+            update_user_ldata(user_id, "THUMBNAIL_URL", link)
+            await database.update_user_data(user_id)
+            thumb_preview = f'<a href="{link}">&#8203;</a>'
+            text = f"""⌬ <b><u>Menu Settings :</u></b>
+{thumb_preview}
+╭ <b>Option</b> → {option}
+┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
+┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
+╰ <b>Description</b> → {user_settings_text[option][1]}
+"""
+
+    if edit_mode:
+        await edit_message(message, text, buttons.build_menu(2), disable_web_page_preview=not user_dict.get("THUMBNAIL_URL") if option == "THUMBNAIL" else True)
     else:
-        if edit_mode and message.photo:
-            await delete_message(message)
-            await send_message(message, text, buttons.build_menu(2))
-        elif edit_mode:
-            await edit_message(message, text, buttons.build_menu(2))
-        else:
-            await send_message(message, text, buttons.build_menu(2))
+        await send_message(message, text, buttons.build_menu(2), disable_web_page_preview=not user_dict.get("THUMBNAIL_URL") if option == "THUMBNAIL" else True)
 
 
 async def event_handler(client, query, pfunc, rfunc, photo=False, document=False):
@@ -1227,6 +1229,8 @@ async def edit_user_settings(client, query):
             if await aiopath.exists(fpath):
                 await remove(fpath)
             del user_dict[data[3]]
+            if data[3] == "THUMBNAIL":
+                user_dict.pop("THUMBNAIL_URL", None)
             await database.update_user_doc(user_id, data[3])
         else:
             update_user_ldata(user_id, data[3], "")
@@ -1236,6 +1240,8 @@ async def edit_user_settings(client, query):
         await query.answer("Reset Done!", show_alert=True)
         if data[3] in user_dict:
             del user_dict[data[3]]
+            if data[3] == "THUMBNAIL":
+                user_dict.pop("THUMBNAIL_URL", None)
             await get_menu(data[3], message, user_id)
         else:
             for k in list(user_dict.keys()):
