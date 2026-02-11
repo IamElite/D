@@ -193,6 +193,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "",
         "<i>Send the API Key / Token for <b>{name}</b>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "EQUAL_SPLITS": (
+        "on|off",
+        "Split files equally.",
+        "<i>Send on or off in order to enable or disable equal splits.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "MEDIA_GROUP": (
+        "on|off",
+        "Send files in media group.",
+        "<i>Send on or off in order to enable or disable media group.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 SUPPORTED_UPHOSTERS = {
@@ -818,15 +828,14 @@ async def handle_direct_update(message):
     key = mapping[key_arg]
 
     if key == "THUMBNAIL":
-        if not message.reply_to_message or not (message.reply_to_message.photo or message.reply_to_message.document):
-            await send_message(message, "Reply to a photo/document with this command to set custom thumbnail!")
+        if message.reply_to_message and (message.reply_to_message.photo or message.reply_to_message.document):
+            await add_file(None, message.reply_to_message, "THUMBNAIL", partial(get_menu, "THUMBNAIL", message, user_id, False))
+            await delete_message(message)
             return
-        await add_file(None, message.reply_to_message, "THUMBNAIL", partial(send_message, message, "Thumbnail updated!"))
-        await delete_message(message)
-        return
 
     if not value:
-        await send_message(message, "Value cannot be empty!")
+        await get_menu(key, message, user_id, False)
+        await delete_message(message)
         return
 
     if key == "LEECH_SPLIT_SIZE":
@@ -857,9 +866,8 @@ async def handle_direct_update(message):
          except:
              pass
     else:
-        await send_message(message, f"<b>{key_arg.title()}</b> updated to: <code>{value}</code>")
+        await get_menu(key, message, user_id, False)
 
-@new_task
 @new_task
 async def send_user_settings(_, message):
     if len(message.command) > 1 and message.command[1] == "-s":
@@ -968,7 +976,7 @@ async def set_option(_, message, option, rfunc):
     await database.update_user_data(user_id)
 
 
-async def get_menu(option, message, user_id):
+async def get_menu(option, message, user_id, edit_mode=True):
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
 
@@ -1031,7 +1039,10 @@ async def get_menu(option, message, user_id):
 ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
 ╰ <b>Description</b> → {user_settings_text[option][1]}
 """
-    await edit_message(message, text, buttons.build_menu(2))
+    if edit_mode:
+        await edit_message(message, text, buttons.build_menu(2))
+    else:
+        await send_message(message, text, buttons.build_menu(2))
 
 
 async def event_handler(client, query, pfunc, rfunc, photo=False, document=False):
