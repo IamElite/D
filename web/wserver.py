@@ -14,6 +14,7 @@ from aioqbt.client import create_client
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from web.nodes import extract_file_ids, make_tree
 from aiohttp import ClientSession
 from aioqbt.exc import AQError
@@ -42,6 +43,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 templates = Jinja2Templates(directory="web/templates/")
+app.mount("/thumbnails", StaticFiles(directory="thumbnails"), name="thumbnails")
 
 basicConfig(
     format="[%(asctime)s] [%(levelname)s] - %(message)s",  #  [%(filename)s:%(lineno)d]

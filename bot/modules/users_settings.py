@@ -908,7 +908,7 @@ async def add_file(_, message, ftype, rfunc, forced_user_id=None):
         des_dir = f"{cpath}/cookies.txt"
         await message.download(file_name=des_dir)
     await delete_message(message)
-    LOGGER.info(f"User {user_id} updated {ftype}. Path: {ospath.abspath(des_dir)}")
+    LOGGER.info(f"User {user_id} updated {ftype}. Path: {des_dir}")
     update_user_ldata(user_id, ftype, des_dir)
     await rfunc()
     await database.update_user_doc(user_id, ftype, des_dir)
@@ -1042,7 +1042,7 @@ async def get_menu(option, message, user_id, edit_mode=True):
         val = get_readable_file_size(val)
     desc = user_settings_text[option][1]
     if option == "THUMBNAIL" and val == "<b>Exists</b>" and Config.BASE_URL:
-        public_url = f"{Config.BASE_URL}/thumbnails/{user_id}.jpg"
+        public_url = f"{Config.BASE_URL.rstrip('/')}/thumbnails/{user_id}.jpg"
         if desc.endswith("."):
             desc = f"{desc[:-1]}<a href=\"{public_url}\">.</a>"
 
