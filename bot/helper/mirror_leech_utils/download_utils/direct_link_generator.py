@@ -1337,10 +1337,19 @@ def gofile(url):
             "Accept-Encoding": "gzip, deflate, br",
             "Accept": "*/*",
             "Connection": "keep-alive",
+            "Referer": "https://gofile.io/",
+            "Origin": "https://gofile.io",
         }
-        __url = "https://api.gofile.io/accounts"
+        __url = "https://gofile.io/dist/js/config.js"
         try:
-            __res = session.post(__url, headers=headers).json()
+            __res = session.get(__url, headers=headers).text
+            if wt_match := search(r'appdata\.wt\s*[:=]\s*["\']([^"\']+)["\']', __res):
+                wt = wt_match.group(1)
+            else:
+                wt = "4fd6sg89d7s6"
+            __res = session.get(f"https://api.gofile.io/accounts/website?wt={wt}", headers=headers).json()
+            if __res["status"] != "ok":
+                __res = session.post("https://api.gofile.io/accounts", json={"websiteToken": wt}, headers=headers).json()
             if __res["status"] != "ok":
                 raise DirectDownloadLinkException("ERROR: Failed to get token.")
             return __res["data"]["token"]
@@ -1354,7 +1363,9 @@ def gofile(url):
             "Accept-Encoding": "gzip, deflate, br",
             "Accept": "*/*",
             "Connection": "keep-alive",
-            "Authorization": "Bearer" + " " + token,
+            "Authorization": "Bearer " + token,
+            "Referer": "https://gofile.io/",
+            "Origin": "https://gofile.io",
         }
         if _password:
             _url += f"&password={_password}"
@@ -1411,7 +1422,7 @@ def gofile(url):
             token = __get_token(session)
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-        details["header"] = f"Cookie: accountToken={token}"
+        details["header"] = f"Authorization: Bearer {token}"
         try:
             __fetch_links(session, _id)
         except Exception as e:
