@@ -756,7 +756,8 @@ async def get_user_settings(from_user, stype="main"):
 async def update_user_settings(query, stype="main"):
     handler_dict[query.from_user.id] = False
     msg, button = await get_user_settings(query.from_user, stype)
-    if query.message.photo or query.message.document:
+    
+    if query.message.photo:
         await delete_message(query.message)
         await send_message(query.message.chat.id, msg, button)
     else:
@@ -1052,14 +1053,18 @@ async def get_menu(option, message, user_id, edit_mode=True):
 ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
 ╰ <b>Description</b> → {user_settings_text[option][1]}
 """
-    if option == "THUMBNAIL" and await aiopath.exists(file_dict["THUMBNAIL"]):
-        if edit_mode:
-            await delete_message(message)
-        await send_message(message.chat.id if hasattr(message, "chat") else message, text, buttons.build_menu(2), photo=file_dict["THUMBNAIL"])
+    thumbpath = file_dict["THUMBNAIL"]
+    if option == "THUMBNAIL" and await aiopath.exists(thumbpath):
+        if edit_mode and message.photo:
+            await edit_message(message, text, buttons.build_menu(2))
+        else:
+            if edit_mode:
+                await delete_message(message)
+            await send_message(message, text, buttons.build_menu(2), photo=thumbpath)
     else:
-        if edit_mode and (message.photo or message.document):
+        if edit_mode and message.photo:
             await delete_message(message)
-            await send_message(message.chat.id, text, buttons.build_menu(2))
+            await send_message(message, text, buttons.build_menu(2))
         elif edit_mode:
             await edit_message(message, text, buttons.build_menu(2))
         else:
@@ -1095,10 +1100,7 @@ async def event_handler(client, query, pfunc, rfunc, photo=False, document=False
         elif time() - update_time > 8 and handler_dict[user_id]:
             update_time = time()
             msg = await client.get_messages(query.message.chat.id, query.message.id)
-            if msg.photo or msg.document:
-                text = msg.caption.split("\n")
-            else:
-                text = msg.text.split("\n")
+            text = msg.text.split("\n")
             text[-1] = (
                 f"╰ <b>Time Left :</b> <code>{round(60 - (time() - start_time), 2)} sec</code>"
             )
