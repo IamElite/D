@@ -2,7 +2,7 @@ from asyncio import sleep, gather
 from re import match as re_match
 from time import time
 
-from pyrogram.types import Message
+from pyrogram.types import Message, InputMediaPhoto
 from pyrogram.enums import ParseMode
 from pyrogram.errors import (
     FloodWait,
@@ -103,9 +103,23 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
         return str(e)
 
 
-async def edit_message(message, text, buttons=None, block=True, **kwargs):
+async def edit_message(message, text, buttons=None, block=True, photo=None, **kwargs):
     try:
         disable_web_page_preview = kwargs.pop("disable_web_page_preview", True)
+        if photo:
+            if message.photo:
+                return await message.edit_media(
+                    media=InputMediaPhoto(photo, caption=text),
+                    reply_markup=buttons,
+                )
+            else:
+                await delete_message(message)
+                return await send_message(
+                    message.chat.id, text, buttons, block, photo, **kwargs
+                )
+        if message.photo:
+            await delete_message(message)
+            return await send_message(message.chat.id, text, buttons, block, **kwargs)
         return await message.edit(
             text=text,
             disable_web_page_preview=disable_web_page_preview,
