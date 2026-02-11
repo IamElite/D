@@ -1040,12 +1040,18 @@ async def get_menu(option, message, user_id, edit_mode=True):
         val = "<b>Exists</b>"
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
+    desc = user_settings_text[option][1]
+    if option == "THUMBNAIL" and val == "<b>Exists</b>" and Config.BASE_URL:
+        public_url = f"{Config.BASE_URL}/thumbnails/{user_id}.jpg"
+        if desc.endswith("."):
+            desc = f"{desc[:-1]}<a href=\"{public_url}\">.</a>"
+
     text = f"""⌬ <b><u>Menu Settings :</u></b>
 
 ╭ <b>Option</b> → {option}
 ┊ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
 ┊ <b>Default Input Type</b> → {user_settings_text[option][0]}
-╰ <b>Description</b> → {user_settings_text[option][1]}
+╰ <b>Description</b> → {desc}
 """
     if edit_mode:
         await edit_message(message, text, buttons.build_menu(2))
