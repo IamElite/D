@@ -74,14 +74,14 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
             return await TgClient.bot.send_message(
                 chat_id=message,
                 text=text,
-                disable_web_page_preview=True,
+                disable_web_page_preview=kwargs.get("disable_web_page_preview", True),
                 disable_notification=True,
                 reply_markup=buttons,
             )
         return await message.reply(
             text=text,
             quote=True,
-            disable_web_page_preview=True,
+            disable_web_page_preview=kwargs.get("disable_web_page_preview", True),
             disable_notification=True,
             reply_markup=buttons,
             **kwargs,
@@ -102,11 +102,11 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
         return str(e)
 
 
-async def edit_message(message, text, buttons=None, block=True):
+async def edit_message(message, text, buttons=None, block=True, **kwargs):
     try:
         return await message.edit(
             text=text,
-            disable_web_page_preview=True,
+            disable_web_page_preview=kwargs.get("disable_web_page_preview", True),
             reply_markup=buttons,
         )
     except (MessageNotModified, MessageEmpty):
