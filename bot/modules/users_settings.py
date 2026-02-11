@@ -1041,9 +1041,11 @@ async def get_menu(option, message, user_id, edit_mode=True):
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
     desc = user_settings_text[option][1]
-    photo = None
-    if option == "THUMBNAIL" and val == "<b>Exists</b>":
-        photo = file_dict[option]
+    kwargs = {"disable_web_page_preview": True}
+    if option == "THUMBNAIL" and val == "<b>Exists</b>" and Config.BASE_URL:
+        mtime = int(ospath.getmtime(file_dict[option]))
+        desc = f"<a href=\"{Config.BASE_URL.rstrip('/')}/thumbnails/{user_id}.jpg?v={mtime}\">&#8203;</a>{desc}"
+        kwargs["disable_web_page_preview"] = False
 
     text = f"""⌬ <b><u>Menu Settings :</u></b>
 
@@ -1053,7 +1055,7 @@ async def get_menu(option, message, user_id, edit_mode=True):
 ╰ <b>Description</b> → {desc}
 """
     func = edit_message if edit_mode else send_message
-    await func(message, text, buttons.build_menu(2), photo=photo)
+    await func(message, text, buttons.build_menu(2), **kwargs)
 
 
 async def event_handler(client, query, pfunc, rfunc, photo=False, document=False):
