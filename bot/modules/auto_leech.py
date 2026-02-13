@@ -1,4 +1,3 @@
-import asyncio
 from bot import LOGGER, user_data
 from bot.helper.ext_utils.links_utils import (
     is_gdrive_id,
@@ -18,7 +17,6 @@ class AutoMessage:
         self._msg = original_message
         self.text = command_text
         self.reply_to_message = original_message
-        self.reply_to_message_id = original_message.id
 
     def __getattr__(self, name):
         return getattr(self._msg, name)
@@ -89,43 +87,52 @@ async def auto_leech_handler(client, message):
     if mode == "mirror" and user_dict.get("AUTO_MIRROR_FLAGS"):
         flags.append(user_dict["AUTO_MIRROR_FLAGS"])
 
-    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-
-    # If multiple lines, process each as a separate task
-    if len(lines) > 1 and is_link:
-        for line in lines:
-            # Construct command for each line
-            full_cmd = f"{cmd} {' '.join(flags)} {line}".strip()
-            while "  " in full_cmd:
-                full_cmd = full_cmd.replace("  ", " ")
-            
-            mock_msg = AutoMessage(message, full_cmd)
-            LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
-
-            if mode == "ytdl":
-                await ytdl_leech(client, mock_msg)
-            elif mode == "leech":
-                await leech(client, mock_msg)
-            elif mode == "mirror":
-                await mirror(client, mock_msg)
-            
-            # Small delay to prevent flood or ordering issues
-            await asyncio.sleep(0.5) 
+    if is_media:
+        # Process media (single task)
+        full_cmd = f"{cmd} {' '.join(flags)} {text}".strip()
+        while "  " in full_cmd:
+            full_cmd = full_cmd.replace("  ", " ")
+        mock_msg = AutoMessage(message, full_cmd)
+        LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
+        if mode == "ytdl":
+            await ytdl_leech(client, mock_msg)
+        elif mode == "leech":
+            await leech(client, mock_msg)
+        elif mode == "mirror":
+            await mirror(client, mock_msg)
         return
 
-    # Single line or Media
-    full_cmd = f"{cmd} {' '.join(flags)} {text}".strip()
-    while "  " in full_cmd:
-        full_cmd = full_cmd.replace("  ", " ")
+    # Process links (potentially multiline)
+    lines = text.split('\n')
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Check if line is a valid link/magnet/path
+        is_valid_line = (
+             is_url(line)
+             or is_magnet(line)
+             or is_rclone_path(line)
+             or is_gdrive_link(line)
+             or is_mega_link(line)
+             or is_gdrive_id(line)
+             or is_telegram_link(line)
+        )
+        
+        if not is_valid_line:
+            continue
 
-    # Create Mock Message
-    mock_msg = AutoMessage(message, full_cmd)
+        full_cmd = f"{cmd} {' '.join(flags)} {line}".strip()
+        while "  " in full_cmd:
+            full_cmd = full_cmd.replace("  ", " ")
 
-    LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
+        mock_msg = AutoMessage(message, full_cmd)
+        LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
 
-    if mode == "ytdl":
-        await ytdl_leech(client, mock_msg)
-    elif mode == "leech":
-        await leech(client, mock_msg)
-    elif mode == "mirror":
-        await mirror(client, mock_msg)
+        if mode == "ytdl":
+            await ytdl_leech(client, mock_msg)
+        elif mode == "leech":
+            await leech(client, mock_msg)
+        elif mode == "mirror":
+            await mirror(client, mock_msg)
