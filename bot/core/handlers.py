@@ -397,6 +397,14 @@ def add_handlers():
             & CustomFilters.authorized,
         )
     )
+    # AutoLeech handler - intercepts non-command messages
+    TgClient.bot.add_handler(
+        MessageHandler(
+            auto_command_handler,
+            filters=~command("") & CustomFilters.authorized,
+        ),
+        group=-1
+    )
     if Config.SET_COMMANDS:
         global BOT_COMMANDS
 

@@ -54,6 +54,13 @@ advanced_options = [
     "UPLOAD_PATHS",
     "USER_COOKIE_FILE",
 ]
+autoleech_options = [
+    "AUTO_LEECH",
+    "AUTO_MIRROR",
+    "AUTO_YL",
+    "AUTO_FFMPEG",
+    "AUTO_FLAGS",
+]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -203,6 +210,24 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "Send files in media group.",
         "<i>Send on or off in order to enable or disable media group.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "AUTO_MIRROR_FLAGS": (
+        "",
+        "",
+        "<i>Send flags for AutoMirror. Example: <code>-up streamtape</code> or <code>-up all</code>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "AUTO_FFMPEG_FLAGS": (
+        "",
+        "",
+        "<i>Send FFmpeg flag. Example: <code>-ff on2</code>.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "AUTO_FLAGS_VALUE": (
+        "",
+        "",
+        """<i>Send flags to apply automatically. Supports both formats:</i>
+<b>Format 1:</b> <code>-n filename -ss 10 -ff on</code>
+<b>Format 2:</b> <code>-n filename, -ss 10, -ff on</code>
+╰ <b>Time Left :</b> <code>60 sec</code>""",
+    ),
 }
 
 SUPPORTED_UPHOSTERS = {
@@ -236,6 +261,9 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
             "Misc Settings", f"userset {user_id} advanced", position="l_body"
+        )
+        buttons.data_button(
+            "AutoLeech Settings", f"userset {user_id} autoleech"
         )
 
         if user_dict and any(
@@ -702,6 +730,74 @@ async def get_user_settings(from_user, stype="main"):
 ┊ <b>YT-DLP Options</b> → <code>{ytopt}</code>
 ╰ <b>YT User Cookie File</b> → <b>{user_cookie_msg}</b>"""
 
+    elif stype == "autoleech":
+        # AutoLeech toggle
+        auto_leech = user_dict.get("AUTO_LEECH", False)
+        buttons.data_button(
+            f"AutoLeech: {'✅ True' if auto_leech else '❌ False'}",
+            f"userset {user_id} tog AUTO_LEECH {'f' if auto_leech else 't'}"
+        )
+
+        # AutoMirror toggle + flags
+        auto_mirror = user_dict.get("AUTO_MIRROR", False)
+        auto_mirror_flags = user_dict.get("AUTO_MIRROR_FLAGS", "")
+        buttons.data_button(
+            f"AutoMirror: {'✅ True' if auto_mirror else '❌ False'}",
+            f"userset {user_id} tog AUTO_MIRROR {'f' if auto_mirror else 't'}"
+        )
+        if auto_mirror_flags:
+            buttons.data_button("Remove Flag", f"userset {user_id} remove AUTO_MIRROR_FLAGS")
+        else:
+            buttons.data_button("Set Flag", f"userset {user_id} set AUTO_MIRROR_FLAGS")
+
+        # AutoYL toggle
+        auto_yl = user_dict.get("AUTO_YL", False)
+        buttons.data_button(
+            f"AutoYL: {'✅ True' if auto_yl else '❌ False'}",
+            f"userset {user_id} tog AUTO_YL {'f' if auto_yl else 't'}"
+        )
+
+        # AutoFFmpeg toggle + flags
+        auto_ffmpeg = user_dict.get("AUTO_FFMPEG", False)
+        auto_ffmpeg_flags = user_dict.get("AUTO_FFMPEG_FLAGS", "")
+        buttons.data_button(
+            f"AutoFFmpeg: {'✅ True' if auto_ffmpeg else '❌ False'}",
+            f"userset {user_id} tog AUTO_FFMPEG {'f' if auto_ffmpeg else 't'}"
+        )
+        if auto_ffmpeg_flags:
+            buttons.data_button("Remove Flag", f"userset {user_id} remove AUTO_FFMPEG_FLAGS")
+        else:
+            buttons.data_button("Set Flag", f"userset {user_id} set AUTO_FFMPEG_FLAGS")
+
+        # AutoFlags toggle + value
+        auto_flags = user_dict.get("AUTO_FLAGS", False)
+        auto_flags_value = user_dict.get("AUTO_FLAGS_VALUE", "")
+        buttons.data_button(
+            f"AutoFlags: {'✅ True' if auto_flags else '❌ False'}",
+            f"userset {user_id} tog AUTO_FLAGS {'f' if auto_flags else 't'}"
+        )
+        if auto_flags_value:
+            buttons.data_button("Remove Flag", f"userset {user_id} remove AUTO_FLAGS_VALUE")
+        else:
+            buttons.data_button("Set Flag", f"userset {user_id} set AUTO_FLAGS_VALUE")
+
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+
+        text = f"""⌬ <b>AutoLeech Settings :</b>
+╭ <b>Name</b> → {user_name}
+┊ <b>AutoLeech</b> → <b>{'Enabled' if auto_leech else 'Disabled'}</b>
+┊ <b>AutoMirror</b> → <b>{'Enabled' if auto_mirror else 'Disabled'}</b>
+┊ <b>Mirror Flags</b> → <code>{auto_mirror_flags or 'None'}</code>
+┊ <b>AutoYL</b> → <b>{'Enabled' if auto_yl else 'Disabled'}</b>
+┊ <b>AutoFFmpeg</b> → <b>{'Enabled' if auto_ffmpeg else 'Disabled'}</b>
+┊ <b>FFmpeg Flags</b> → <code>{auto_ffmpeg_flags or 'None'}</code>
+┊ <b>AutoFlags</b> → <b>{'Enabled' if auto_flags else 'Disabled'}</b>
+╰ <b>Auto Flags</b> → <code>{auto_flags_value or 'None'}</code>
+
+<b>Priority:</b> AutoYL > AutoLeech > AutoMirror"""
+
     elif stype == "uphoster":
         buttons.data_button("Stream Sites", f"userset {user_id} upstream")
         buttons.data_button("Download Sites", f"userset {user_id} updown")
@@ -1126,6 +1222,7 @@ async def edit_user_settings(client, query):
         "uphoster",
         "upstream",
         "updown",
+        "autoleech",
     ]:
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1139,6 +1236,8 @@ async def edit_user_settings(client, query):
             back_to = "gdrive"
         elif data[3] in ["USER_TOKENS", "USE_USER_COOKIE"]:
             back_to = "general"
+        elif data[3] in autoleech_options:
+            back_to = "autoleech"
         else:
             back_to = "leech"
         await update_user_settings(query, stype=back_to)
