@@ -1,4 +1,4 @@
-from bot import LOGGER, user_data
+from bot import LOGGER, bot_loop, user_data
 from bot.helper.ext_utils.links_utils import (
     is_gdrive_id,
     is_gdrive_link,
@@ -16,34 +16,59 @@ class AutoMessage:
     def __init__(self, original_message, command_text):
         self._msg = original_message
         self.text = command_text
-        self.reply_to_message = original_message
+        self.reply_to_message = None
 
     def __getattr__(self, name):
         return getattr(self._msg, name)
+
+
+def _check_link(line):
+    """Check if the first word of a line is a valid link."""
+    first = line.split()[0] if line.split() else ""
+    return (
+        is_url(first)
+        or is_magnet(first)
+        or is_rclone_path(first)
+        or is_gdrive_link(first)
+        or is_mega_link(first)
+        or is_gdrive_id(first)
+        or is_telegram_link(first)
+    )
+
+
+async def _process_line(client, line, mode, cmd, auto_flags, user_id):
+    """Process a single line as a task."""
+    full_cmd = f"{cmd} {' '.join(auto_flags)} {line}".strip()
+    while "  " in full_cmd:
+        full_cmd = full_cmd.replace("  ", " ")
+
+    mock_msg = AutoMessage(client._msg_ref, full_cmd)
+    LOGGER.info(f"AutoLeech [{user_id}]: {full_cmd}")
+
+    if mode == "ytdl":
+        await ytdl_leech(client, mock_msg)
+    elif mode == "leech":
+        await leech(client, mock_msg)
+    elif mode == "mirror":
+        await mirror(client, mock_msg)
 
 
 async def auto_leech_handler(client, message):
     user_id = message.from_user.id
     user_dict = user_data.get(user_id, {})
 
-    # Check if any Auto setting is enabled
     if not any(
         user_dict.get(k) for k in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL"]
     ):
         return
 
     text = message.text or message.caption or ""
+    lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
 
-    # Determine types
-    is_link = (
-        is_url(text)
-        or is_magnet(text)
-        or is_rclone_path(text)
-        or is_gdrive_link(text)
-        or is_mega_link(text)
-        or is_gdrive_id(text)
-        or is_telegram_link(text)
-    )
+    if not lines:
+        return
+
+    # Check if at least one line has a valid link or message has media
     is_media = (
         message.document
         or message.photo
@@ -52,14 +77,17 @@ async def auto_leech_handler(client, message):
         or message.voice
     )
 
-    if not is_link and not is_media:
+    valid_lines = [l for l in lines if _check_link(l)]
+
+    if not valid_lines and not is_media:
         return
 
     # Determine mode (Priority: YTDL > Leech > Mirror)
     mode = None
     cmd = ""
+    has_links = bool(valid_lines)
 
-    if user_dict.get("AUTO_YTDL") and is_link:
+    if user_dict.get("AUTO_YTDL") and has_links:
         mode = "ytdl"
         cmd = "/yl"
     elif user_dict.get("AUTO_LEECH"):
@@ -72,67 +100,42 @@ async def auto_leech_handler(client, message):
     if not mode:
         return
 
-    # Helper to append flags
-    flags = []
-
-    # AutoFlags
+    # Build auto flags
+    auto_flags = []
     if user_dict.get("AUTO_FLAGS") and user_dict.get("AUTO_FLAGS_VALUE"):
-        flags.append(user_dict["AUTO_FLAGS_VALUE"])
-
-    # AutoFFmpeg
+        auto_flags.append(user_dict["AUTO_FLAGS_VALUE"])
     if user_dict.get("AUTO_FFMPEG") and user_dict.get("AUTO_FFMPEG_FLAGS"):
-        flags.append(user_dict["AUTO_FFMPEG_FLAGS"])
-
-    # AutoMirror Flags (Only for Mirror)
+        auto_flags.append(user_dict["AUTO_FFMPEG_FLAGS"])
     if mode == "mirror" and user_dict.get("AUTO_MIRROR_FLAGS"):
-        flags.append(user_dict["AUTO_MIRROR_FLAGS"])
+        auto_flags.append(user_dict["AUTO_MIRROR_FLAGS"])
 
-    if is_media:
-        # Process media (single task)
-        full_cmd = f"{cmd} {' '.join(flags)} {text}".strip()
-        while "  " in full_cmd:
-            full_cmd = full_cmd.replace("  ", " ")
+    # Store message ref for AutoMessage
+    client._msg_ref = message
+
+    if is_media and not valid_lines:
+        # Media without links — single task with just cmd + flags
+        full_cmd = f"{cmd} {' '.join(auto_flags)}".strip()
         mock_msg = AutoMessage(message, full_cmd)
-        LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
-        if mode == "ytdl":
-            await ytdl_leech(client, mock_msg)
-        elif mode == "leech":
-            await leech(client, mock_msg)
+        mock_msg.reply_to_message = message
+        LOGGER.info(f"AutoLeech [{user_id}]: {full_cmd} (media)")
+        if mode == "leech":
+            bot_loop.create_task(leech(client, mock_msg))
         elif mode == "mirror":
-            await mirror(client, mock_msg)
+            bot_loop.create_task(mirror(client, mock_msg))
         return
 
-    # Process links (potentially multiline)
-    lines = text.split('\n')
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-            
-        # Check if line is a valid link/magnet/path
-        is_valid_line = (
-             is_url(line)
-             or is_magnet(line)
-             or is_rclone_path(line)
-             or is_gdrive_link(line)
-             or is_mega_link(line)
-             or is_gdrive_id(line)
-             or is_telegram_link(line)
-        )
-        
-        if not is_valid_line:
-            continue
-
-        full_cmd = f"{cmd} {' '.join(flags)} {line}".strip()
+    # Process each valid line as a separate task (bulk style)
+    for line in valid_lines:
+        full_cmd = f"{cmd} {' '.join(auto_flags)} {line}".strip()
         while "  " in full_cmd:
             full_cmd = full_cmd.replace("  ", " ")
 
         mock_msg = AutoMessage(message, full_cmd)
-        LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
+        LOGGER.info(f"AutoLeech [{user_id}]: {full_cmd}")
 
         if mode == "ytdl":
-            await ytdl_leech(client, mock_msg)
+            bot_loop.create_task(ytdl_leech(client, mock_msg))
         elif mode == "leech":
-            await leech(client, mock_msg)
+            bot_loop.create_task(leech(client, mock_msg))
         elif mode == "mirror":
-            await mirror(client, mock_msg)
+            bot_loop.create_task(mirror(client, mock_msg))
