@@ -87,7 +87,7 @@ async def auto_leech_handler(client, message):
     if mode == "mirror" and user_dict.get("AUTO_MIRROR_FLAGS"):
         flags.append(user_dict["AUTO_MIRROR_FLAGS"])
 
-    full_cmd = f"{cmd} {' '.join(flags)}"
+    full_cmd = f"{cmd} {' '.join(flags)} {text}"
 
     # Create Mock Message
     mock_msg = AutoMessage(message, full_cmd)
