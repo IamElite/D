@@ -87,6 +87,10 @@ async def auto_leech_handler(client, message):
     if mode == "mirror" and user_dict.get("AUTO_MIRROR_FLAGS"):
         flags.append(user_dict["AUTO_MIRROR_FLAGS"])
 
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+    if len(lines) > 1 and is_link:
+        flags.append(f"-i {len(lines)}")
+
     full_cmd = f"{cmd} {' '.join(flags)} {text}".strip()
     while "  " in full_cmd:
         full_cmd = full_cmd.replace("  ", " ")
