@@ -1,3 +1,6 @@
+import random
+from time import time
+
 from bot import LOGGER, bot_loop, user_data
 from bot.helper.ext_utils.links_utils import (
     is_gdrive_id,
@@ -17,6 +20,7 @@ class AutoMessage:
         self._msg = original_message
         self.text = command_text
         self.reply_to_message = None
+        self.id = original_message.id + int(time() * 1000) + random.randint(100, 10000000)
 
     def __getattr__(self, name):
         return getattr(self._msg, name)
