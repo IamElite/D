@@ -33,18 +33,8 @@ async def auto_leech_handler(client, message):
         return
 
     text = message.text or message.caption or ""
-
-    # Determine types
-    is_link = (
-        is_url(text)
-        or is_magnet(text)
-        or is_rclone_path(text)
-        or is_gdrive_link(text)
-        or is_mega_link(text)
-        or is_gdrive_id(text)
-        or is_telegram_link(text)
-    )
-    is_media = (
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+    is_media = bool(
         message.document
         or message.photo
         or message.video
@@ -52,57 +42,72 @@ async def auto_leech_handler(client, message):
         or message.voice
     )
 
-    if not is_link and not is_media:
+    if not lines and not is_media:
         return
 
-    # Determine mode (Priority: YTDL > Leech > Mirror)
-    mode = None
-    cmd = ""
+    # If it's media, we treat the whole caption as one task if not multi-line
+    # If multi-line text/caption, we process each line
+    for line in lines or [""]:
+        # If media and first line, 'line' might be the caption
+        # We need to check if this specific line has a link
+        first_word = line.split(maxsplit=1)[0] if line else ""
+        line_is_link = (
+            is_url(first_word)
+            or is_magnet(first_word)
+            or is_rclone_path(first_word)
+            or is_gdrive_link(first_word)
+            or is_mega_link(first_word)
+            or is_gdrive_id(first_word)
+            or is_telegram_link(first_word)
+        )
 
-    if user_dict.get("AUTO_YTDL") and is_link:
-        mode = "ytdl"
-        cmd = "/yl"
-    elif user_dict.get("AUTO_LEECH"):
-        mode = "leech"
-        cmd = "/leech"
-    elif user_dict.get("AUTO_MIRROR"):
-        mode = "mirror"
-        cmd = "/mirror"
+        if not line_is_link and not (is_media and (not lines or line == lines[0])):
+            continue
 
-    if not mode:
-        return
+        # Determine mode (Priority: YTDL > Leech > Mirror)
+        mode = None
+        cmd = ""
 
-    # Helper to append flags
-    flags = []
+        if user_dict.get("AUTO_YTDL") and line_is_link:
+            mode = "ytdl"
+            cmd = "/yl"
+        elif user_dict.get("AUTO_LEECH"):
+            mode = "leech"
+            cmd = "/leech"
+        elif user_dict.get("AUTO_MIRROR"):
+            mode = "mirror"
+            cmd = "/mirror"
 
-    # AutoFlags
-    if user_dict.get("AUTO_FLAGS") and user_dict.get("AUTO_FLAGS_VALUE"):
-        flags.append(user_dict["AUTO_FLAGS_VALUE"])
+        if not mode:
+            continue
 
-    # AutoFFmpeg
-    if user_dict.get("AUTO_FFMPEG") and user_dict.get("AUTO_FFMPEG_FLAGS"):
-        flags.append(user_dict["AUTO_FFMPEG_FLAGS"])
+        # Helper to append flags
+        flags = []
 
-    # AutoMirror Flags (Only for Mirror)
-    if mode == "mirror" and user_dict.get("AUTO_MIRROR_FLAGS"):
-        flags.append(user_dict["AUTO_MIRROR_FLAGS"])
+        # AutoFlags
+        if user_dict.get("AUTO_FLAGS") and user_dict.get("AUTO_FLAGS_VALUE"):
+            flags.append(user_dict["AUTO_FLAGS_VALUE"])
 
-    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-    if len(lines) > 1 and is_link:
-        flags.append(f"-i {len(lines)}")
+        # AutoFFmpeg
+        if user_dict.get("AUTO_FFMPEG") and user_dict.get("AUTO_FFMPEG_FLAGS"):
+            flags.append(user_dict["AUTO_FFMPEG_FLAGS"])
 
-    full_cmd = f"{cmd} {' '.join(flags)} {text}".strip()
-    while "  " in full_cmd:
-        full_cmd = full_cmd.replace("  ", " ")
+        # AutoMirror Flags (Only for Mirror)
+        if mode == "mirror" and user_dict.get("AUTO_MIRROR_FLAGS"):
+            flags.append(user_dict["AUTO_MIRROR_FLAGS"])
 
-    # Create Mock Message
-    mock_msg = AutoMessage(message, full_cmd)
+        full_cmd = f"{cmd} {' '.join(flags)} {line}".strip()
+        while "  " in full_cmd:
+            full_cmd = full_cmd.replace("  ", " ")
 
-    LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
+        # Create Mock Message
+        mock_msg = AutoMessage(message, full_cmd)
 
-    if mode == "ytdl":
-        await ytdl_leech(client, mock_msg)
-    elif mode == "leech":
-        await leech(client, mock_msg)
-    elif mode == "mirror":
-        await mirror(client, mock_msg)
+        LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
+
+        if mode == "ytdl":
+            await ytdl_leech(client, mock_msg)
+        elif mode == "leech":
+            await leech(client, mock_msg)
+        elif mode == "mirror":
+            await mirror(client, mock_msg)
