@@ -397,14 +397,6 @@ def add_handlers():
             & CustomFilters.authorized,
         )
     )
-    # AutoLeech handler - intercepts non-command messages
-    TgClient.bot.add_handler(
-        MessageHandler(
-            auto_command_handler,
-            filters=~command("") & CustomFilters.authorized,
-        ),
-        group=-1
-    )
     if Config.SET_COMMANDS:
         global BOT_COMMANDS
 
@@ -444,4 +436,13 @@ def add_handlers():
 
     TgClient.bot.add_handler(
         CallbackQueryHandler(save_to_saved_messages, filters=regex("^save_"))
+    )
+
+    # AutoLeech: process plain messages (links/files/media) when user has auto settings
+    TgClient.bot.add_handler(
+        MessageHandler(
+            auto_task_handler,
+            filters=CustomFilters.authorized,
+        ),
+        group=1,
     )
