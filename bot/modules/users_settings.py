@@ -1296,7 +1296,7 @@ async def edit_user_settings(client, query):
         
         # Redirect to autoleech section for AutoLeech flags, otherwise to option menu
         if data[3] in ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE"]:
-            async def autoleech_redirect(_, __, ___):
+            async def autoleech_redirect():
                 await update_user_settings(query, stype="autoleech")
             rfunc = autoleech_redirect
         else:
