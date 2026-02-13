@@ -128,9 +128,8 @@ async def auto_leech_handler(client, message):
     # Pass remaining lines as bulk list for run_multi to consume sequentially
     total = len(valid_lines)
     first_line = valid_lines[0]
-    remaining = valid_lines[1:]
 
-    full_cmd = f"{cmd} {first_line} -i {total} {flags_str}".strip()
+    full_cmd = f"{cmd} {first_line} {flags_str} -i {total}".strip()
     while "  " in full_cmd:
         full_cmd = full_cmd.replace("  ", " ")
 
@@ -144,17 +143,17 @@ async def auto_leech_handler(client, message):
     else:
         nextmsg.sender_chat = message.sender_chat
 
-    LOGGER.info(f"AutoLeech [{user_id}]: bulk {total} links → {full_cmd}")
+    LOGGER.info(f"AutoLeech [{user_id}]: bulk {total} links")
 
     if mode == "ytdl":
         bot_loop.create_task(
-            YtDlp(client, nextmsg, is_leech=True, bulk=remaining, options=flags_str).new_event()
+            YtDlp(client, nextmsg, is_leech=True, bulk=valid_lines, options=flags_str).new_event()
         )
     elif mode == "leech":
         bot_loop.create_task(
-            Mirror(client, nextmsg, is_leech=True, bulk=remaining, options=flags_str).new_event()
+            Mirror(client, nextmsg, is_leech=True, bulk=valid_lines, options=flags_str).new_event()
         )
     elif mode == "mirror":
         bot_loop.create_task(
-            Mirror(client, nextmsg, bulk=remaining, options=flags_str).new_event()
+            Mirror(client, nextmsg, bulk=valid_lines, options=flags_str).new_event()
         )
