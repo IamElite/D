@@ -17,6 +17,7 @@ class AutoMessage:
         self._msg = original_message
         self.text = command_text
         self.reply_to_message = original_message
+        self.reply_to_message_id = original_message.id
 
     def __getattr__(self, name):
         return getattr(self._msg, name)
@@ -89,7 +90,7 @@ async def auto_leech_handler(client, message):
 
     lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
     if len(lines) > 1 and is_link:
-        full_cmd = f"{cmd} -b {' '.join(flags)}\n{text}"
+        full_cmd = f"{cmd} -b {' '.join(flags)}"
     else:
         full_cmd = f"{cmd} {' '.join(flags)} {text}"
 
