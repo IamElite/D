@@ -179,10 +179,20 @@ async def auto_command_handler(client, message):
     # Merge all flags
     merged_flags = merge_flags(*flag_lists)
     
-    # Extract link/file from message
+    # Extract link and flags from message text
     link = ""
+    message_flags = []
     if message.text:
-        link = message.text.split()[0]
+        parts = message.text.split()
+        if parts:
+            link = parts[0]  # First part is the link
+            # Rest are flags from the message itself
+            if len(parts) > 1:
+                message_flags = parts[1:]
+    
+    # Merge message flags with auto flags (message flags have priority)
+    if message_flags:
+        merged_flags = merge_flags(parse_auto_flags(merged_flags), message_flags)
     
     # Build command string
     command_str = f"{command} {link} {merged_flags}".strip()

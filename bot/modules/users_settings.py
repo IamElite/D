@@ -1293,7 +1293,15 @@ async def edit_user_settings(client, query):
         await edit_message(
             message, message.text.html + "\n\n" + text, buttons.build_menu(1)
         )
-        rfunc = partial(get_menu, data[3], message, user_id)
+        
+        # Redirect to autoleech section for AutoLeech flags, otherwise to option menu
+        if data[3] in ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE"]:
+            async def autoleech_redirect(_, __, ___):
+                await update_user_settings(query, stype="autoleech")
+            rfunc = autoleech_redirect
+        else:
+            rfunc = partial(get_menu, data[3], message, user_id)
+        
         pfunc = partial(func, option=data[3], rfunc=rfunc)
         await event_handler(client, query, pfunc, rfunc)
     elif data[2] == "remove":
@@ -1314,7 +1322,12 @@ async def edit_user_settings(client, query):
         else:
             update_user_ldata(user_id, data[3], "")
             await database.update_user_data(user_id)
-        await get_menu(data[3], message, user_id)
+        
+        # Redirect back to autoleech section for AutoLeech flags
+        if data[3] in ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE"]:
+            await update_user_settings(query, stype="autoleech")
+        else:
+            await get_menu(data[3], message, user_id)
     elif data[2] == "reset":
         await query.answer("Reset Done!", show_alert=True)
         if data[3] in user_dict:
