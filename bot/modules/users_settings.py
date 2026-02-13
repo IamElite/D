@@ -54,6 +54,7 @@ advanced_options = [
     "UPLOAD_PATHS",
     "USER_COOKIE_FILE",
 ]
+auto_leech_options = ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE"]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -203,6 +204,21 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "Send files in media group.",
         "<i>Send on or off in order to enable or disable media group.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "AUTO_MIRROR_FLAGS": (
+        "Flags",
+        "Set Auto Mirror Flags (e.g. -up all, -up streamtape).",
+        "<i>Send Flags to use with Auto Mirror.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "AUTO_FFMPEG_FLAGS": (
+        "Flags",
+        "Set Auto FFmpeg Flags (e.g. -ff on2).",
+        "<i>Send Flags to use with Auto FFmpeg.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "AUTO_FLAGS_VALUE": (
+        "Flags",
+        "Set Auto Flags (e.g. -n hi, -ss 10).",
+        "<i>Send Flags to use with Auto Flags.</i> \n╰ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 SUPPORTED_UPHOSTERS = {
@@ -233,12 +249,10 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Mirror Settings", f"userset {user_id} mirror")
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
         buttons.data_button("Uphoster Settings", f"userset {user_id} uphoster")
+        buttons.data_button("AutoLeech Settings", f"userset {user_id} autoleech")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
             "Misc Settings", f"userset {user_id} advanced", position="l_body"
-        )
-        buttons.data_button(
-            "AutoLeech Settings", f"userset {user_id} autoleech"
         )
 
         if user_dict and any(
@@ -252,12 +266,16 @@ async def get_user_settings(from_user, stype="main"):
                 "USER_TRANSMISSION",
                 "HYBRID_LEECH",
                 "STOP_DUPLICATE",
+                "STOP_DUPLICATE",
                 "DEFAULT_UPLOAD",
                 "AUTO_LEECH",
                 "AUTO_MIRROR",
-                "AUTO_YL",
+                "AUTO_YTDL",
                 "AUTO_FFMPEG",
                 "AUTO_FLAGS",
+                "AUTO_MIRROR_FLAGS",
+                "AUTO_FFMPEG_FLAGS",
+                "AUTO_FLAGS_VALUE",
             ]
         ):
             buttons.data_button(
@@ -654,48 +672,6 @@ async def get_user_settings(from_user, stype="main"):
 ╭ <b>Name</b> → {user_name}
 ╰ <b>FFmpeg Commands</b> → {ffc}"""
 
-    elif stype == "autoleech":
-        auto_keys = [
-            ("AUTO_LEECH", "AutoLeech", False),
-            ("AUTO_MIRROR", "AutoMirror", False),
-            ("AUTO_YL", "AutoYL", False),
-            ("AUTO_FFMPEG", "AutoFFmpeg", False),
-            ("AUTO_FLAGS", "AutoFlags", False),
-        ]
-        flag_keys = {
-            "AUTO_MIRROR": "AUTO_MIRROR_FLAGS",
-            "AUTO_FFMPEG": "AUTO_FFMPEG_FLAGS",
-            "AUTO_FLAGS": "AUTO_FLAGS_VALUE",
-        }
-        text_lines = [f"⌬ <b>AutoLeech Settings :</b>", f"╭ <b>Name</b> → {user_name}"]
-        for idx, (key, label, has_flag) in enumerate(auto_keys):
-            val = user_dict.get(key, False)
-            status = "✅ True" if val else "❌ False"
-            tog_val = "f" if val else "t"
-            buttons.data_button(
-                f"{label}: {status}", f"userset {user_id} tog {key} {tog_val}"
-            )
-            sep = "╰" if idx == len(auto_keys) - 1 else "┊"
-            line = f"{sep} <b>{label}</b> → <b>{status}</b>"
-            if has_flag:
-                fkey = flag_keys[key]
-                fval = user_dict.get(fkey, "")
-                line += f"  ⟨<code>{escape(fval) if fval else 'No Flag'}</code>⟩"
-                buttons.data_button(
-                    f"Set {label} Flag", f"userset {user_id} autoset {fkey}"
-                )
-                buttons.data_button(
-                    f"Rm {label} Flag", f"userset {user_id} autorm {fkey}"
-                )
-            text_lines.append(line)
-
-        buttons.data_button("Back", f"userset {user_id} back", "footer")
-        buttons.data_button("Close", f"userset {user_id} close", "footer")
-        btns = buttons.build_menu(2)
-
-        text_lines.append("\n<i>Priority: AutoYL › AutoLeech › AutoMirror</i>")
-        text = "\n".join(text_lines)
-
     elif stype == "advanced":
         buttons.data_button(
             "Excluded Extensions", f"userset {user_id} menu EXCLUDED_EXTENSIONS"
@@ -799,6 +775,75 @@ async def get_user_settings(from_user, stype="main"):
 ╭ <b>Name</b> → {user_name}
 ┊ <b>Current Key</b> → <code>{val}</code>
 ╰ <b>Send new API Key / Token for {name}.</b>"""
+
+    elif stype == "autoleech":
+        if user_dict.get("AUTO_LEECH", False):
+            buttons.data_button("Disable Auto Leech", f"userset {user_id} tog AUTO_LEECH f")
+            al_msg = "Enabled"
+        else:
+            buttons.data_button("Enable Auto Leech", f"userset {user_id} tog AUTO_LEECH t")
+            al_msg = "Disabled"
+
+        if user_dict.get("AUTO_MIRROR", False):
+            buttons.data_button("Disable Auto Mirror", f"userset {user_id} tog AUTO_MIRROR f")
+            am_msg = "Enabled"
+        else:
+            buttons.data_button("Enable Auto Mirror", f"userset {user_id} tog AUTO_MIRROR t")
+            am_msg = "Disabled"
+        
+        buttons.data_button("Mirror Flags", f"userset {user_id} menu AUTO_MIRROR_FLAGS")
+        if user_dict.get("AUTO_MIRROR_FLAGS", False):
+            am_flags = user_dict["AUTO_MIRROR_FLAGS"]
+        else:
+            am_flags = "None"
+
+        if user_dict.get("AUTO_YTDL", False):
+            buttons.data_button("Disable Auto YTDL", f"userset {user_id} tog AUTO_YTDL f")
+            ay_msg = "Enabled"
+        else:
+            buttons.data_button("Enable Auto YTDL", f"userset {user_id} tog AUTO_YTDL t")
+            ay_msg = "Disabled"
+
+        if user_dict.get("AUTO_FFMPEG", False):
+            buttons.data_button("Disable Auto FFmpeg", f"userset {user_id} tog AUTO_FFMPEG f")
+            aff_msg = "Enabled"
+        else:
+            buttons.data_button("Enable Auto FFmpeg", f"userset {user_id} tog AUTO_FFMPEG t")
+            aff_msg = "Disabled"
+            
+        buttons.data_button("FFmpeg Flags", f"userset {user_id} menu AUTO_FFMPEG_FLAGS")
+        if user_dict.get("AUTO_FFMPEG_FLAGS", False):
+            aff_flags = user_dict["AUTO_FFMPEG_FLAGS"]
+        else:
+            aff_flags = "None"
+
+        if user_dict.get("AUTO_FLAGS", False):
+            buttons.data_button("Disable Auto Flags", f"userset {user_id} tog AUTO_FLAGS f")
+            af_msg = "Enabled"
+        else:
+            buttons.data_button("Enable Auto Flags", f"userset {user_id} tog AUTO_FLAGS t")
+            af_msg = "Disabled"
+            
+        buttons.data_button("Common Flags", f"userset {user_id} menu AUTO_FLAGS_VALUE")
+        if user_dict.get("AUTO_FLAGS_VALUE", False):
+            af_val = user_dict["AUTO_FLAGS_VALUE"]
+        else:
+            af_val = "None"
+
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(2)
+
+        text = f"""⌬ <b>AutoLeech Settings :</b>
+╭ <b>Name</b> → {user_name}
+┊ <b>Auto Leech</b> → <b>{al_msg}</b>
+┊ <b>Auto Mirror</b> → <b>{am_msg}</b>
+┊ <b>Mirror Flags</b> → <code>{am_flags}</code>
+┊ <b>Auto YTDL</b> → <b>{ay_msg}</b>
+┊ <b>Auto FFmpeg</b> → <b>{aff_msg}</b>
+┊ <b>FFmpeg Flags</b> → <code>{aff_flags}</code>
+┊ <b>Auto Flags</b> → <b>{af_msg}</b>
+╰ <b>Common Flags</b> → <code>{af_val}</code>"""
 
     return text, btns
 
@@ -1081,6 +1126,8 @@ async def get_menu(option, message, user_id, edit_mode=True):
         back_to = "ffset"
     elif option in advanced_options:
         back_to = "advanced"
+    elif option in auto_leech_options:
+        back_to = "autoleech"
     else:
         back_to = "back"
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
@@ -1190,7 +1237,7 @@ async def edit_user_settings(client, query):
             back_to = "gdrive"
         elif data[3] in ["USER_TOKENS", "USE_USER_COOKIE"]:
             back_to = "general"
-        elif data[3].startswith("AUTO_"):
+        elif data[3] in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL", "AUTO_FFMPEG", "AUTO_FLAGS"]:
             back_to = "autoleech"
         else:
             back_to = "leech"
@@ -1208,25 +1255,6 @@ async def edit_user_settings(client, query):
         await query.answer(f"SS Orientation: {data[3].upper()}")
         update_user_ldata(user_id, "SCREENSHOT_ORIENTATION", data[3])
         await update_user_settings(query, stype="screenshot")
-        await database.update_user_data(user_id)
-    elif data[2] == "autoset":
-        await query.answer()
-        flag_key = data[3]
-        buttons = ButtonMaker()
-        text = f"<i>Send the flags for <b>{flag_key}</b>.\nExamples: <code>-up all</code>, <code>-ff on2</code>, <code>-n hi -ss 10 -ff on</code></i>\n╰ <b>Time Left :</b> <code>60 sec</code>"
-        buttons.data_button("Stop", f"userset {user_id} autoleech")
-        buttons.data_button("Back", f"userset {user_id} autoleech", "footer")
-        buttons.data_button("Close", f"userset {user_id} close", "footer")
-        await edit_message(
-            message, message.text.html + "\n\n" + text, buttons.build_menu(1)
-        )
-        rfunc = partial(update_user_settings, query, "autoleech")
-        pfunc = partial(set_option, option=flag_key, rfunc=rfunc)
-        await event_handler(client, query, pfunc, rfunc)
-    elif data[2] == "autorm":
-        await query.answer("Flag Removed!", show_alert=True)
-        update_user_ldata(user_id, data[3], "")
-        await update_user_settings(query, stype="autoleech")
         await database.update_user_data(user_id)
     elif data[2] == "file":
         await query.answer()

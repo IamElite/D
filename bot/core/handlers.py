@@ -12,6 +12,8 @@ from ..helper.telegram_helper.message_utils import send_message
 from ..modules import *
 from .tg_client import TgClient
 from .. import LOGGER
+from ..modules.auto_leech import auto_leech_handler
+from pyrogram import filters
 
 
 async def save_to_saved_messages(_, query):
@@ -437,12 +439,19 @@ def add_handlers():
     TgClient.bot.add_handler(
         CallbackQueryHandler(save_to_saved_messages, filters=regex("^save_"))
     )
-
-    # AutoLeech: process plain messages (links/files/media) when user has auto settings
     TgClient.bot.add_handler(
         MessageHandler(
-            auto_task_handler,
-            filters=CustomFilters.authorized,
-        ),
-        group=1,
+            auto_leech_handler,
+            filters=(
+                filters.text
+                | filters.document
+                | filters.photo
+                | filters.video
+                | filters.audio
+                | filters.voice
+            )
+            & ~filters.command
+            & ~filters.regex(r"^/")
+            & CustomFilters.authorized,
+        )
     )

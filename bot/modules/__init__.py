@@ -34,7 +34,6 @@ from .stats import bot_stats, stats_pages, get_packages_version
 from .status import task_status, status_pages
 from .users_settings import get_users_settings, edit_user_settings, send_user_settings
 from .ytdlp import ytdl, ytdl_leech
-from .auto_handler import auto_task_handler
 
 __all__ = [
     "send_bot_settings",
@@ -96,5 +95,4 @@ __all__ = [
     "send_user_settings",
     "ytdl",
     "ytdl_leech",
-    "auto_task_handler",
 ]
