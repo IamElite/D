@@ -82,8 +82,7 @@ async def add_mega_download(listener, path):
         async with task_dict_lock:
             task_dict[listener.mid] = QueueStatus(listener, gid, "Dl")
         await listener.on_download_start()
-        if listener.multi <= 1:
-            await send_status_message(listener.message)
+        await send_status_message(listener.message)
         await event.wait()
         if listener.is_cancelled:
             await async_api.logout()
@@ -97,8 +96,7 @@ async def add_mega_download(listener, path):
     else:
         LOGGER.info(f"Download from Mega: {listener.name}")
         await listener.on_download_start()
-        if listener.multi <= 1:
-            await send_status_message(listener.message)
+        await send_status_message(listener.message)
 
     await makedirs(path, exist_ok=True)
     await async_api.startDownload(

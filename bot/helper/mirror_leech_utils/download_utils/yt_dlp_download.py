@@ -149,8 +149,7 @@ class YoutubeDLHelper:
             task_dict[self._listener.mid] = YtDlpStatus(self._listener, self, self._gid)
         if not from_queue:
             await self._listener.on_download_start()
-            if self._listener.multi <= 1:
-                await send_status_message(self._listener.message)
+            await send_status_message(self._listener.message)
 
     async def switch_to_merge(self):
         async with task_dict_lock:

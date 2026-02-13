@@ -109,8 +109,7 @@ async def add_rclone_download(listener, path):
         async with task_dict_lock:
             task_dict[listener.mid] = QueueStatus(listener, gid, "dl")
         await listener.on_download_start()
-        if listener.multi <= 1:
-            await send_status_message(listener.message)
+        await send_status_message(listener.message)
         await event.wait()
         if listener.is_cancelled:
             return
@@ -123,8 +122,7 @@ async def add_rclone_download(listener, path):
         LOGGER.info(f"Start Queued Download with rclone: {listener.link}")
     else:
         await listener.on_download_start()
-        if listener.multi <= 1:
-            await send_status_message(listener.message)
+        await send_status_message(listener.message)
         LOGGER.info(f"Download with rclone: {listener.link}")
 
     await RCTransfer.download(remote, config_path, path)

@@ -53,8 +53,7 @@ class TelegramDownloadHelper:
             )
         if not from_queue:
             await self._listener.on_download_start()
-            if self._listener.multi <= 1:
-                await send_status_message(self._listener.message)
+            await send_status_message(self._listener.message)
             LOGGER.info(f"Download from Telegram: {self._listener.name}")
         else:
             LOGGER.info(f"Start Queued Download from Telegram: {self._listener.name}")
@@ -183,8 +182,7 @@ class TelegramDownloadHelper:
                             self._listener, gid, "dl"
                         )
                     await self._listener.on_download_start()
-                    if self._listener.multi <= 1:
-                        await send_status_message(self._listener.message)
+                    await send_status_message(self._listener.message)
                     await event.wait()
                     if self.session == "bot":
                         message = await self._listener.client.get_messages(

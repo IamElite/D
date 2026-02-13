@@ -43,8 +43,7 @@ async def add_direct_download(listener, path):
         async with task_dict_lock:
             task_dict[listener.mid] = QueueStatus(listener, gid, "dl")
         await listener.on_download_start()
-        if listener.multi <= 1:
-            await send_status_message(listener.message)
+        await send_status_message(listener.message)
         await event.wait()
         if listener.is_cancelled:
             return
@@ -62,7 +61,6 @@ async def add_direct_download(listener, path):
     else:
         LOGGER.info(f"Download from Direct Download: {listener.name}")
         await listener.on_download_start()
-        if listener.multi <= 1:
-            await send_status_message(listener.message)
+        await send_status_message(listener.message)
 
     await directListener.download(contents)

@@ -69,20 +69,14 @@ async def add_aria2_download(listener, dpath, header, ratio, seed_time):
         task_dict[listener.mid] = Aria2Status(listener, gid, queued=add_to_queue)
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}. Gid: {gid}")
-        if (
-            not listener.select or "bittorrent" not in download
-        ) and listener.multi <= 1:
+        if not listener.select or "bittorrent" not in download:
             await send_status_message(listener.message)
     else:
         LOGGER.info(f"Aria2Download started: {name}. Gid: {gid}")
 
     await listener.on_download_start()
 
-    if (
-        not add_to_queue
-        and (not listener.select or not Config.BASE_URL)
-        and listener.multi <= 1
-    ):
+    if not add_to_queue and (not listener.select or not Config.BASE_URL):
         await send_status_message(listener.message)
     elif listener.select and "bittorrent" in download and not is_metadata(download):
         if not add_to_queue:
