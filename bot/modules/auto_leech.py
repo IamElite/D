@@ -1,3 +1,4 @@
+import asyncio
 from bot import LOGGER, user_data
 from bot.helper.ext_utils.links_utils import (
     is_gdrive_id,
@@ -89,12 +90,31 @@ async def auto_leech_handler(client, message):
         flags.append(user_dict["AUTO_MIRROR_FLAGS"])
 
     lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-    if len(lines) > 1 and is_link:
-        full_cmd = f"{cmd} -b {' '.join(flags)}"
-    else:
-        full_cmd = f"{cmd} {' '.join(flags)} {text}"
 
-    full_cmd = full_cmd.strip()
+    # If multiple lines, process each as a separate task
+    if len(lines) > 1 and is_link:
+        for line in lines:
+            # Construct command for each line
+            full_cmd = f"{cmd} {' '.join(flags)} {line}".strip()
+            while "  " in full_cmd:
+                full_cmd = full_cmd.replace("  ", " ")
+            
+            mock_msg = AutoMessage(message, full_cmd)
+            LOGGER.info(f"AutoLeech Triggered for User {user_id}: {full_cmd}")
+
+            if mode == "ytdl":
+                await ytdl_leech(client, mock_msg)
+            elif mode == "leech":
+                await leech(client, mock_msg)
+            elif mode == "mirror":
+                await mirror(client, mock_msg)
+            
+            # Small delay to prevent flood or ordering issues
+            await asyncio.sleep(0.5) 
+        return
+
+    # Single line or Media
+    full_cmd = f"{cmd} {' '.join(flags)} {text}".strip()
     while "  " in full_cmd:
         full_cmd = full_cmd.replace("  ", " ")
 
