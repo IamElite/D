@@ -102,6 +102,23 @@ def should_auto_execute(message):
     return has_link or has_file
 
 
+
+
+class FakeCommandMessage:
+    """
+    Wrapper class that mimics a command message while delegating
+    all method calls to the original message object.
+    """
+    def __init__(self, original_message, command_text):
+        self._original = original_message
+        self.text = command_text
+        self.command = command_text.split()
+        
+    def __getattr__(self, name):
+        """Delegate all other attributes to the original message"""
+        return getattr(self._original, name)
+
+
 @new_task
 async def auto_command_handler(client, message):
     """
@@ -170,23 +187,8 @@ async def auto_command_handler(client, message):
     # Build command string
     command_str = f"{command} {link} {merged_flags}".strip()
     
-    # Create fake message with command
-    fake_message = type('obj', (object,), {
-        'text': command_str,
-        'from_user': message.from_user,
-        'chat': message.chat,
-        'reply_to_message': message.reply_to_message if hasattr(message, 'reply_to_message') else None,
-        'id': message.id,
-        'command': command_str.split(),
-        'document': message.document if hasattr(message, 'document') else None,
-        'photo': message.photo if hasattr(message, 'photo') else None,
-        'video': message.video if hasattr(message, 'video') else None,
-        'audio': message.audio if hasattr(message, 'audio') else None,
-        'voice': message.voice if hasattr(message, 'voice') else None,
-        'video_note': message.video_note if hasattr(message, 'video_note') else None,
-        'sticker': message.sticker if hasattr(message, 'sticker') else None,
-        'animation': message.animation if hasattr(message, 'animation') else None,
-    })()
+    # Create fake command message that wraps the original
+    fake_message = FakeCommandMessage(message, command_str)
     
     # Execute appropriate command
     try:
@@ -196,3 +198,4 @@ async def auto_command_handler(client, message):
             await Mirror(client, fake_message, is_leech=is_leech).new_event()
     except Exception as e:
         LOGGER.error(f"Auto-execution error: {e}")
+
