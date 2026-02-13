@@ -450,7 +450,6 @@ def add_handlers():
                 | filters.audio
                 | filters.voice
             )
-            & ~filters.command
             & ~filters.regex(r"^/")
             & CustomFilters.authorized,
         )
