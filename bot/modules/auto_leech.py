@@ -123,7 +123,7 @@ async def auto_leech_handler(client, message):
 
     if len(valid_lines) == 1:
         # Single link
-        full_cmd = f"{cmd} {flags_str} {valid_lines[0]}".strip()
+        full_cmd = f"{cmd} {valid_lines[0]} {flags_str}".strip()
         while "  " in full_cmd:
             full_cmd = full_cmd.replace("  ", " ")
         mock_msg = AutoMessage(message, full_cmd)
