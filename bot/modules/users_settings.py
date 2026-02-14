@@ -777,61 +777,67 @@ async def get_user_settings(from_user, stype="main"):
 ╰ <b>Send new API Key / Token for {name}.</b>"""
 
     elif stype == "autoleech":
-        if user_dict.get("AUTO_LEECH", False):
-            buttons.data_button("Disable Auto Leech", f"userset {user_id} tog AUTO_LEECH f")
-            al_msg = "Enabled"
-        else:
-            buttons.data_button("Enable Auto Leech", f"userset {user_id} tog AUTO_LEECH t")
-            al_msg = "Disabled"
-
-        if user_dict.get("AUTO_THUMB", True):
-            buttons.data_button("Disable Auto Thumb", f"userset {user_id} tog AUTO_THUMB f")
+        # Row 1: Auto Thumb
+        if user_dict.get("AUTO_THUMB", False):
+            buttons.data_button("Auto Thumb ✓", f"userset {user_id} tog AUTO_THUMB f")
             at_msg = "Enabled"
         else:
-            buttons.data_button("Enable Auto Thumb", f"userset {user_id} tog AUTO_THUMB t")
+            buttons.data_button("Auto Thumb ✘", f"userset {user_id} tog AUTO_THUMB t")
             at_msg = "Disabled"
 
+        # Row 2: Auto Leech
+        if user_dict.get("AUTO_LEECH", False):
+            buttons.data_button("Auto Leech ✓", f"userset {user_id} tog AUTO_LEECH f")
+            al_msg = "Enabled"
+        else:
+            buttons.data_button("Auto Leech ✘", f"userset {user_id} tog AUTO_LEECH t")
+            al_msg = "Disabled"
+
+        # Row 3: Auto YTDL
+        if user_dict.get("AUTO_YTDL", False):
+            buttons.data_button("Auto YTDL ✓", f"userset {user_id} tog AUTO_YTDL f")
+            ay_msg = "Enabled"
+        else:
+            buttons.data_button("Auto YTDL ✘", f"userset {user_id} tog AUTO_YTDL t")
+            ay_msg = "Disabled"
+
+        # Row 4: Auto Mirror | Mirror Flags
         if user_dict.get("AUTO_MIRROR", False):
-            buttons.data_button("Disable Auto Mirror", f"userset {user_id} tog AUTO_MIRROR f")
+            buttons.data_button("Auto Mirror ✓", f"userset {user_id} tog AUTO_MIRROR f")
             am_msg = "Enabled"
         else:
-            buttons.data_button("Enable Auto Mirror", f"userset {user_id} tog AUTO_MIRROR t")
+            buttons.data_button("Auto Mirror ✘", f"userset {user_id} tog AUTO_MIRROR t")
             am_msg = "Disabled"
         
-        buttons.data_button("Mirror Flags", f"userset {user_id} menu AUTO_MIRROR_FLAGS")
+        buttons.data_button("Mirror Flags ✎", f"userset {user_id} menu AUTO_MIRROR_FLAGS")
         if user_dict.get("AUTO_MIRROR_FLAGS", False):
             am_flags = user_dict["AUTO_MIRROR_FLAGS"]
         else:
             am_flags = "None"
 
-        if user_dict.get("AUTO_YTDL", False):
-            buttons.data_button("Disable Auto YTDL", f"userset {user_id} tog AUTO_YTDL f")
-            ay_msg = "Enabled"
-        else:
-            buttons.data_button("Enable Auto YTDL", f"userset {user_id} tog AUTO_YTDL t")
-            ay_msg = "Disabled"
-
+        # Row 5: Auto FFmpeg | FFmpeg Flags
         if user_dict.get("AUTO_FFMPEG", False):
-            buttons.data_button("Disable Auto FFmpeg", f"userset {user_id} tog AUTO_FFMPEG f")
+            buttons.data_button("Auto FFmpeg ✓", f"userset {user_id} tog AUTO_FFMPEG f")
             aff_msg = "Enabled"
         else:
-            buttons.data_button("Enable Auto FFmpeg", f"userset {user_id} tog AUTO_FFMPEG t")
+            buttons.data_button("Auto FFmpeg ✘", f"userset {user_id} tog AUTO_FFMPEG t")
             aff_msg = "Disabled"
             
-        buttons.data_button("FFmpeg Flags", f"userset {user_id} menu AUTO_FFMPEG_FLAGS")
+        buttons.data_button("FFmpeg Flags ✎", f"userset {user_id} menu AUTO_FFMPEG_FLAGS")
         if user_dict.get("AUTO_FFMPEG_FLAGS", False):
             aff_flags = user_dict["AUTO_FFMPEG_FLAGS"]
         else:
             aff_flags = "None"
 
+        # Row 6: Auto Flags | Common Flags
         if user_dict.get("AUTO_FLAGS", False):
-            buttons.data_button("Disable Auto Flags", f"userset {user_id} tog AUTO_FLAGS f")
+            buttons.data_button("Auto Flags ✓", f"userset {user_id} tog AUTO_FLAGS f")
             af_msg = "Enabled"
         else:
-            buttons.data_button("Enable Auto Flags", f"userset {user_id} tog AUTO_FLAGS t")
+            buttons.data_button("Auto Flags ✘", f"userset {user_id} tog AUTO_FLAGS t")
             af_msg = "Disabled"
             
-        buttons.data_button("Common Flags", f"userset {user_id} menu AUTO_FLAGS_VALUE")
+        buttons.data_button("Set Flags ✎", f"userset {user_id} menu AUTO_FLAGS_VALUE")
         if user_dict.get("AUTO_FLAGS_VALUE", False):
             af_val = user_dict["AUTO_FLAGS_VALUE"]
         else:
@@ -839,9 +845,11 @@ async def get_user_settings(from_user, stype="main"):
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
-        btns = buttons.build_menu(2)
+        # Layout: 1, 1, 1, 2, 2, 2
+        btns = buttons.build_menu([1, 1, 1, 2, 2, 2])
 
         text = f"""⌬ <b>AutoLeech Settings :</b>
+        
 ╭ <b>Name</b> → {user_name}
 ┊ <b>Auto Leech</b> → <b>{al_msg}</b>
 ┊ <b>Auto Thumb</b> → <b>{at_msg}</b>

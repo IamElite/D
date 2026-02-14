@@ -49,11 +49,11 @@ async def auto_leech_handler(client, message):
 
     if not any(
         user_dict.get(k) for k in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL", "AUTO_THUMB"]
-    ) and user_dict.get("AUTO_THUMB", True) is False: # Check if all are false (AutoThumb defaults to True)
+    ) and user_dict.get("AUTO_THUMB", False) is False: # Check if all are false (AutoThumb defaults to False)
         return
 
     # Auto Thumb
-    if user_dict.get("AUTO_THUMB", True) and message.photo:
+    if user_dict.get("AUTO_THUMB", False) and message.photo:
          path = await create_thumb(message, user_id)
          update_user_ldata(user_id, "THUMBNAIL", path)
          await database.update_user_doc(user_id, "THUMBNAIL", path)
