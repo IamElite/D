@@ -81,6 +81,35 @@ async def auto_leech_handler(client, message):
     if not valid_lines and not is_media:
         return
 
+    # Auto Mode Filter
+    auto_mode = user_dict.get("AUTO_MODE", "All")
+    if message.sticker or message.animation:
+        return
+
+    is_video = message.video or (
+        message.document
+        and message.document.mime_type
+        and message.document.mime_type.startswith("video")
+    )
+    is_audio = (
+        message.audio
+        or message.voice
+        or (
+            message.document
+            and message.document.mime_type
+            and message.document.mime_type.startswith("audio")
+        )
+    )
+
+    if auto_mode == "Links" and not valid_lines:
+        return
+    elif auto_mode == "Video" and not is_video:
+        return
+    elif auto_mode == "Audio" and not is_audio:
+        return
+    elif auto_mode == "All" and not valid_lines and not is_video and not is_audio:
+        return
+
     # Determine mode (Priority: YTDL > Leech > Mirror)
     mode = None
     cmd = ""

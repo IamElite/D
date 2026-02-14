@@ -54,7 +54,7 @@ advanced_options = [
     "UPLOAD_PATHS",
     "USER_COOKIE_FILE",
 ]
-auto_leech_options = ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE", "AUTO_THUMB"]
+auto_leech_options = ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE", "AUTO_THUMB", "AUTO_MODE"]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -777,7 +777,11 @@ async def get_user_settings(from_user, stype="main"):
 ╰ <b>Send new API Key / Token for {name}.</b>"""
 
     elif stype == "autoleech":
-        # Row 1: Auto Thumb
+        # Row 1: Auto Mode
+        mode = user_dict.get("AUTO_MODE", "All")
+        buttons.data_button(f"Auto Mode: {mode} 🔄", f"userset {user_id} cycle AUTO_MODE")
+
+        # Row 2: Auto Thumb
         if user_dict.get("AUTO_THUMB", False):
             buttons.data_button("Set Auto Thumbnail ✓", f"userset {user_id} tog AUTO_THUMB f")
             at_msg = "Enabled ✓"
@@ -845,24 +849,24 @@ async def get_user_settings(from_user, stype="main"):
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
-        # Layout: 1, 1, 1, 2, 2, 2
-        btns = buttons.build_menu([1, 1, 1, 2, 2, 2])
+        # Layout: 1, 1, 1, 1, 2, 2, 2
+        btns = buttons.build_menu([1, 1, 1, 1, 2, 2, 2])
 
         text = f"""⌬ <b>AutoLeech Settings :</b>
         
 ╭ <b>Name</b> → {user_name}
-┊ <b>Auto Leech</b> → <b>{al_msg}</b>
+┊ <b>Auto Mode</b> → <b>{mode}</b>
 ┊ <b>Auto Thumb</b> → <b>{at_msg}</b>
+┊ <b>Auto Leech</b> → <b>{al_msg}</b> 
+┊ <b>Auto YTDL</b> → <b>{ay_msg}</b>
 ┊ <b>Auto Mirror</b> → <b>{am_msg}</b>
 ┊ <b>Mirror Flags</b> → <code>{am_flags}</code>
-┊ <b>Auto YTDL</b> → <b>{ay_msg}</b>
 ┊ <b>Auto FFmpeg</b> → <b>{aff_msg}</b>
 ┊ <b>FFmpeg Flags</b> → <code>{aff_flags}</code>
 ┊ <b>Auto Flags</b> → <b>{af_msg}</b>
 ╰ <b>Common Flags</b> → <code>{af_val}</code>"""
 
     return text, btns
-
 
 async def update_user_settings(query, stype="main"):
     handler_dict[query.from_user.id] = False
@@ -1257,6 +1261,18 @@ async def edit_user_settings(client, query):
             back_to = "autoleech"
         else:
             back_to = "leech"
+    elif data[2] == "cycle":
+        await query.answer()
+        if data[3] == "AUTO_MODE":
+            modes = ['All', 'Links', 'Video', 'Audio']
+            current = user_dict.get("AUTO_MODE", "All")
+            try:
+                idx = modes.index(current)
+            except ValueError:
+                idx = 0
+            next_mode = modes[(idx + 1) % len(modes)]
+            update_user_ldata(user_id, "AUTO_MODE", next_mode)
+            back_to = "autoleech"
         await update_user_settings(query, stype=back_to)
         await database.update_user_data(user_id)
     elif data[2] == "sset":
