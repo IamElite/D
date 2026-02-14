@@ -54,7 +54,7 @@ advanced_options = [
     "UPLOAD_PATHS",
     "USER_COOKIE_FILE",
 ]
-auto_leech_options = ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE"]
+auto_leech_options = ["AUTO_MIRROR_FLAGS", "AUTO_FFMPEG_FLAGS", "AUTO_FLAGS_VALUE", "AUTO_THUMB"]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -784,6 +784,13 @@ async def get_user_settings(from_user, stype="main"):
             buttons.data_button("Enable Auto Leech", f"userset {user_id} tog AUTO_LEECH t")
             al_msg = "Disabled"
 
+        if user_dict.get("AUTO_THUMB", True):
+            buttons.data_button("Disable Auto Thumb", f"userset {user_id} tog AUTO_THUMB f")
+            at_msg = "Enabled"
+        else:
+            buttons.data_button("Enable Auto Thumb", f"userset {user_id} tog AUTO_THUMB t")
+            at_msg = "Disabled"
+
         if user_dict.get("AUTO_MIRROR", False):
             buttons.data_button("Disable Auto Mirror", f"userset {user_id} tog AUTO_MIRROR f")
             am_msg = "Enabled"
@@ -837,6 +844,7 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>AutoLeech Settings :</b>
 ╭ <b>Name</b> → {user_name}
 ┊ <b>Auto Leech</b> → <b>{al_msg}</b>
+┊ <b>Auto Thumb</b> → <b>{at_msg}</b>
 ┊ <b>Auto Mirror</b> → <b>{am_msg}</b>
 ┊ <b>Mirror Flags</b> → <code>{am_flags}</code>
 ┊ <b>Auto YTDL</b> → <b>{ay_msg}</b>
@@ -1237,7 +1245,7 @@ async def edit_user_settings(client, query):
             back_to = "gdrive"
         elif data[3] in ["USER_TOKENS", "USE_USER_COOKIE"]:
             back_to = "general"
-        elif data[3] in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL", "AUTO_FFMPEG", "AUTO_FLAGS"]:
+        elif data[3] in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL", "AUTO_FFMPEG", "AUTO_FLAGS", "AUTO_THUMB"]:
             back_to = "autoleech"
         else:
             back_to = "leech"

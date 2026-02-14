@@ -13,7 +13,10 @@ from bot.helper.ext_utils.links_utils import (
 )
 from bot.modules.mirror_leech import Mirror, leech, mirror
 from bot.modules.ytdlp import YtDlp, ytdl_leech
-from bot.helper.telegram_helper.message_utils import send_message
+from bot.helper.telegram_helper.message_utils import send_message, delete_message
+from bot.helper.ext_utils.db_handler import database
+from bot.helper.ext_utils.bot_utils import update_user_ldata
+from bot.helper.ext_utils.media_utils import create_thumb
 
 
 class AutoMessage:
@@ -45,9 +48,19 @@ async def auto_leech_handler(client, message):
     user_dict = user_data.get(user_id, {})
 
     if not any(
-        user_dict.get(k) for k in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL"]
-    ):
+        user_dict.get(k) for k in ["AUTO_LEECH", "AUTO_MIRROR", "AUTO_YTDL", "AUTO_THUMB"]
+    ) and user_dict.get("AUTO_THUMB", True) is False: # Check if all are false (AutoThumb defaults to True)
         return
+
+    # Auto Thumb
+    if user_dict.get("AUTO_THUMB", True) and message.photo:
+         path = await create_thumb(message, user_id)
+         update_user_ldata(user_id, "THUMBNAIL", path)
+         await database.update_user_doc(user_id, "THUMBNAIL", path)
+         
+         from bot.modules.users_settings import get_menu
+         await get_menu("THUMBNAIL", message, user_id, edit_mode=False)
+         return 
 
     text = message.text or message.caption or ""
     lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
