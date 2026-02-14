@@ -25,9 +25,21 @@ class ButtonMaker:
         def chunk(lst, n):
             return [lst[i: i + n] for i in range(0, len(lst), n)]
         
-        menu = chunk(self.buttons["default"], b_cols)
+        if isinstance(b_cols, list):
+            menu = []
+            idx = 0
+            for n in b_cols:
+                if idx >= len(self.buttons["default"]):
+                    break
+                menu.append(self.buttons["default"][idx : idx + n])
+                idx += n
+            if idx < len(self.buttons["default"]):
+                menu.extend(chunk(self.buttons["default"][idx:], 1))
+        else:
+            menu = chunk(self.buttons["default"], b_cols)
+
         menu = (
-            chunk(self.buttons["header"], h_cols) if self.buttons["header"] else []
+             chunk(self.buttons["header"], h_cols) if self.buttons["header"] else []
         ) + menu
         for key, cols in (("f_body", fb_cols), ("l_body", lb_cols), ("footer", f_cols)):
             if self.buttons[key]:
