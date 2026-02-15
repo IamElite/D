@@ -588,11 +588,23 @@ class TaskConfig:
             if len(self.bulk) == 0:
                 raise ValueError("Bulk Empty!")
             b_msg = input_list[:1]
-            self.options = input_list[1:]
-            index = self.options.index("-b")
-            del self.options[index]
-            if bulk_start or bulk_end:
-                del self.options[index + 1]
+            self.options = []
+            it = iter(input_list[1:])
+            for part in it:
+                if part == "-b":
+                    try:
+                        if bulk_start or bulk_end:
+                            next(it)
+                    except StopIteration:
+                        pass
+                    continue
+                if part == "-i":
+                    try:
+                        next(it)
+                    except StopIteration:
+                        pass
+                    continue
+                self.options.append(part)
             self.options = " ".join(self.options)
             b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
             msg = " ".join(b_msg)

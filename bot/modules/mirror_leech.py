@@ -129,6 +129,18 @@ class Mirror(TaskListener):
 
         arg_parser(input_list[1:], args)
 
+        options = []
+        it = iter(input_list[1:])
+        for part in it:
+            if part == "-i":
+                try:
+                    next(it)
+                except StopIteration:
+                    pass
+                continue
+            options.append(part)
+        self.options = " ".join(options)
+
         if Config.DISABLE_BULK and args.get("-b", False):
             await send_message(self.message, "Bulk downloads are currently disabled.")
             return
@@ -305,7 +317,6 @@ class Mirror(TaskListener):
             else:
                 self.bulk = reply_to
                 b_msg = input_list[:1]
-                self.options = " ".join(input_list[1:])
                 b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
                 nextmsg = await send_message(self.message, " ".join(b_msg))
                 nextmsg = await self.client.get_messages(
