@@ -253,6 +253,7 @@ class Mirror(TaskListener):
                          self.same_dir = {
                              self.folder_name: {
                                  "total": self.multi,
+                                 "original_total": self.multi,
                                  "tasks": {self.mid},
                              }
                          }

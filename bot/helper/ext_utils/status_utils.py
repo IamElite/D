@@ -245,8 +245,13 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         if task.listener.zip_all:
              processed_groups.add(task.listener.folder_name)
              all_tasks = [t for t in tasks if t.listener.folder_name == task.listener.folder_name]
-             current_count = len(all_tasks)
-             total_count = task.listener.same_dir[task.listener.folder_name]['total'] if task.listener.same_dir and task.listener.folder_name in task.listener.same_dir else current_count
+             
+             if task.listener.same_dir and task.listener.folder_name in task.listener.same_dir:
+                 total_count = task.listener.same_dir[task.listener.folder_name]['original_total']
+                 current_count = total_count - len(all_tasks) + 1
+             else:
+                 total_count = len(all_tasks)
+                 current_count = 1
              
              # Combined stats
              total_speed = 0

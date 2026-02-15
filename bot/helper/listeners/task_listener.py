@@ -160,12 +160,11 @@ class TaskListener(TaskConfig):
                                 LOGGER.info(f"Moving files from {self.mid} to {des_id}")
                                 await move_and_merge(spath, des_path, self.mid)
                                 multi_links = True
-                            elif self.zip_all:
-                                des_id = list(self.same_dir[self.folder_name]["tasks"])[0]
-                                if self.mid != des_id:
-                                    multi_links = True
                             break
                     await sleep(1)
+        
+        if self.zip_all and not multi_links:
+             self.is_file = False
         async with task_dict_lock:
             if self.is_cancelled:
                 return
