@@ -1,6 +1,5 @@
 from base64 import b64encode
 from re import match as re_match
-from secrets import token_hex
 
 from aiofiles.os import path as aiopath
 from bot.core.config_manager import Config
@@ -100,7 +99,6 @@ class Mirror(TaskListener):
             "-b": False,
             "-e": False,
             "-z": False,
-            "-za": False,
             "-sv": False,
             "-ss": False,
             "-sst": False,
@@ -129,20 +127,6 @@ class Mirror(TaskListener):
         }
 
         arg_parser(input_list[1:], args)
-
-        if args["-za"]:
-            args["-z"] = True
-            if not args["-m"]:
-                args["-m"] = token_hex(4)
-            if "-m" not in input_list:
-                input_list.append("-m")
-                input_list.append(args["-m"])
-            self.dir = f"{DOWNLOAD_DIR}{args['-m']}_zip/"
-            self.same_dir = {}
-            self.same_dir[args["-m"]] = {
-                "total": int(args.get("-i", 1)),
-                "tasks": set(),
-            }
 
         if Config.DISABLE_BULK and args.get("-b", False):
             await send_message(self.message, "Bulk downloads are currently disabled.")
@@ -259,7 +243,19 @@ class Mirror(TaskListener):
 
         if not is_bulk:
             if self.multi > 0:
-                if self.folder_name:
+                if args["-za"]:
+                    self.compress = True
+                    self.zip_all = True
+                    if not self.folder_name:
+                         self.folder_name = f"/_zip_all_{self.mid}_{token_hex(4)}"
+                    async with task_dict_lock:
+                         self.same_dir = {
+                             self.folder_name: {
+                                 "total": self.multi,
+                                 "tasks": {self.mid},
+                             }
+                         }
+                elif self.folder_name:
                     async with task_dict_lock:
                         if self.folder_name in self.same_dir:
                             self.same_dir[self.folder_name]["tasks"].add(self.mid)

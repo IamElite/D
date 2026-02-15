@@ -46,10 +46,8 @@ from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
 from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
-from ..mirror_leech_utils.status_utils.waiting_status import WaitingStatus
 from ..mirror_leech_utils.upload_utils.telegram_uploader import TelegramUploader
 from ..mirror_leech_utils.upload_utils.uphoster_uploader import UphosterUploader
-from aioshutil import move
 from ...modules.users_settings import SUPPORTED_UPHOSTERS
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
@@ -149,24 +147,25 @@ class TaskListener(TaskConfig):
                             self.same_dir[self.folder_name]["total"] <= 1
                             or len(self.same_dir[self.folder_name]["tasks"]) > 1
                         ):
-                             if self.same_dir[self.folder_name]["total"] > 1:
+                            if self.same_dir[self.folder_name]["total"] > 1:
                                 self.same_dir[self.folder_name]["tasks"].remove(
                                     self.mid
                                 )
                                 self.same_dir[self.folder_name]["total"] -= 1
+                                spath = f"{self.dir}{self.folder_name}"
+                                des_id = list(self.same_dir[self.folder_name]["tasks"])[
+                                    0
+                                ]
+                                des_path = f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
+                                LOGGER.info(f"Moving files from {self.mid} to {des_id}")
+                                await move_and_merge(spath, des_path, self.mid)
                                 multi_links = True
-                             break
+                            elif self.zip_all:
+                                des_id = list(self.same_dir[self.folder_name]["tasks"])[0]
+                                if self.mid != des_id:
+                                    multi_links = True
+                            break
                     await sleep(1)
-
-        if (
-            self.folder_name
-            and self.same_dir
-            and self.mid in self.same_dir[self.folder_name]["tasks"]
-        ):
-             pass
-
-
-
         async with task_dict_lock:
             if self.is_cancelled:
                 return
@@ -182,9 +181,9 @@ class TaskListener(TaskConfig):
 
         if multi_links:
             self.seed = False
-            async with task_dict_lock:
-                if self.mid in task_dict:
-                     del task_dict[self.mid]
+            await self.on_upload_error(
+                f"{self.name} Downloaded!\n\nWaiting for other tasks to finish..."
+            )
             return
         elif self.same_dir:
             self.seed = False
@@ -203,13 +202,8 @@ class TaskListener(TaskConfig):
                 return
 
         dl_path = f"{self.dir}/{self.name}"
-        if self.dir.endswith("_zip/"):
-             dl_path = self.dir.rstrip("/")
-             self.name = self.folder_name
-             self.is_file = False
-        else:
-             self.size = await get_path_size(dl_path)
-             self.is_file = await aiopath.isfile(dl_path)
+        self.size = await get_path_size(dl_path)
+        self.is_file = await aiopath.isfile(dl_path)
 
         if self.seed:
             up_dir = self.up_dir = f"{self.dir}10000"
@@ -420,6 +414,28 @@ class TaskListener(TaskConfig):
                 for index, (link, name) in enumerate(files.items(), start=1):
                     chat_id, msg_id = link.split("/")[-2:]
                     fmsg += f"{index}. <a href='{link}'>{name}</a>"
+        elif self.zip_all:
+             msg += f"\n┊ <b>File Name</b> → {self.name}"
+             msg += f"\n┊ <b>Total Files</b> → {self.same_dir[self.folder_name]['total'] if self.same_dir and self.folder_name in self.same_dir else 1}"
+             msg += f"\n┊ <b>Total Size</b> → {get_readable_file_size(self.size)}"
+             msg += f"\n╰ <b>Task By</b> → {self.tag}\n\n"
+             if self.bot_pm:
+                 pmsg = msg
+                 pmsg += "〶 <b><u>Action Performed :</u></b>\n"
+                 pmsg += "⋗ <i>File(s) have been sent to User PM</i>\n\n"
+                 if self.is_super_chat:
+                      await send_message(self.message, pmsg)
+                 final_sent_msg = await send_message(self.user_id, msg)
+             else:
+                 final_sent_msg = await send_message(self.message, msg)
+             
+             if self.up_dest.lower() == "all" and final_sent_msg:
+                 await send_message(final_sent_msg, link)
+             
+             # Skip the rest as we handled it
+             await self.clean()
+             return
+
         else:
             msg += f"\n╰ <b>Type</b> → {mime_type}"
             if mime_type == "Folder":
@@ -583,13 +599,12 @@ class TaskListener(TaskConfig):
         if self.thumb and await aiopath.exists(self.thumb):
             await remove(self.thumb)
 
-    async def on_upload_error(self, error, silent_cleanup=False):
+    async def on_upload_error(self, error):
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
             count = len(task_dict)
-        if not silent_cleanup:
-            await send_message(self.message, f"{self.tag} {escape(str(error))}")
+        await send_message(self.message, f"{self.tag} {escape(str(error))}")
         if count == 0:
             await self.clean()
         else:

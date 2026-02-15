@@ -229,15 +229,44 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         except:
             pass
 
+    processed_groups = set()
     for index, task in enumerate(
         tasks[start_position : STATUS_LIMIT + start_position], start=1
     ):
+        if task.listener.zip_all and task.listener.folder_name in processed_groups:
+             continue
         if status != "All":
             tstatus = status
         elif iscoroutinefunction(task.status):
             tstatus = await task.status()
         else:
             tstatus = task.status()
+
+        if task.listener.zip_all:
+             processed_groups.add(task.listener.folder_name)
+             all_tasks = [t for t in tasks if t.listener.folder_name == task.listener.folder_name]
+             current_count = len(all_tasks)
+             total_count = task.listener.same_dir[task.listener.folder_name]['total'] if task.listener.same_dir and task.listener.folder_name in task.listener.same_dir else current_count
+             
+             # Combined stats
+             total_speed = 0
+             total_size = 0
+             total_processed = 0
+             
+             for t in all_tasks:
+                 total_speed += speed_string_to_bytes(t.speed())
+                 total_size += t.size()
+                 total_processed += t.processed_bytes()
+                 
+             avg_speed = get_readable_file_size(total_speed) + "/s"
+             
+             msg += f"{index + start_position}. {escape(task.listener.name)} (ZipAll)\n"
+             msg += f"<b>By:</b> {task.listener.message.from_user.mention(style='html')} [<code>{task.listener.message.from_user.id}</code>]\n"
+             msg += f"╭ <b>Status:</b> {tstatus}\n"
+             msg += f"┊ <b>Count:</b> ( {current_count}/{total_count} )\n"
+             msg += f"┊ <b>Speed:</b> {avg_speed}\n"
+             msg += f"┊ <b>Mode:</b> {task.listener.mode[1]}\n\n"
+             continue
 
         msg += f"{index + start_position}. {escape(f'{task.name()}')}\n"
         msg += f"<b>Bx:</b> {task.listener.message.from_user.mention(style='html')} [<code>{task.listener.message.from_user.id}</code>]\n"
@@ -257,14 +286,14 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             msg += f"\n┊ <b>ETA:</b> {task.eta()}"
             msg += f"\n┊ <b>Pᴀsᴛ:</b> {get_readable_time(time() - task.listener.message.date.timestamp() + get_raw_time(task.eta()))}"
             msg += f"\n┊ <b>Eɴɢɪɴᴇ:</b> {task.engine}"
-            msg += f"\n╰ <b>Mᴏᴅᴇ:</b> {task.listener.mode[1]}\n"
+            msg += f"\n┊ <b>Mᴏᴅᴇ:</b> {task.listener.mode[1]}\n"
         elif tstatus == MirrorStatus.STATUS_SEED:
             msg += f"╭ Sᴇᴇᴅɪɴɢ » {task.ratio()}"
             msg += f"\n┊ {get_progress_bar_string(100)}"
-            msg += f"\n┊ <b>Sɪᴢᴇ:</b> {task.size()}"
-            msg += f"\n┊ <b>Sᴘᴇᴇᴅ:</b> {task.seed_speed()}"
-            msg += f"\n┊ <b>Uᴘʟᴏᴀᴅᴇᴅ:</b> {task.uploaded_bytes()}"
-            msg += f"\n╰ <b>Pᴀsᴛ:</b> {get_readable_time(time() - task.listener.message.date.timestamp())}\n"
+            msg += f"\n┊ <b>Size:</b> {task.size()}"
+            msg += f"\n┊ <b>Speed:</b> {task.seed_speed()}"
+            msg += f"\n┊ <b>Uploaded:</b> {task.uploaded_bytes()}"
+            msg += f"\n╰ <b>Past:</b> {get_readable_time(time() - task.listener.message.date.timestamp())}\n"
         else:
             msg += f"╭ <b>Status:</b> {tstatus}\n"
             msg += f"╰ <b>Size:</b> {task.size()}\n"
@@ -293,9 +322,9 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 buttons.data_button(label, f"status {sid} st {status_value}")
     buttons.data_button("♻️", f"status {sid} ref", position="header")
     button = buttons.build_menu(8)
-    msg += "\n〄 <b>Sʏsᴛᴇᴍ Sᴛᴀᴛɪsᴛɪᴄs...</b>"
-    msg += f"\n╭ <b>Cᴘᴜ:</b> {cpu_percent()}% | <b>F:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
-    msg += f"\n┊ <b>Rᴀᴍ:</b> {virtual_memory().percent}% | <b>Uᴘ:</b> {get_readable_time(time() - bot_start_time)}"
+    msg += "\n〄 <b>System Statistics...</b>"
+    msg += f"\n╭ <b>CPU:</b> {cpu_percent()}% | <b>F:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
+    msg += f"\n┊ <b>RAM:</b> {virtual_memory().percent}% | <b>Uptime:</b> {get_readable_time(time() - bot_start_time)}"
     msg += f"\n┊ 🔻 <b>Total DL:</b> {get_readable_file_size(total_dl)}/s"
     msg += f"\n╰ 🔺 <b>Total UL:</b> {get_readable_file_size(total_ul)}/s"
     return msg, button
