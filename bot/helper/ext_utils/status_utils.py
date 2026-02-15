@@ -253,12 +253,12 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 msg += f"\n┊ <b>{task.processed_bytes()} of {task.size()}</b> / {get_readable_file_size(task.listener.subsize)}"
             else:
                 msg += f"\n┊ <b>{task.processed_bytes()} of {task.size()}</b>"
+            if task.listener.total_count > 1:
+                msg += f"\n┊ <b>Cᴏᴜɴᴛ:</b> {task.listener.proceed_count}/{task.listener.total_count}"
             msg += f"\n┊ <b>Sᴘᴇᴇᴅ:</b> {task.speed()}"
             msg += f"\n┊ <b>ETA:</b> {task.eta()}"
             msg += f"\n┊ <b>Pᴀsᴛ:</b> {get_readable_time(time() - task.listener.message.date.timestamp() + get_raw_time(task.eta()))}"
             msg += f"\n┊ <b>Eɴɢɪɴᴇ:</b> {task.engine}"
-            if task.listener.is_zip_all and hasattr(task, 'count') and task.count():
-                 msg += f"\n┊ <b>Count:</b> {task.count()}"
             msg += f"\n╰ <b>Mᴏᴅᴇ:</b> {task.listener.mode[1]}\n"
         elif tstatus == MirrorStatus.STATUS_SEED:
             msg += f"╭ Sᴇᴇᴅɪɴɢ » {task.ratio()}"

@@ -97,6 +97,8 @@ class TaskConfig:
         self.hybrid_leech = False
         self.extract = False
         self.compress = False
+        self.zip_all = False
+        self.total_count = 1
         self.select = False
         self.seed = False
         self.join = False
@@ -120,7 +122,6 @@ class TaskConfig:
         self.bot_trans = False
         self.user_trans = False
         self.progress = True
-        self.is_zip_all = False
         self.ffmpeg_cmds = None
         self.chat_thread_id = None
         self.subproc = None

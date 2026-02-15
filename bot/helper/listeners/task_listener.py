@@ -5,7 +5,7 @@ from mimetypes import guess_type
 from contextlib import suppress
 from os import path as ospath
 
-from aiofiles.os import listdir, remove, path as aiopath
+from aiofiles.os import listdir, remove, path as aiopath, rename as aiorename
 from requests import utils as rutils
 
 from ... import (
@@ -91,9 +91,6 @@ class TaskListener(TaskConfig):
             ):
                 self.same_dir[self.folder_name]["tasks"].remove(self.mid)
                 self.same_dir[self.folder_name]["total"] -= 1
-                if "done" not in self.same_dir[self.folder_name]:
-                     self.same_dir[self.folder_name]["done"] = 0
-                self.same_dir[self.folder_name]["done"] += 1
 
     async def on_download_start(self):
         # Auto-Scale Up to Performance Mode (if enabled) when First Task Starts
@@ -189,18 +186,27 @@ class TaskListener(TaskConfig):
 
         if self.folder_name:
             self.name = self.folder_name.strip("/").split("/", 1)[0]
+        
+        if self.zip_all:
+            old_path = f"{self.dir}/_zip"
+            if not self.name:
+                self.name = "ZipAll"
+            dl_path = f"{self.dir}/{self.name}"
+            await aiorename(old_path, dl_path)
+            self.total_count = len(await listdir(dl_path))
+        else:
+            if not await aiopath.exists(f"{self.dir}/{self.name}"):
+                try:
+                    files = await listdir(self.dir)
+                    self.name = files[-1]
+                    if self.name == "yt-dlp-thumb":
+                        self.name = files[0]
+                except Exception as e:
+                    await self.on_upload_error(str(e))
+                    return
 
-        if not await aiopath.exists(f"{self.dir}/{self.name}"):
-            try:
-                files = await listdir(self.dir)
-                self.name = files[-1]
-                if self.name == "yt-dlp-thumb":
-                    self.name = files[0]
-            except Exception as e:
-                await self.on_upload_error(str(e))
-                return
-
-        dl_path = f"{self.dir}/{self.name}"
+            dl_path = f"{self.dir}/{self.name}"
+        
         self.size = await get_path_size(dl_path)
         self.is_file = await aiopath.isfile(dl_path)
 

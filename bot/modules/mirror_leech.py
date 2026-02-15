@@ -90,7 +90,6 @@ class Mirror(TaskListener):
             )
             return
 
-
         args = {
             "-doc": False,
             "-med": False,
@@ -158,24 +157,13 @@ class Mirror(TaskListener):
         self.up_dest = args["-up"]
         self.rc_flags = args["-rcf"]
         self.link = args["link"]
-        self.compress = args["-z"]
+        self.compress = args["-z"] or args["-za"]
+        self.zip_all = args["-za"]
         self.extract = args["-e"]
         self.join = args["-j"]
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
         self.sample_video = args["-sv"]
-        self.folder_name = (
-            f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
-        )
-        self.is_zip_all = args["-za"]
-
-        if self.is_zip_all:
-             self.compress = True
-             if not self.folder_name:
-                 self.folder_name = f"/_zip_{self.mid}"
-             if not self.name:
-                 self.name = f"final_{self.mid}.zip"
-
         ss_arg = args["-ss"]
         if ss_arg:
             if isinstance(ss_arg, str) and ":" in ss_arg:
@@ -211,8 +199,7 @@ class Mirror(TaskListener):
         self.thumbnail_layout = args["-tl"]
         self.as_doc = args["-doc"]
         self.as_med = args["-med"]
-        if not self.is_zip_all:
-            self.folder_name = f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
+        self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
 
@@ -257,20 +244,17 @@ class Mirror(TaskListener):
             is_bulk = True
 
         if not is_bulk:
-            if self.multi > 0 or self.is_zip_all:
+            if self.multi > 0:
                 if self.folder_name:
                     async with task_dict_lock:
                         if self.folder_name in self.same_dir:
                             self.same_dir[self.folder_name]["tasks"].add(self.mid)
                             for fd_name in self.same_dir:
                                 if fd_name != self.folder_name:
-                                    self.same_dir[fd_name]["total"] -= 1 # Keep total accurate
-                            # If zip_all, expand total if multi is also used
-                            if self.is_zip_all and self.multi > 0:
-                                 self.same_dir[self.folder_name]["total"] += self.multi
+                                    self.same_dir[fd_name]["total"] -= 1
                         elif self.same_dir:
                             self.same_dir[self.folder_name] = {
-                                "total": self.multi if self.multi > 0 else 1, # Start with 1 if just zip_all single/link
+                                "total": self.multi,
                                 "tasks": {self.mid},
                             }
                             for fd_name in self.same_dir:
@@ -279,8 +263,7 @@ class Mirror(TaskListener):
                         else:
                             self.same_dir = {
                                 self.folder_name: {
-                                    "total": self.multi if self.multi > 0 else 1,
-                                    "done": 0,
+                                    "total": self.multi,
                                     "tasks": {self.mid},
                                 }
                             }
@@ -295,11 +278,9 @@ class Mirror(TaskListener):
         if len(self.bulk) != 0:
             del self.bulk[0]
 
-        if self.is_zip_all:
-            if "-m" not in input_list:
-                input_list.extend(["-m", self.folder_name.strip("/")])
-
-        await self.run_multi(input_list, Mirror)
+            if self.zip_all:
+                self.multi = 0
+            await self.run_multi(input_list, Mirror)
 
         await self.get_tag(text)
 
@@ -318,32 +299,49 @@ class Mirror(TaskListener):
                 return
 
         if isinstance(reply_to, list):
-            self.bulk = reply_to
-            b_msg = input_list[:1]
-            self.options = " ".join(input_list[1:])
-            b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
-            nextmsg = await send_message(self.message, " ".join(b_msg))
-            nextmsg = await self.client.get_messages(
-                chat_id=self.message.chat.id, message_ids=nextmsg.id
-            )
-            if self.message.from_user:
-                nextmsg.from_user = self.user
+            if self.zip_all:
+                self.bulk = reply_to
+                reply_to = self.bulk[0]
             else:
-                nextmsg.sender_chat = self.user
-            await Mirror(
-                self.client,
-                nextmsg,
-                self.is_qbit,
-                self.is_leech,
-                self.is_jd,
-                self.same_dir,
-                self.bulk,
-                self.multi_tag,
-                self.options,
-            ).new_event()
-            return
+                self.bulk = reply_to
+                b_msg = input_list[:1]
+                self.options = " ".join(input_list[1:])
+                b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
+                nextmsg = await send_message(self.message, " ".join(b_msg))
+                nextmsg = await self.client.get_messages(
+                    chat_id=self.message.chat.id, message_ids=nextmsg.id
+                )
+                if self.message.from_user:
+                    nextmsg.from_user = self.user
+                else:
+                    nextmsg.sender_chat = self.user
+                await Mirror(
+                    self.client,
+                    nextmsg,
+                    self.is_qbit,
+                    self.is_leech,
+                    self.is_jd,
+                    self.same_dir,
+                    self.bulk,
+                    self.multi_tag,
+                    self.options,
+                ).new_event()
+                return
 
-        if reply_to:
+        if (
+            not isinstance(reply_to, list)
+            and self.zip_all
+            and self.multi > 1
+            and reply_to
+        ):
+            self.bulk = await self.client.get_messages(
+                chat_id=self.message.chat.id,
+                message_ids=range(reply_to.id, reply_to.id + self.multi),
+            )
+            reply_to = self.bulk[0]
+            self.file_details = {"caption": reply_to.caption}
+
+        if reply_to and not isinstance(reply_to, list):
             file_ = (
                 reply_to.document
                 or reply_to.photo

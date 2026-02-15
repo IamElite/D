@@ -134,7 +134,7 @@ class TelegramDownloadHelper:
         self.session = session
         if not self.session:
             if self._hyper_dl:
-                self.session == "hbots"
+                self.session = "hbots"
             elif self._listener.user_transmission and self._listener.is_super_chat:
                 self.session = "user"
                 try:
@@ -148,69 +148,105 @@ class TelegramDownloadHelper:
                     self.session = "bot"
             else:
                 self.session = "bot"
-        media = getattr(message, message.media.value) if message.media else None
 
-        if media is not None:
-            async with global_lock:
-                download = media.file_unique_id not in GLOBAL_GID
-
-            if download:
-                if not self._listener.name:
-                    if hasattr(media, "file_name") and media.file_name:
-                        if "/" in media.file_name:
-                            self._listener.name = media.file_name.rsplit("/", 1)[-1]
-                            path = path + self._listener.name
-                        else:
-                            self._listener.name = media.file_name
-                    else:
-                        self._listener.name = "None"
-                else:
-                    path = path + self._listener.name
-                self._listener.size = media.file_size
-                gid = token_hex(5)
-
-                msg, button = await stop_duplicate_check(self._listener)
-                if msg:
-                    await self._listener.on_download_error(msg, button)
-                    return
-
-                add_to_queue, event = await check_running_tasks(self._listener)
-                if add_to_queue:
-                    LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
-                    async with task_dict_lock:
-                        task_dict[self._listener.mid] = QueueStatus(
-                            self._listener, gid, "dl"
-                        )
-                    await self._listener.on_download_start()
-                    await send_status_message(self._listener.message)
-                    await event.wait()
-                    if self.session == "bot":
-                        message = await self._listener.client.get_messages(
-                            chat_id=message.chat.id, message_ids=message.id
-                        )
-                    else:
-                        try:
-                            message = await TgClient.user.get_messages(
-                                chat_id=message.chat.id, message_ids=message.id
-                            )
-                        except (PeerIdInvalid, ChannelInvalid):
-                            message = await self._listener.client.get_messages(
-                                chat_id=message.chat.id, message_ids=message.id
-                            )
-                    if self._listener.is_cancelled:
-                        async with global_lock:
-                            if self._id in GLOBAL_GID:
-                                GLOBAL_GID.pop(self._id)
-                        return
-                self._start_time = time()
-                await self._on_download_start(media.file_unique_id, gid, add_to_queue)
-                await self._download(message, path)
-            else:
-                await self._on_download_error("File already being downloaded!")
+        if self._listener.bulk and self._listener.zip_all:
+            messages = self._listener.bulk
+            self._listener.total_count = len(messages)
+            total_size = 0
+            for msg in messages:
+                if msg.media:
+                    media = getattr(msg, msg.media.value)
+                    total_size += media.file_size
+            self._listener.size = total_size
         else:
-            await self._on_download_error(
-                "No document in the replied message! Use SuperGroup incase you are trying to download with User session!"
-            )
+            messages = [message]
+
+        for index, message in enumerate(messages, start=1):
+            if self._listener.is_cancelled:
+                return
+            media = getattr(message, message.media.value) if message.media else None
+            if media is not None:
+                async with global_lock:
+                    download = media.file_unique_id not in GLOBAL_GID
+
+                if download:
+                    if self._listener.zip_all:
+                        self._listener.proceed_count = index
+                        path_to_download = f"{path}_zip/"
+                        if hasattr(media, "file_name") and media.file_name:
+                            name = media.file_name
+                        else:
+                            name = f"file_{index}"
+                        file_path = f"{path_to_download}{name}"
+                    else:
+                        if not self._listener.name:
+                            if hasattr(media, "file_name") and media.file_name:
+                                if "/" in media.file_name:
+                                    self._listener.name = media.file_name.rsplit("/", 1)[-1]
+                                    file_path = path + self._listener.name
+                                else:
+                                    self._listener.name = media.file_name
+                                    file_path = path + self._listener.name
+                            else:
+                                self._listener.name = "None"
+                                file_path = path + self._listener.name
+                        else:
+                            file_path = path + self._listener.name
+                        self._listener.size = media.file_size
+                    
+                    gid = token_hex(5)
+
+                    if index == 1:
+                        msg, button = await stop_duplicate_check(self._listener)
+                        if msg:
+                            await self._listener.on_download_error(msg, button)
+                            return
+
+                        add_to_queue, event = await check_running_tasks(self._listener)
+                        if add_to_queue:
+                            LOGGER.info(f"Added to Queue/Download: {self._listener.name or 'ZipAll'}")
+                            async with task_dict_lock:
+                                task_dict[self._listener.mid] = QueueStatus(
+                                    self._listener, gid, "dl"
+                                )
+                            await self._listener.on_download_start()
+                            await send_status_message(self._listener.message)
+                            await event.wait()
+                            if self.session == "bot":
+                                message = await self._listener.client.get_messages(
+                                    chat_id=message.chat.id, message_ids=message.id
+                                )
+                            else:
+                                try:
+                                    message = await TgClient.user.get_messages(
+                                        chat_id=message.chat.id, message_ids=message.id
+                                    )
+                                except (PeerIdInvalid, ChannelInvalid):
+                                    message = await self._listener.client.get_messages(
+                                        chat_id=message.chat.id, message_ids=message.id
+                                    )
+                            if self._listener.is_cancelled:
+                                async with global_lock:
+                                    if self._id in GLOBAL_GID:
+                                        GLOBAL_GID.pop(self._id)
+                                return
+                        self._start_time = time()
+                        await self._on_download_start(media.file_unique_id, gid, add_to_queue)
+                    
+                    await self._download(message, file_path)
+                    async with global_lock:
+                        if self._id in GLOBAL_GID:
+                            GLOBAL_GID.pop(self._id)
+                else:
+                    await self._on_download_error("File already being downloaded!")
+                    return
+            else:
+                await self._on_download_error(
+                    "No document in the replied message! Use SuperGroup incase you are trying to download with User session!"
+                )
+                return
+        
+        await self._listener.on_download_complete()
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
