@@ -277,6 +277,7 @@ class Mirror(TaskListener):
                             self.same_dir = {
                                 self.folder_name: {
                                     "total": self.multi if self.multi > 0 else 1,
+                                    "done": 0,
                                     "tasks": {self.mid},
                                 }
                             }
@@ -290,6 +291,13 @@ class Mirror(TaskListener):
 
         if len(self.bulk) != 0:
             del self.bulk[0]
+
+        if self.is_zip_all:
+             # Inject -m folder logic into input_list for recursion if not already present
+             # heuristic: check if "-m" is in input_list. 
+             # Note: input_list is local variable from split()
+             if "-m" not in input_list:
+                 input_list.extend(["-m", self.folder_name.strip("/")])
 
         await self.run_multi(input_list, Mirror)
 

@@ -56,9 +56,14 @@ class TelegramStatus:
         if self.listener.is_zip_all and self.listener.folder_name and self.listener.same_dir:
             try:
                 folder_data = self.listener.same_dir[self.listener.folder_name]
-                total = folder_data["total"]
-                current = len(folder_data["tasks"])
-                return f"{current}/{total}"
+                done = folder_data.get("done", 0)
+                remaining = folder_data["total"]
+                total = done + remaining
+                # Current processing is implicitly part of "remaining" active tasks or "done".
+                # If we want "Processing X of Y".
+                # If done=0, remaining=5. Total=5. Progress: 0/5? Or 1/5 (current).
+                # Let's show "Done: X / Total: Y"
+                return f"{done}/{total}"
             except Exception:
                 return "0/0"
         return None

@@ -90,7 +90,20 @@ class TaskListener(TaskConfig):
                 and self.mid in self.same_dir[self.folder_name]["tasks"]
             ):
                 self.same_dir[self.folder_name]["tasks"].remove(self.mid)
-                self.same_dir[self.folder_name]["total"] -= 1
+                self.same_dir[self.folder_name]["total"] -= 1  # This decrements total tasks active? Wait.
+
+                # CORRECTION:
+                # If "total" tracks remaining, and we remove it, total goes down.
+                # User wants "Current processed / Total Original".
+                # If total decrementing was existing logic, I should respect it or change it.
+                # Existing logic: self.same_dir[self.folder_name]["total"] -= 1
+                # If total becomes 1, it merges.
+                # So "total" is actually "remaining count".
+                
+                # So for display "X / Y", I need "Done / (Done + Remaining)".
+                if "done" not in self.same_dir[self.folder_name]:
+                     self.same_dir[self.folder_name]["done"] = 0
+                self.same_dir[self.folder_name]["done"] += 1
 
     async def on_download_start(self):
         # Auto-Scale Up to Performance Mode (if enabled) when First Task Starts
