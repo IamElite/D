@@ -410,6 +410,12 @@ class YtDlp(TaskListener):
             if "-m" not in input_list:
                 input_list.append("-m")
                 input_list.append(args["-m"])
+            self.dir = f"{DOWNLOAD_DIR}{args['-m']}_zip/"
+            self.same_dir = {}
+            self.same_dir[args["-m"]] = {
+                "total": 0,
+                "tasks": set(),
+            }
 
         if Config.DISABLE_FF_MODE and args.get("-ff"):
             await send_message(self.message, "FFmpeg commands are currently disabled.")

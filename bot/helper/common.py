@@ -131,7 +131,6 @@ class TaskConfig:
         self.bot_pm = Config.BOT_PM or self.user_dict.get("BOT_PM")
         self.pm_msg = None
         self.file_details = {}
-        self.next_task_info = None
         self.mode = tuple()
 
     def _set_mode_engine(self):
@@ -566,31 +565,17 @@ class TaskConfig:
             nextmsg.sender_chat = self.user
         if intervals["stopAll"]:
             return
-        if self.compress and self.same_dir:
-            self.next_task_info = (
-                obj,
-                self.client,
-                nextmsg,
-                self.is_qbit,
-                self.is_leech,
-                self.is_jd,
-                self.same_dir,
-                self.bulk,
-                self.multi_tag,
-                self.options,
-            )
-        else:
-            await obj(
-                self.client,
-                nextmsg,
-                self.is_qbit,
-                self.is_leech,
-                self.is_jd,
-                self.same_dir,
-                self.bulk,
-                self.multi_tag,
-                self.options,
-            ).new_event()
+        await obj(
+            self.client,
+            nextmsg,
+            self.is_qbit,
+            self.is_leech,
+            self.is_jd,
+            self.same_dir,
+            self.bulk,
+            self.multi_tag,
+            self.options,
+        ).new_event()
 
     async def init_bulk(self, input_list, bulk_start, bulk_end, obj):
         if Config.DISABLE_BULK:
