@@ -259,6 +259,9 @@ class Mirror(TaskListener):
                     async with task_dict_lock:
                          if self.folder_name in self.same_dir:
                              self.same_dir[self.folder_name]["tasks"].add(self.mid)
+                             if self.same_dir[self.folder_name]["original_total"] < self.multi:
+                                 self.same_dir[self.folder_name]["original_total"] = self.multi
+                                 self.same_dir[self.folder_name]["total"] = self.multi  
                              for fd_name in self.same_dir:
                                  if fd_name != self.folder_name:
                                      self.same_dir[fd_name]["total"] -= 1
