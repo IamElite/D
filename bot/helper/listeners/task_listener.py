@@ -188,12 +188,20 @@ class TaskListener(TaskConfig):
             self.name = self.folder_name.strip("/").split("/", 1)[0]
         
         if self.zip_all:
-            old_path = f"{self.dir}/_zip"
-            if not self.name:
+            old_path = ospath.join(self.dir, "_zip")
+            if not await aiopath.exists(old_path):
+                old_path = dl_path
+            
+            if not self.name or self.name == "ZipAll":
                 self.name = "ZipAll"
-            dl_path = f"{self.dir}/{self.name}"
-            await aiorename(old_path, dl_path)
-            self.total_count = len(await listdir(dl_path))
+            
+            new_dl_path = ospath.join(self.dir, self.name)
+            if old_path != new_dl_path:
+                if await aiopath.exists(new_dl_path):
+                    await aiormtree(new_dl_path, ignore_errors=True)
+                await aiorename(old_path, new_dl_path)
+            dl_path = new_dl_path
+            self.total_count = len(await listdir(dl_path)) if await aiopath.isdir(dl_path) else 1
         else:
             if not await aiopath.exists(f"{self.dir}/{self.name}"):
                 try:

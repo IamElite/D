@@ -276,10 +276,10 @@ class Mirror(TaskListener):
             return
 
         if len(self.bulk) != 0:
-            del self.bulk[0]
-
             if self.zip_all:
                 self.multi = 0
+            else:
+                del self.bulk[0]
             await self.run_multi(input_list, Mirror)
 
         await self.get_tag(text)
@@ -330,15 +330,18 @@ class Mirror(TaskListener):
 
         if (
             not isinstance(reply_to, list)
-            and self.zip_all
             and self.multi > 1
             and reply_to
         ):
-            self.bulk = await self.client.get_messages(
+            messages = await self.client.get_messages(
                 chat_id=self.message.chat.id,
                 message_ids=range(reply_to.id, reply_to.id + self.multi),
             )
-            reply_to = self.bulk[0]
+            if self.zip_all:
+                self.bulk = messages
+            else:
+                self.bulk = [msg.link for msg in messages if msg.media]
+            reply_to = messages[0]
             self.file_details = {"caption": reply_to.caption}
 
         if reply_to and not isinstance(reply_to, list):

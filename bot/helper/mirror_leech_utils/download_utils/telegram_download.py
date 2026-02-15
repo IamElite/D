@@ -1,7 +1,8 @@
-from asyncio import Lock, sleep
-from time import time
+from os import path as ospath
 from secrets import token_hex
-from pyrogram.errors import FloodWait, PeerIdInvalid, ChannelInvalid
+from time import time
+
+from pyrogram.errors import ChannelInvalid, FloodWait, PeerIdInvalid
 
 from bot.helper.ext_utils.hyperdl_utils import HyperTGDownload
 
@@ -10,17 +11,14 @@ try:
 except ImportError:
     FloodPremiumWait = FloodWait
 
-from .... import (
-    LOGGER,
-    task_dict,
-    task_dict_lock,
-)
-from ....core.tg_client import TgClient
+from .... import LOGGER, task_dict, task_dict_lock
 from ....core.config_manager import Config
+from ....core.tg_client import TgClient
+from ...ext_utils.bot_utils import is_telegram_link
 from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ...mirror_leech_utils.status_utils.telegram_status import TelegramStatus
-from ...telegram_helper.message_utils import send_status_message
+from ...telegram_helper.message_utils import get_tg_link_message, send_status_message
 
 global_lock = Lock()
 GLOBAL_GID = dict()
@@ -151,6 +149,14 @@ class TelegramDownloadHelper:
                 self.session = "bot"
 
         if self._listener.bulk and self._listener.zip_all:
+            messages = []
+            for item in self._listener.bulk:
+                if isinstance(item, str) and is_telegram_link(item):
+                    msg, _ = await get_tg_link_message(item)
+                    messages.append(msg)
+                else:
+                    messages.append(item)
+            self._listener.bulk = messages
             messages = self._listener.bulk
             self._listener.total_count = len(messages)
             total_size = 0
@@ -173,12 +179,12 @@ class TelegramDownloadHelper:
                 if download:
                     if self._listener.zip_all:
                         self._listener.proceed_count = index
-                        path_to_download = f"{path}_zip/"
+                        path_to_download = ospath.join(self._listener.dir, "_zip")
                         if hasattr(media, "file_name") and media.file_name:
                             name = media.file_name
                         else:
                             name = f"file_{index}"
-                        file_path = f"{path_to_download}{name}"
+                        file_path = ospath.join(path_to_download, name)
                     else:
                         if not self._listener.name:
                             if hasattr(media, "file_name") and media.file_name:
