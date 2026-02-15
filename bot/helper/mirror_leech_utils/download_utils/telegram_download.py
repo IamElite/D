@@ -185,7 +185,7 @@ class TelegramDownloadHelper:
                         if hasattr(media, "file_name") and media.file_name:
                             name = media.file_name
                         else:
-                            name = f"file_{index}"
+                            name = f"f_{index}"
                         
                         file_path = ospath.join(path_to_download, name)
                         if await aiopath.exists(file_path):

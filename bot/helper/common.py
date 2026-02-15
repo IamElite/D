@@ -642,54 +642,86 @@ class TaskConfig:
     async def proceed_extract(self, dl_path, gid):
         pswd = self.extract if isinstance(self.extract, str) else ""
         self.files_to_proceed = []
-        if self.is_file and is_archive(dl_path):
-            self.files_to_proceed.append(dl_path)
-        else:
-            for dirpath, _, files in await sync_to_async(walk, dl_path, topdown=False):
-                for file_ in files:
-                    if (
-                        is_first_archive_split(file_)
-                        or is_archive(file_)
-                        and not file_.strip().lower().endswith(".rar")
-                    ):
-                        f_path = ospath.join(dirpath, file_)
-                        self.files_to_proceed.append(f_path)
+        archives = []
+        
+        async def scan_for_archives(path):
+            found = []
+            if await aiopath.isfile(path) and is_archive(path):
+                found.append(path)
+            elif await aiopath.isdir(path):
+                for dirpath, _, files in await sync_to_async(walk, path, topdown=False):
+                    for file_ in files:
+                        if is_first_archive_split(file_) or (is_archive(file_) and not file_.strip().lower().endswith(".rar")):
+                            found.append(ospath.join(dirpath, file_))
+            return found
 
-        if not self.files_to_proceed:
+        archives = await scan_for_archives(dl_path)
+        if not archives:
             return dl_path
+
+        self.total_count = len(archives)
         sevenz = SevenZ(self)
         LOGGER.info(f"Extracting: {self.name}")
         async with task_dict_lock:
             task_dict[self.mid] = SevenZStatus(self, sevenz, gid, "Extract")
-        for dirpath, _, files in await sync_to_async(
-            walk, self.up_dir or self.dir, topdown=False
-        ):
-            code = 0
-            for file_ in files:
+
+        depth = 0
+        max_depth = 10
+        processed_archives = set()
+        total_extracted_size = 0
+        zip_bomb_limit = 50 * 1024 * 1024 * 1024  # 50GB safety limit
+        
+        while archives and depth < max_depth:
+            next_layer_archives = []
+            for f_path in list(archives):
                 if self.is_cancelled:
                     return False
-                if (
-                    is_first_archive_split(file_)
-                    or is_archive(file_)
-                    and not file_.strip().lower().endswith(".rar")
-                ):
-                    self.proceed_count += 1
-                    f_path = ospath.join(dirpath, file_)
-                    t_path = get_base_name(f_path) if self.is_file else dirpath
-                    if not self.is_file:
-                        self.subname = file_
-                    code = await sevenz.extract(f_path, t_path, pswd)
-            if self.is_cancelled:
-                return code
-            if code == 0:
-                for file_ in files:
-                    if is_archive_split(file_) or is_archive(file_):
-                        del_path = ospath.join(dirpath, file_)
-                        try:
-                            await remove(del_path)
-                        except Exception:
-                            self.is_cancelled = True
-        return t_path if self.is_file and code == 0 else dl_path
+                if f_path in processed_archives:
+                    continue
+                
+                # Zip Bomb Protection
+                arch_size = await get_path_size(f_path)
+                if total_extracted_size + arch_size > zip_bomb_limit:
+                    LOGGER.warning(f"Zip bomb risk detected! Stopping extraction at: {f_path}")
+                    break
+
+                self.proceed_count += 1
+                dirpath = ospath.dirname(f_path)
+                t_path = get_base_name(f_path) if self.is_file else dirpath
+                
+                if not self.is_file:
+                    self.subname = ospath.basename(f_path)
+                
+                code = await sevenz.extract(f_path, t_path, pswd)
+                if code == 0:
+                    processed_archives.add(f_path)
+                    # Scan for new archives in the extraction output
+                    new_found = await scan_for_archives(t_path)
+                    for nf in new_found:
+                        if nf not in processed_archives and nf not in archives and nf not in next_layer_archives:
+                            next_layer_archives.append(nf)
+                    
+                    # Cleanup extracted archive
+                    base_name = ospath.basename(f_path)
+                    for file_ in await listdir(dirpath):
+                        if is_archive_split(file_) or is_archive(file_):
+                            # Check if it belongs to the same archive set (best effort)
+                            if file_.startswith(ospath.splitext(base_name)[0]):
+                                with suppress(Exception):
+                                    await remove(ospath.join(dirpath, file_))
+                else:
+                    LOGGER.warning(f"Failed to extract {f_path}. Code: {code}")
+            
+            if not next_layer_archives:
+                break
+            
+            archives = next_layer_archives
+            self.total_count += len(archives)
+            depth += 1
+            total_extracted_size = await get_path_size(self.dir)
+
+        self.subname = ""
+        return t_path if self.is_file else dl_path
 
     async def proceed_ffmpeg(self, dl_path, gid):
         checked = False
