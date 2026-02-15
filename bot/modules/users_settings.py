@@ -1261,6 +1261,8 @@ async def edit_user_settings(client, query):
             back_to = "autoleech"
         else:
             back_to = "leech"
+        await update_user_settings(query, stype=back_to)
+        await database.update_user_data(user_id)
     elif data[2] == "cycle":
         await query.answer()
         if data[3] == "AUTO_MODE":
