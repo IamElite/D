@@ -247,16 +247,30 @@ class Mirror(TaskListener):
                 if args["-za"]:
                     self.compress = True
                     self.zip_all = True
-                    if not self.folder_name:
+                    found_existing = False
+                    if self.same_dir:
+                         for fd in self.same_dir:
+                             if "_zip_all_" in fd:
+                                 self.folder_name = fd
+                                 found_existing = True
+                                 break
+                    if not self.folder_name and not found_existing:
                          self.folder_name = f"/_zip_all_{self.mid}_{token_hex(4)}"
                     async with task_dict_lock:
-                         self.same_dir = {
-                             self.folder_name: {
+                         if self.folder_name in self.same_dir:
+                             self.same_dir[self.folder_name]["tasks"].add(self.mid)
+                             for fd_name in self.same_dir:
+                                 if fd_name != self.folder_name:
+                                     self.same_dir[fd_name]["total"] -= 1
+                         else:
+                             self.same_dir[self.folder_name] = {
                                  "total": self.multi,
                                  "original_total": self.multi,
                                  "tasks": {self.mid},
                              }
-                         }
+                             for fd_name in self.same_dir:
+                                 if fd_name != self.folder_name:
+                                     self.same_dir[fd_name]["total"] -= 1
                 elif self.folder_name:
                     async with task_dict_lock:
                         if self.folder_name in self.same_dir:

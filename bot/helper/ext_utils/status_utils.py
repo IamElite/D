@@ -274,7 +274,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
              continue
 
         msg += f"{index + start_position}. {escape(f'{task.name()}')}\n"
-        msg += f"<b>Bx:</b> {task.listener.message.from_user.mention(style='html')} [<code>{task.listener.message.from_user.id}</code>]\n"
+        msg += f"<b>By:</b> {task.listener.message.from_user.mention(style='html')} [<code>{task.listener.message.from_user.id}</code>]\n"
 
         if (
             tstatus not in [MirrorStatus.STATUS_SEED, MirrorStatus.STATUS_QUEUEUP]
@@ -287,11 +287,11 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 msg += f"\n┊ <b>{task.processed_bytes()} of {task.size()}</b> / {get_readable_file_size(task.listener.subsize)}"
             else:
                 msg += f"\n┊ <b>{task.processed_bytes()} of {task.size()}</b>"
-            msg += f"\n┊ <b>Sᴘᴇᴇᴅ:</b> {task.speed()}"
+            msg += f"\n┊ <b>Speed:</b> {task.speed()}"
             msg += f"\n┊ <b>ETA:</b> {task.eta()}"
-            msg += f"\n┊ <b>Pᴀsᴛ:</b> {get_readable_time(time() - task.listener.message.date.timestamp() + get_raw_time(task.eta()))}"
-            msg += f"\n┊ <b>Eɴɢɪɴᴇ:</b> {task.engine}"
-            msg += f"\n┊ <b>Mᴏᴅᴇ:</b> {task.listener.mode[1]}\n"
+            msg += f"\n┊ <b>Past:</b> {get_readable_time(time() - task.listener.message.date.timestamp() + get_raw_time(task.eta()))}"
+            msg += f"\n┊ <b>Engine:</b> {task.engine}"
+            msg += f"\n┊ <b>Mode:</b> {task.listener.mode[1]}\n"
         elif tstatus == MirrorStatus.STATUS_SEED:
             msg += f"╭ Sᴇᴇᴅɪɴɢ » {task.ratio()}"
             msg += f"\n┊ {get_progress_bar_string(100)}"
