@@ -1,5 +1,6 @@
 from asyncio import Lock, sleep
 from os import path as ospath
+from aiofiles.os import path as aiopath
 from secrets import token_hex
 from time import time
 
