@@ -178,7 +178,8 @@ class TaskListener(TaskConfig):
         if multi_links:
             self.seed = False
             await self.on_upload_error(
-                f"{self.name} Downloaded!\n\nWaiting for other tasks to finish..."
+                f"{self.name} Downloaded!\n\nWaiting for other tasks to finish...",
+                silent_cleanup=True,
             )
             return
         elif self.same_dir:
@@ -573,12 +574,13 @@ class TaskListener(TaskConfig):
         if self.thumb and await aiopath.exists(self.thumb):
             await remove(self.thumb)
 
-    async def on_upload_error(self, error):
+    async def on_upload_error(self, error, silent_cleanup=False):
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
             count = len(task_dict)
-        await send_message(self.message, f"{self.tag} {escape(str(error))}")
+        if not silent_cleanup:
+            await send_message(self.message, f"{self.tag} {escape(str(error))}")
         if count == 0:
             await self.clean()
         else:
