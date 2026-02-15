@@ -90,6 +90,7 @@ class Mirror(TaskListener):
             )
             return
 
+
         args = {
             "-doc": False,
             "-med": False,
@@ -163,6 +164,15 @@ class Mirror(TaskListener):
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
         self.sample_video = args["-sv"]
+        self.is_zip_all = args["-za"]
+
+        if self.is_zip_all:
+             self.compress = True
+             if not self.folder_name:
+                 self.folder_name = f"/_zip_{self.mid}"
+             if not self.name:
+                 self.name = f"final_{self.mid}.zip"
+
         ss_arg = args["-ss"]
         if ss_arg:
             if isinstance(ss_arg, str) and ":" in ss_arg:
@@ -198,7 +208,8 @@ class Mirror(TaskListener):
         self.thumbnail_layout = args["-tl"]
         self.as_doc = args["-doc"]
         self.as_med = args["-med"]
-        self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
+        if not self.is_zip_all:
+            self.folder_name = f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
 
@@ -243,47 +254,20 @@ class Mirror(TaskListener):
             is_bulk = True
 
         if not is_bulk:
-            if self.multi > 0:
-                if args["-za"]:
-                    self.compress = True
-                    self.zip_all = True
-                    found_existing = False
-                    if self.same_dir:
-                         for fd in self.same_dir:
-                             if "_zip_all_" in fd:
-                                 self.folder_name = fd
-                                 found_existing = True
-                                 break
-                    if not self.folder_name and not found_existing:
-                         self.folder_name = f"/_zip_all_{self.mid}_{token_hex(4)}"
-                    async with task_dict_lock:
-                         if self.folder_name in self.same_dir:
-                             self.same_dir[self.folder_name]["tasks"].add(self.mid)
-                             if self.same_dir[self.folder_name]["original_total"] < self.multi:
-                                 self.same_dir[self.folder_name]["original_total"] = self.multi
-                                 self.same_dir[self.folder_name]["total"] = self.multi  
-                             for fd_name in self.same_dir:
-                                 if fd_name != self.folder_name:
-                                     self.same_dir[fd_name]["total"] -= 1
-                         else:
-                             self.same_dir[self.folder_name] = {
-                                 "total": self.multi,
-                                 "original_total": self.multi,
-                                 "tasks": {self.mid},
-                             }
-                             for fd_name in self.same_dir:
-                                 if fd_name != self.folder_name:
-                                     self.same_dir[fd_name]["total"] -= 1
-                elif self.folder_name:
+            if self.multi > 0 or self.is_zip_all:
+                if self.folder_name:
                     async with task_dict_lock:
                         if self.folder_name in self.same_dir:
                             self.same_dir[self.folder_name]["tasks"].add(self.mid)
                             for fd_name in self.same_dir:
                                 if fd_name != self.folder_name:
-                                    self.same_dir[fd_name]["total"] -= 1
+                                    self.same_dir[fd_name]["total"] -= 1 # Keep total accurate
+                            # If zip_all, expand total if multi is also used
+                            if self.is_zip_all and self.multi > 0:
+                                 self.same_dir[self.folder_name]["total"] += self.multi
                         elif self.same_dir:
                             self.same_dir[self.folder_name] = {
-                                "total": self.multi,
+                                "total": self.multi if self.multi > 0 else 1, # Start with 1 if just zip_all single/link
                                 "tasks": {self.mid},
                             }
                             for fd_name in self.same_dir:
@@ -292,7 +276,7 @@ class Mirror(TaskListener):
                         else:
                             self.same_dir = {
                                 self.folder_name: {
-                                    "total": self.multi,
+                                    "total": self.multi if self.multi > 0 else 1,
                                     "tasks": {self.mid},
                                 }
                             }

@@ -120,6 +120,7 @@ class TaskConfig:
         self.bot_trans = False
         self.user_trans = False
         self.progress = True
+        self.is_zip_all = False
         self.ffmpeg_cmds = None
         self.chat_thread_id = None
         self.subproc = None
@@ -132,9 +133,6 @@ class TaskConfig:
         self.pm_msg = None
         self.file_details = {}
         self.mode = tuple()
-        self.zip_all = False
-        self.total_zip_files = 0
-        self.current_zip_files = 0
 
     def _set_mode_engine(self):
         self.source_url = (

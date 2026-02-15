@@ -162,9 +162,6 @@ class TaskListener(TaskConfig):
                                 multi_links = True
                             break
                     await sleep(1)
-        
-        if self.zip_all and not multi_links:
-             self.is_file = False
         async with task_dict_lock:
             if self.is_cancelled:
                 return
@@ -413,28 +410,6 @@ class TaskListener(TaskConfig):
                 for index, (link, name) in enumerate(files.items(), start=1):
                     chat_id, msg_id = link.split("/")[-2:]
                     fmsg += f"{index}. <a href='{link}'>{name}</a>"
-        elif self.zip_all:
-             msg += f"\n┊ <b>File Name</b> → {self.name}"
-             msg += f"\n┊ <b>Total Files</b> → {self.same_dir[self.folder_name]['total'] if self.same_dir and self.folder_name in self.same_dir else 1}"
-             msg += f"\n┊ <b>Total Size</b> → {get_readable_file_size(self.size)}"
-             msg += f"\n╰ <b>Task By</b> → {self.tag}\n\n"
-             if self.bot_pm:
-                 pmsg = msg
-                 pmsg += "〶 <b><u>Action Performed :</u></b>\n"
-                 pmsg += "⋗ <i>File(s) have been sent to User PM</i>\n\n"
-                 if self.is_super_chat:
-                      await send_message(self.message, pmsg)
-                 final_sent_msg = await send_message(self.user_id, msg)
-             else:
-                 final_sent_msg = await send_message(self.message, msg)
-             
-             if self.up_dest.lower() == "all" and final_sent_msg:
-                 await send_message(final_sent_msg, link)
-             
-             # Skip the rest as we handled it
-             await self.clean()
-             return
-
         else:
             msg += f"\n╰ <b>Type</b> → {mime_type}"
             if mime_type == "Folder":

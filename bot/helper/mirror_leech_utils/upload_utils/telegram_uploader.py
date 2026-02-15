@@ -112,10 +112,11 @@ class TelegramUploader:
             msg_link = (
                 self._listener.message.link if self._listener.is_super_chat else ""
             )
-            msg = f"""➲ <b><u>Leech Started :</u></b>
-┃
-┊ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){f"\n┊ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""}
-╰ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"""
+            msg_link_part = f"\n┊ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""
+            msg = f"➲ <b><u>Leech Started :</u></b>\n" \
+                  f"┃\n" \
+                  f"┊ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){msg_link_part}\n" \
+                  f"╰ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"
             try:
                 self._log_msg = await TgClient.bot.send_message(
                     chat_id=self._listener.up_dest,
@@ -185,18 +186,24 @@ class TelegramUploader:
             )
             up_path = ospath.join(dirpath, pre_file_)
             dur, qual, lang, subs = await get_media_info(up_path, True)
-            cap_mono = parts[0].format(
-                filename=cap_file_,
-                size=get_readable_file_size(await aiopath.getsize(up_path)),
-                duration=get_readable_time(dur),
-                quality=qual,
-                languages=lang,
-                subtitles=subs,
-                md5_hash=await sync_to_async(get_md5_hash, up_path),
-                mime_type=self._listener.file_details.get("mime_type", "text/plain"),
-                prefilename=self._listener.file_details.get("filename", ""),
-                precaption=self._listener.file_details.get("caption", ""),
-            )
+            
+            if self._listener.is_zip_all and file_.endswith(".zip"):
+                 total_files = 0
+                 cap_mono = f"<b>File Name:</b> {cap_file_}\n"
+                 cap_mono += f"<b>Total Size:</b> {get_readable_file_size(await aiopath.getsize(up_path))}"
+            else:
+                cap_mono = parts[0].format(
+                    filename=cap_file_,
+                    size=get_readable_file_size(await aiopath.getsize(up_path)),
+                    duration=get_readable_time(dur),
+                    quality=qual,
+                    languages=lang,
+                    subtitles=subs,
+                    md5_hash=await sync_to_async(get_md5_hash, up_path),
+                    mime_type=self._listener.file_details.get("mime_type", "text/plain"),
+                    prefilename=self._listener.file_details.get("filename", ""),
+                    precaption=self._listener.file_details.get("caption", ""),
+                )
 
             for part in parts[1:]:
                 args = part.split(":")

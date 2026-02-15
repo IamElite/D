@@ -51,3 +51,14 @@ class TelegramStatus:
 
     def task(self):
         return self._obj
+
+    def count(self):
+        if self.listener.is_zip_all and self.listener.folder_name and self.listener.same_dir:
+            try:
+                folder_data = self.listener.same_dir[self.listener.folder_name]
+                total = folder_data["total"]
+                current = len(folder_data["tasks"])
+                return f"{current}/{total}"
+            except Exception:
+                return "0/0"
+        return None
