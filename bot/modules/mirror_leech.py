@@ -1,5 +1,6 @@
 from base64 import b64encode
 from re import match as re_match
+from secrets import token_hex
 
 from aiofiles.os import path as aiopath
 from bot.core.config_manager import Config
@@ -99,6 +100,7 @@ class Mirror(TaskListener):
             "-b": False,
             "-e": False,
             "-z": False,
+            "-za": False,
             "-sv": False,
             "-ss": False,
             "-sst": False,
@@ -127,6 +129,14 @@ class Mirror(TaskListener):
         }
 
         arg_parser(input_list[1:], args)
+
+        if args["-za"]:
+            args["-z"] = True
+            if not args["-m"]:
+                args["-m"] = token_hex(4)
+            if "-m" not in input_list:
+                input_list.append("-m")
+                input_list.append(args["-m"])
 
         if Config.DISABLE_BULK and args.get("-b", False):
             await send_message(self.message, "Bulk downloads are currently disabled.")

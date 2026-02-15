@@ -1,6 +1,7 @@
 from asyncio import Event, wait_for, sleep
 from functools import partial
 from time import time
+from secrets import token_hex
 import random
 
 from httpx import AsyncClient
@@ -374,6 +375,7 @@ class YtDlp(TaskListener):
             "-s": False,
             "-b": False,
             "-z": False,
+            "-za": False,
             "-sv": False,
             "-ss": False,
             "-sst": False,
@@ -400,6 +402,14 @@ class YtDlp(TaskListener):
         }
 
         arg_parser(input_list[1:], args)
+
+        if args["-za"]:
+            args["-z"] = True
+            if not args["-m"]:
+                args["-m"] = token_hex(4)
+            if "-m" not in input_list:
+                input_list.append("-m")
+                input_list.append(args["-m"])
 
         if Config.DISABLE_FF_MODE and args.get("-ff"):
             await send_message(self.message, "FFmpeg commands are currently disabled.")
