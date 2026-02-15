@@ -184,7 +184,7 @@ class TaskListener(TaskConfig):
             self.seed = False
             async with task_dict_lock:
                 if self.mid in task_dict:
-                    task_dict[self.mid] = WaitingStatus(self, task_dict[self.mid], self.mid, "waiting")
+                     del task_dict[self.mid]
             return
         elif self.same_dir:
             self.seed = False

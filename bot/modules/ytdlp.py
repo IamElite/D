@@ -413,7 +413,7 @@ class YtDlp(TaskListener):
             self.dir = f"{DOWNLOAD_DIR}{args['-m']}_zip/"
             self.same_dir = {}
             self.same_dir[args["-m"]] = {
-                "total": 0,
+                "total": int(args.get("-i", 1)),
                 "tasks": set(),
             }
 
