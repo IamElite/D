@@ -154,17 +154,17 @@ class TelegramDownloadHelper:
             for item in self._listener.bulk:
                 if isinstance(item, str) and is_telegram_link(item):
                     msg, _ = await get_tg_link_message(item)
-                    messages.append(msg)
-                else:
+                    if msg.media:
+                        messages.append(msg)
+                elif item.media:
                     messages.append(item)
             self._listener.bulk = messages
             messages = self._listener.bulk
             self._listener.total_count = len(messages)
             total_size = 0
             for msg in messages:
-                if msg.media:
-                    media = getattr(msg, msg.media.value)
-                    total_size += media.file_size
+                media = getattr(msg, msg.media.value)
+                total_size += media.file_size
             self._listener.size = total_size
         else:
             messages = [message]
@@ -185,7 +185,14 @@ class TelegramDownloadHelper:
                             name = media.file_name
                         else:
                             name = f"file_{index}"
+                        
                         file_path = ospath.join(path_to_download, name)
+                        if await aiopath.exists(file_path):
+                            base, ext = ospath.splitext(name)
+                            count = 1
+                            while await aiopath.exists(ospath.join(path_to_download, f"{base}_{count}{ext}")):
+                                count += 1
+                            file_path = ospath.join(path_to_download, f"{base}_{count}{ext}")
                     else:
                         if not self._listener.name:
                             if hasattr(media, "file_name") and media.file_name:
@@ -252,7 +259,7 @@ class TelegramDownloadHelper:
                 else:
                     await self._on_download_error("File already being downloaded!")
                     return
-            else:
+            elif not self._listener.zip_all:
                 await self._on_download_error(
                     "No document in the replied message! Use SuperGroup incase you are trying to download with User session!"
                 )
