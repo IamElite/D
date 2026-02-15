@@ -99,6 +99,7 @@ class Mirror(TaskListener):
             "-b": False,
             "-e": False,
             "-z": False,
+            "-za": False,
             "-sv": False,
             "-ss": False,
             "-sst": False,
