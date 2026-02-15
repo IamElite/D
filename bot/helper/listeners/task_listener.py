@@ -43,12 +43,13 @@ from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from ..mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
-from ..mirror_leech_utils.status_utils.waiting_status import WaitingStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
 from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
+from ..mirror_leech_utils.status_utils.waiting_status import WaitingStatus
 from ..mirror_leech_utils.upload_utils.telegram_uploader import TelegramUploader
 from ..mirror_leech_utils.upload_utils.uphoster_uploader import UphosterUploader
+from aioshutil import move
 from ...modules.users_settings import SUPPORTED_UPHOSTERS
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
@@ -92,14 +93,6 @@ class TaskListener(TaskConfig):
             ):
                 self.same_dir[self.folder_name]["tasks"].remove(self.mid)
                 self.same_dir[self.folder_name]["total"] -= 1
-
-    async def clean_waiting_tasks(self):
-        if self.folder_name and self.same_dir and self.folder_name in self.same_dir:
-            if "waiting" in self.same_dir[self.folder_name]:
-                async with task_dict_lock:
-                    for mid in self.same_dir[self.folder_name]["waiting"]:
-                        if mid in task_dict:
-                            del task_dict[mid]
 
     async def on_download_start(self):
         # Auto-Scale Up to Performance Mode (if enabled) when First Task Starts
@@ -161,16 +154,39 @@ class TaskListener(TaskConfig):
                                     self.mid
                                 )
                                 self.same_dir[self.folder_name]["total"] -= 1
+                                if "clean_tasks" not in self.same_dir[self.folder_name]:
+                                    self.same_dir[self.folder_name]["clean_tasks"] = set()
+                                self.same_dir[self.folder_name]["clean_tasks"].add(self.mid)
                                 spath = f"{self.dir}{self.folder_name}"
                                 des_id = list(self.same_dir[self.folder_name]["tasks"])[
                                     0
                                 ]
                                 des_path = f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
-                                LOGGER.info(f"Moving files from {self.mid} to {des_id}")
-                                await move_and_merge(spath, des_path, self.mid)
+                                des_zip = f"{des_path}/_zip"
+                                await move_and_merge(spath, des_zip, self.mid)
                                 multi_links = True
                             break
                     await sleep(1)
+
+        if (
+            self.folder_name
+            and self.same_dir
+            and self.mid in self.same_dir[self.folder_name]["tasks"]
+        ):
+            if "clean_tasks" in self.same_dir[self.folder_name]:
+                 for mid in self.same_dir[self.folder_name]["clean_tasks"]:
+                     async with task_dict_lock:
+                         if mid in task_dict:
+                             del task_dict[mid]
+                 del self.same_dir[self.folder_name]["clean_tasks"]
+
+            zip_path = f"{self.dir}{self.folder_name}/_zip"
+            if await aiopath.exists(zip_path):
+                await move_and_merge(zip_path, f"{self.dir}{self.folder_name}", self.mid)
+                await clean_download(zip_path)
+
+
+
         async with task_dict_lock:
             if self.is_cancelled:
                 return
@@ -188,9 +204,7 @@ class TaskListener(TaskConfig):
             self.seed = False
             async with task_dict_lock:
                 if self.mid in task_dict:
-                    task_dict[self.mid] = WaitingStatus(self, self.mid)
-                self.same_dir[self.folder_name].setdefault("waiting", []).append(self.mid)
-                await update_status_message(self.message.chat.id)
+                    task_dict[self.mid] = WaitingStatus(self, task_dict[self.mid], self.mid, "waiting")
             return
         elif self.same_dir:
             self.seed = False
@@ -512,7 +526,6 @@ class TaskListener(TaskConfig):
             await delete_message(self.pm_msg)
 
         await clean_download(self.dir)
-        await self.clean_waiting_tasks()
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
@@ -529,7 +542,6 @@ class TaskListener(TaskConfig):
         await start_from_queued()
 
     async def on_download_error(self, error, button=None, is_limit=False):
-        await self.clean_waiting_tasks()
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
@@ -587,7 +599,6 @@ class TaskListener(TaskConfig):
             await remove(self.thumb)
 
     async def on_upload_error(self, error, silent_cleanup=False):
-        await self.clean_waiting_tasks()
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]

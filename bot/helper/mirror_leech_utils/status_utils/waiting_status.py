@@ -1,40 +1,35 @@
-from ...ext_utils.status_utils import get_readable_file_size, MirrorStatus, EngineStatus
-from .... import LOGGER
+from ...ext_utils.status_utils import MirrorStatus
 
 class WaitingStatus:
-    def __init__(self, listener, gid):
-        self.listener = listener
+    def __init__(self, listener, obj, gid, status):
+        self._listener = listener
+        self._obj = obj
         self._gid = gid
-        self.engine = "Waiting..."
+        self._status = status
 
     def gid(self):
         return self._gid
 
-    def name(self):
-        return self.listener.name
-
-    def size(self):
-        return get_readable_file_size(self.listener.size)
-
-    def status(self):
-        return "Waiting..."
-
-    def processed_bytes(self):
-        return self.listener.size
-
     def progress(self):
-        return "100%"
+        return self._obj.progress
 
     def speed(self):
-        return "0B/s"
+        return self._obj.speed
+
+    def name(self):
+        return self._listener.name
+
+    def size(self):
+        return self._listener.size
 
     def eta(self):
-        return "-"
+        return self._obj.eta()
 
-    def task(self):
-        return self
+    def status(self):
+        return "Waiting for others..."
 
-    async def cancel_task(self):
-        self.listener.is_cancelled = True
-        LOGGER.info(f"Cancelling Waiting Task: {self.listener.name}")
-        await self.listener.on_upload_error("Waiting task cancelled!")
+    def processed_bytes(self):
+        return self._obj.processed_bytes()
+
+    def download(self):
+        return self._obj
