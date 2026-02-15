@@ -149,23 +149,13 @@ class TaskListener(TaskConfig):
                             self.same_dir[self.folder_name]["total"] <= 1
                             or len(self.same_dir[self.folder_name]["tasks"]) > 1
                         ):
-                            if self.same_dir[self.folder_name]["total"] > 1:
+                             if self.same_dir[self.folder_name]["total"] > 1:
                                 self.same_dir[self.folder_name]["tasks"].remove(
                                     self.mid
                                 )
                                 self.same_dir[self.folder_name]["total"] -= 1
-                                if "clean_tasks" not in self.same_dir[self.folder_name]:
-                                    self.same_dir[self.folder_name]["clean_tasks"] = set()
-                                self.same_dir[self.folder_name]["clean_tasks"].add(self.mid)
-                                spath = f"{self.dir}{self.folder_name}"
-                                des_id = list(self.same_dir[self.folder_name]["tasks"])[
-                                    0
-                                ]
-                                des_path = f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
-                                des_zip = f"{des_path}/_zip"
-                                await move_and_merge(spath, des_zip, self.mid)
                                 multi_links = True
-                            break
+                             break
                     await sleep(1)
 
         if (
@@ -173,17 +163,7 @@ class TaskListener(TaskConfig):
             and self.same_dir
             and self.mid in self.same_dir[self.folder_name]["tasks"]
         ):
-            if "clean_tasks" in self.same_dir[self.folder_name]:
-                 for mid in self.same_dir[self.folder_name]["clean_tasks"]:
-                     async with task_dict_lock:
-                         if mid in task_dict:
-                             del task_dict[mid]
-                 del self.same_dir[self.folder_name]["clean_tasks"]
-
-            zip_path = f"{self.dir}{self.folder_name}/_zip"
-            if await aiopath.exists(zip_path):
-                await move_and_merge(zip_path, f"{self.dir}{self.folder_name}", self.mid)
-                await clean_download(zip_path)
+             pass
 
 
 
@@ -223,8 +203,13 @@ class TaskListener(TaskConfig):
                 return
 
         dl_path = f"{self.dir}/{self.name}"
-        self.size = await get_path_size(dl_path)
-        self.is_file = await aiopath.isfile(dl_path)
+        if self.dir.endswith("_zip/"):
+             dl_path = self.dir.rstrip("/")
+             self.name = self.folder_name
+             self.is_file = False
+        else:
+             self.size = await get_path_size(dl_path)
+             self.is_file = await aiopath.isfile(dl_path)
 
         if self.seed:
             up_dir = self.up_dir = f"{self.dir}10000"

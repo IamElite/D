@@ -137,6 +137,12 @@ class Mirror(TaskListener):
             if "-m" not in input_list:
                 input_list.append("-m")
                 input_list.append(args["-m"])
+            listener.dir = f"{DOWNLOAD_DIR}{args['-m']}_zip/"
+            listener.same_dir = {}
+            listener.same_dir[args["-m"]] = {
+                "total": 0,
+                "tasks": set(),
+            }
 
         if Config.DISABLE_BULK and args.get("-b", False):
             await send_message(self.message, "Bulk downloads are currently disabled.")
