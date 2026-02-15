@@ -196,6 +196,7 @@ class TelegramUploader:
                 mime_type=self._listener.file_details.get("mime_type", "text/plain"),
                 prefilename=self._listener.file_details.get("filename", ""),
                 precaption=self._listener.file_details.get("caption", ""),
+                files=self._listener.file_details.get("file_count", 1),
             )
 
             for part in parts[1:]:
@@ -210,6 +211,12 @@ class TelegramUploader:
                 lambda m: {"%%": "|", "&%&": "{", "$%$": "}"}[m.group()],
                 cap_mono,
             )
+        else:
+            up_path = ospath.join(dirpath, pre_file_)
+            files_count = self._listener.file_details.get("file_count", 1)
+            cap_mono = f"Name: {cap_file_}\nSize: {get_readable_file_size(await aiopath.getsize(up_path))}\nFiles: {files_count}"
+            if Config.LEECH_FONT:
+                cap_mono = f"<{Config.LEECH_FONT}>{cap_mono}</{Config.LEECH_FONT}>"
 
         if len(file_) > 56:
             if is_archive(file_):

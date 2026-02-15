@@ -736,7 +736,7 @@ class TaskConfig:
                         break
                     new_folder = ospath.splitext(dl_path)[0]
                     if new_folder == dl_path:
-                        new_folder += "_f"
+                        new_folder += "_syntax"
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     file_path = f"{new_folder}/{name}"
@@ -1013,7 +1013,7 @@ class TaskConfig:
                 if res:
                     new_folder = ospath.splitext(dl_path)[0]
                     if new_folder == dl_path:
-                        new_folder += "_f"
+                        new_folder += "_syntax"
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     await gather(
@@ -1179,7 +1179,7 @@ class TaskConfig:
                     if res and self.is_file:
                         new_folder = ospath.splitext(f_path)[0]
                         if new_folder == f_path:
-                            new_folder += "_f"
+                            new_folder += "_syntax"
                         await makedirs(new_folder, exist_ok=True)
                         await gather(
                             move(f_path, f"{new_folder}/{file_}"),
@@ -1193,7 +1193,7 @@ class TaskConfig:
         if self.is_leech and self.is_file:
             new_folder = ospath.splitext(dl_path)[0]
             if new_folder == dl_path:
-                new_folder += "_f"
+                new_folder += "_syntax"
             name = ospath.basename(dl_path)
             await makedirs(new_folder, exist_ok=True)
             new_dl_path = f"{new_folder}/{name}"
@@ -1203,6 +1203,11 @@ class TaskConfig:
             self.is_file = False
         else:
             up_path = f"{dl_path}.zip"
+            if not self.is_file:
+                count = 0
+                for _, _, files in await sync_to_async(walk, dl_path):
+                    count += len(files)
+                self.file_details["file_count"] = count
         sevenz = SevenZ(self)
         async with task_dict_lock:
             task_dict[self.mid] = SevenZStatus(self, sevenz, gid, "Zip")
