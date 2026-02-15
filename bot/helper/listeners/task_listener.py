@@ -43,6 +43,7 @@ from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from ..mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
+from ..mirror_leech_utils.status_utils.waiting_status import WaitingStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
 from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
@@ -91,6 +92,14 @@ class TaskListener(TaskConfig):
             ):
                 self.same_dir[self.folder_name]["tasks"].remove(self.mid)
                 self.same_dir[self.folder_name]["total"] -= 1
+
+    async def clean_waiting_tasks(self):
+        if self.folder_name and self.same_dir and self.folder_name in self.same_dir:
+            if "waiting" in self.same_dir[self.folder_name]:
+                async with task_dict_lock:
+                    for mid in self.same_dir[self.folder_name]["waiting"]:
+                        if mid in task_dict:
+                            del task_dict[mid]
 
     async def on_download_start(self):
         # Auto-Scale Up to Performance Mode (if enabled) when First Task Starts
@@ -177,10 +186,11 @@ class TaskListener(TaskConfig):
 
         if multi_links:
             self.seed = False
-            await self.on_upload_error(
-                f"{self.name} Downloaded!\n\nWaiting for other tasks to finish...",
-                silent_cleanup=True,
-            )
+            async with task_dict_lock:
+                if self.mid in task_dict:
+                    task_dict[self.mid] = WaitingStatus(self, self.mid)
+                self.same_dir[self.folder_name].setdefault("waiting", []).append(self.mid)
+                await update_status_message(self.message.chat.id)
             return
         elif self.same_dir:
             self.seed = False
@@ -502,6 +512,7 @@ class TaskListener(TaskConfig):
             await delete_message(self.pm_msg)
 
         await clean_download(self.dir)
+        await self.clean_waiting_tasks()
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
@@ -518,6 +529,7 @@ class TaskListener(TaskConfig):
         await start_from_queued()
 
     async def on_download_error(self, error, button=None, is_limit=False):
+        await self.clean_waiting_tasks()
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
@@ -575,6 +587,7 @@ class TaskListener(TaskConfig):
             await remove(self.thumb)
 
     async def on_upload_error(self, error, silent_cleanup=False):
+        await self.clean_waiting_tasks()
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
