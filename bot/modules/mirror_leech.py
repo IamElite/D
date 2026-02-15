@@ -164,6 +164,9 @@ class Mirror(TaskListener):
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
         self.sample_video = args["-sv"]
+        self.folder_name = (
+            f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
+        )
         self.is_zip_all = args["-za"]
 
         if self.is_zip_all:
@@ -293,11 +296,8 @@ class Mirror(TaskListener):
             del self.bulk[0]
 
         if self.is_zip_all:
-             # Inject -m folder logic into input_list for recursion if not already present
-             # heuristic: check if "-m" is in input_list. 
-             # Note: input_list is local variable from split()
-             if "-m" not in input_list:
-                 input_list.extend(["-m", self.folder_name.strip("/")])
+            if "-m" not in input_list:
+                input_list.extend(["-m", self.folder_name.strip("/")])
 
         await self.run_multi(input_list, Mirror)
 
