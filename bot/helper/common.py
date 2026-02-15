@@ -604,6 +604,8 @@ class TaskConfig:
                     except StopIteration:
                         pass
                     continue
+                if part == self.link:
+                    continue
                 self.options.append(part)
             self.options = " ".join(self.options)
             b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")

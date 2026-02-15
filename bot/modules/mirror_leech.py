@@ -129,6 +129,7 @@ class Mirror(TaskListener):
 
         arg_parser(input_list[1:], args)
 
+        self.link = args["link"]
         options = []
         it = iter(input_list[1:])
         for part in it:
@@ -137,6 +138,8 @@ class Mirror(TaskListener):
                     next(it)
                 except StopIteration:
                     pass
+                continue
+            if part in [self.link, "-b"] or part.startswith("-b:"):
                 continue
             options.append(part)
         self.options = " ".join(options)
@@ -287,11 +290,8 @@ class Mirror(TaskListener):
             await self.init_bulk(input_list, bulk_start, bulk_end, Mirror)
             return
 
-        if len(self.bulk) != 0:
-            if self.zip_all:
-                self.multi = 0
-            else:
-                del self.bulk[0]
+        if len(self.bulk) != 0 and self.zip_all:
+            self.multi = 0
             await self.run_multi(input_list, Mirror)
 
         await self.get_tag(text)
@@ -354,6 +354,10 @@ class Mirror(TaskListener):
                 self.bulk = [msg.link for msg in messages if msg.media]
             reply_to = messages[0]
             self.file_details = {"caption": reply_to.caption}
+        
+        if len(self.bulk) > 0 and not self.zip_all:
+            del self.bulk[0]
+            await self.run_multi(input_list, Mirror)
 
         if reply_to and not isinstance(reply_to, list):
             file_ = (
