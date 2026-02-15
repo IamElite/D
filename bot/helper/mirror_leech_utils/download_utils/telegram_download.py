@@ -33,6 +33,7 @@ class TelegramDownloadHelper:
         self._listener = listener
         self._id = ""
         self.session = ""
+        self._total_downloaded_bytes = 0
         self._hyper_dl = len(TgClient.helper_bots) != 0 and Config.LEECH_DUMP_CHAT
 
     @property
@@ -67,18 +68,18 @@ class TelegramDownloadHelper:
                     hbot.stop_transmission()
             else:
                 TgClient.bot.stop_transmission()
-        self._processed_bytes = current
+        self._processed_bytes = self._total_downloaded_bytes + current
 
     async def _on_download_error(self, error):
         async with global_lock:
-            if self._id in GLOBAL_GID:
-                GLOBAL_GID.pop(self._id)
+            GLOBAL_GID.pop(self._id, None)
         await self._listener.on_download_error(error)
 
     async def _on_download_complete(self):
-        await self._listener.on_download_complete()
+        if not self._listener.zip_all:
+            await self._listener.on_download_complete()
         async with global_lock:
-            GLOBAL_GID.pop(self._id)
+            GLOBAL_GID.pop(self._id, None)
         return
 
     async def _download(self, message, path):
@@ -232,11 +233,15 @@ class TelegramDownloadHelper:
                                 return
                         self._start_time = time()
                         await self._on_download_start(media.file_unique_id, gid, add_to_queue)
+                    else:
+                        async with global_lock:
+                            GLOBAL_GID[media.file_unique_id] = gid
+                        self._id = media.file_unique_id
                     
                     await self._download(message, file_path)
+                    self._total_downloaded_bytes += media.file_size
                     async with global_lock:
-                        if self._id in GLOBAL_GID:
-                            GLOBAL_GID.pop(self._id)
+                        GLOBAL_GID.pop(self._id, None)
                 else:
                     await self._on_download_error("File already being downloaded!")
                     return
