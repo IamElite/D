@@ -431,8 +431,7 @@ class SevenZ:
         if self._listener.zip_all:
             comment = 'Encode By : TG - [ @SyntaxRealm X @TGUrlsHub X @TGEliteHub ]'
             comment_path = ospath.join(self._listener.dir, 'comment.txt')
-            async with aiomakedirs(self._listener.dir, exist_ok=True):
-                pass
+            await aiomakedirs(self._listener.dir, exist_ok=True)
             with open(comment_path, 'w') as f:
                 f.write(comment)
             cmd.append(f"-z{comment_path}")
