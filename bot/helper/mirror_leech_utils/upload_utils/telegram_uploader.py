@@ -153,6 +153,9 @@ class TelegramUploader:
 
     async def _prepare_file(self, pre_file_, dirpath):
         cap_file_ = file_ = pre_file_
+        if self._listener.zip_all and is_archive(file_) and not self._lcaption:
+            self._lcaption = f"<b>File Name:</b> {{filename}}\n<b>Total Files:</b> {{total_files}}\n<b>Total Size:</b> {{size}}"
+
         if self._lprefix:
             cap_file_ = self._lprefix.replace(r"\s", " ") + file_
             self._lprefix = re_sub(r"<.*?>", "", self._lprefix).replace(r"\s", " ")
@@ -169,9 +172,6 @@ class TelegramUploader:
             if Config.LEECH_FONT
             else cap_file_
         )
-        if self._listener.zip_all and is_archive(file_):
-            self._lcaption = f"<b>File Name:</b> {{filename}}\n<b>Total Files:</b> {self._listener.total_count}\n<b>Total Size:</b> {get_readable_file_size(self._listener.size)}"
-
         if self._lcaption:
             self._lcaption = re_sub(
                 r"(\\\||\\\{|\\\}|\\s)",
@@ -198,6 +198,8 @@ class TelegramUploader:
                 mime_type=self._listener.file_details.get("mime_type", "text/plain"),
                 prefilename=self._listener.file_details.get("filename", ""),
                 precaption=self._listener.file_details.get("caption", ""),
+                total_files=self._listener.total_count,
+                total_size=get_readable_file_size(self._listener.size),
             )
 
             for part in parts[1:]:
