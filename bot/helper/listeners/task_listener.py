@@ -201,7 +201,13 @@ class TaskListener(TaskConfig):
                     await aiormtree(new_dl_path, ignore_errors=True)
                 await aiorename(old_path, new_dl_path)
             dl_path = new_dl_path
-            self.total_count = len(await listdir(dl_path)) if await aiopath.isdir(dl_path) else 1
+            if await aiopath.isdir(dl_path):
+                files = await listdir(dl_path)
+                if files:
+                    self.file_details["filename"] = files[0]
+                self.total_count = len(files)
+            else:
+                self.total_count = 1
         else:
             if not await aiopath.exists(f"{self.dir}/{self.name}"):
                 try:
