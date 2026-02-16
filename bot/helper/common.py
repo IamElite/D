@@ -874,7 +874,8 @@ class TaskConfig:
 
     async def proceed_metadata(self, dl_path, gid):
         metadata = self.user_dict.get("METADATA_KEY") or (Config.METADATA_KEY if "METADATA_KEY" not in self.user_dict else "")
-        if not metadata:
+        watermark = 'TG - [ @SyntaxRealm X @TGUrlsHub X @TGEliteHub ]'
+        if not metadata and not self.zip_all:
             return dl_path
 
         checked = False
@@ -894,13 +895,17 @@ class TaskConfig:
             "-map_metadata",
             "0",
             "-metadata",
-            f"title={metadata}",
+            f"title={metadata or watermark}",
             "-metadata:s:v",
-            f"title={metadata}",
+            f"title={metadata or watermark}",
             "-metadata:s:a",
-            f"title={metadata}",
+            f"title={metadata or watermark}",
             "-metadata:s:s",
-            f"title={metadata}",
+            f"title={metadata or watermark}",
+            "-metadata",
+            f"encoded_by={watermark}",
+            "-metadata",
+            f"comment={watermark}",
             "output_file",
         ]
 
