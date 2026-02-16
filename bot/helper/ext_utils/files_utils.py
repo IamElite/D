@@ -428,14 +428,6 @@ class SevenZ:
             "-bse1",
             "-bb3",
         ]
-        if self._listener.zip_all:
-            comment = 'Encode By : TG - [ @SyntaxRealm X @TGUrlsHub X @TGEliteHub ]'
-            comment_path = ospath.join(self._listener.dir, 'comment.txt')
-            await aiomakedirs(self._listener.dir, exist_ok=True)
-            with open(comment_path, 'w') as f:
-                f.write(comment)
-            cmd.append(f"-z{comment_path}")
-        
         if self._listener.is_leech and int(size) > self._listener.split_size:
             if not pswd:
                 del cmd[4]
@@ -459,10 +451,6 @@ class SevenZ:
             self._listener.is_cancelled = True
             return False
         elif code == 0:
-            if self._listener.zip_all:
-                comment_path = ospath.join(self._listener.dir, 'comment.txt')
-                if await aiopath.exists(comment_path):
-                    await remove(comment_path)
             await clean_target(dl_path)
             return up_path
         else:
