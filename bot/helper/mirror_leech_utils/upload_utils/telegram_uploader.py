@@ -153,10 +153,6 @@ class TelegramUploader:
 
     async def _prepare_file(self, pre_file_, dirpath):
         cap_file_ = file_ = pre_file_
-        if self._listener.zip_all and is_archive(file_):
-            pretty_name = self._listener.file_details.get("filename", file_)
-            self._lcaption = f"<b>File Name:</b> {pretty_name}\n<b>Total Files:</b> {self._listener.total_count}\n<b>Total Size:</b> {get_readable_file_size(self._listener.size)}"
-
         if self._lprefix:
             cap_file_ = self._lprefix.replace(r"\s", " ") + file_
             self._lprefix = re_sub(r"<.*?>", "", self._lprefix).replace(r"\s", " ")
@@ -173,6 +169,9 @@ class TelegramUploader:
             if Config.LEECH_FONT
             else cap_file_
         )
+        if self._listener.zip_all and is_archive(file_):
+            self._lcaption = f"<b>File Name:</b> {{filename}}\n<b>Total Files:</b> {self._listener.total_count}\n<b>Total Size:</b> {get_readable_file_size(self._listener.size)}"
+
         if self._lcaption:
             self._lcaption = re_sub(
                 r"(\\\||\\\{|\\\}|\\s)",
@@ -213,8 +212,6 @@ class TelegramUploader:
                 lambda m: {"%%": "|", "&%&": "{", "$%$": "}"}[m.group()],
                 cap_mono,
             )
-
-        cap_mono += "\n\n<b>Encode By : TG - [ @SyntaxRealm X @TGUrlsHub X @TGEliteHub ]</b>"
 
         if len(file_) > 56:
             if is_archive(file_):
