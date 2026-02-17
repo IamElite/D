@@ -261,9 +261,8 @@ class YtSelection:
             b_name = data[3]
             tbr_dict = self.formats[b_name]
             best_tbr = max(tbr_dict.keys(), key=lambda k: float(k) if k else 0)
-            v_format = tbr_dict[best_tbr][1]
-            await self.add_child_task(v_format)
-            await edit_message(self._reply_to, f"<b>Added:</b> {b_name}\n\n" + (self._reply_to.text.split("\n", 1)[1] if "\n" in self._reply_to.text else self._reply_to.text), self._main_buttons)
+            self.qual = tbr_dict[best_tbr][1]
+            self.event.set()
             
         elif action == "all":
             for b_name in self.formats:
