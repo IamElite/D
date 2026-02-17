@@ -167,6 +167,7 @@ class YoutubeDLHelper:
                 result = ydl.extract_info(self._listener.link, download=False)
                 if result is None:
                     raise ValueError("Info result is None")
+                self._listener.is_live = result.get("is_live", False)
             except Exception as e:
                 return self._on_download_error(str(e))
             if self.is_playlist:
@@ -256,9 +257,15 @@ class YoutubeDLHelper:
 
         if options:
             self._set_options(options)
-
-        if options:
-            self._set_options(options)
+        
+        # Auto-detect Live HLS streams and apply recommended settings
+        is_live = getattr(self._listener, "is_live", False)
+        if is_live or ".m3u8" in self._listener.link or "hls" in self._ext:
+            LOGGER.info("Live/HLS Stream detected. Applying ffmpeg downloader settings...")
+            self.opts.update({
+                "external_downloader": BinConfig.FFMPEG_NAME,
+                "hls_use_mpegts": True,
+            })
 
         # Force Max Speed: Smart Downloader Selection
         # Logic adapted for HIGH_PERFORMANCE_MODE
