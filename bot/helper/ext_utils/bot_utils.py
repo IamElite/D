@@ -20,6 +20,7 @@ from .help_messages import (
     YT_HELP_DICT,
 )
 from .telegraph_helper import telegraph
+from psutil import cpu_percent
 
 COMMAND_USAGE = {}
 
@@ -315,3 +316,10 @@ def safe_int(value, default=0):
         return int(value)
     except (ValueError, TypeError):
         return default
+
+
+async def start_cpu_monitor():
+    import bot
+    while True:
+        bot.GLOBAL_CPU_USAGE = await sync_to_async(cpu_percent, interval=1)
+        await sleep(5)

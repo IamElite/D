@@ -3,7 +3,8 @@ from html import escape
 from re import findall
 from time import time
 
-from psutil import cpu_percent, disk_usage, virtual_memory
+import bot
+from psutil import disk_usage, virtual_memory
 
 from ... import (
     DOWNLOAD_DIR,
@@ -296,7 +297,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
     buttons.data_button("♻️", f"status {sid} ref", position="header")
     button = buttons.build_menu(8)
     msg += "\n〄 <b>Sʏsᴛᴇᴍ Sᴛᴀᴛɪsᴛɪᴄs...</b>"
-    msg += f"\n╭ <b>Cᴘᴜ:</b> {cpu_percent(interval=1)}% | <b>F:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
+    msg += f"\n╭ <b>Cᴘᴜ:</b> {bot.GLOBAL_CPU_USAGE}% | <b>F:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
     msg += f"\n┊ <b>Rᴀᴍ:</b> {virtual_memory().percent}% | <b>Uᴘ:</b> {get_readable_time(time() - bot_start_time)}"
     msg += f"\n┊ 🔻 <b>Total DL:</b> {get_readable_file_size(total_dl)}/s"
     msg += f"\n╰ 🔺 <b>Total UL:</b> {get_readable_file_size(total_ul)}/s"

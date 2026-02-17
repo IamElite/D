@@ -1,4 +1,4 @@
-from psutil import cpu_percent, virtual_memory, disk_usage
+from psutil import virtual_memory, disk_usage
 from time import time
 from asyncio import gather, iscoroutinefunction
 
@@ -36,6 +36,7 @@ import os
 import random
 import importlib.util
 from ..core.config_manager import Config
+import bot
 
 
 def get_owner_id():
@@ -151,7 +152,7 @@ async def task_status(_, message):
         msg = f"""{response}
 
 ⌬ <b><u>Bot Stats</u></b>
-╭ <b>CPU</b> → {cpu_percent(interval=1)}%
+╭ <b>CPU</b> → {bot.GLOBAL_CPU_USAGE}%
 ┊ <b>RAM</b> → {virtual_memory().percent}%
 ┊ <b>Free</b> → {free}
 ╰ <b>UP</b> → {currentTime}

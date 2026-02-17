@@ -9,7 +9,6 @@ from psutil import (
     boot_time,
     cpu_count,
     cpu_freq,
-    cpu_percent,
     disk_io_counters,
     disk_usage,
     getloadavg,
@@ -17,6 +16,7 @@ from psutil import (
     swap_memory,
     virtual_memory,
 )
+import bot
 
 from .. import bot_cache, bot_start_time
 from ..core.config_manager import Config, BinConfig
@@ -87,7 +87,7 @@ async def get_stats(event, key="home"):
 ╰ <b>U :</b> {get_readable_file_size(used)} | <b>F :</b> {get_readable_file_size(free)} | <b>T :</b> {get_readable_file_size(total)}
 """
     elif key == "stsys":
-        cpu_usage = cpu_percent(interval=0.5)
+        cpu_usage = bot.GLOBAL_CPU_USAGE
         msg = f"""⌬ <b><i>OS SYSTEM :</i></b>
 ╭ <b>OS Uptime :</b> {get_readable_time(time() - boot_time())}
 ┊ <b>OS Version :</b> {version()}
