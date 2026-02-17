@@ -1,6 +1,7 @@
 from httpx import AsyncClient
 from html import escape
 from urllib.parse import quote
+from asyncio import sleep
 
 from .. import LOGGER
 from ..core.config_manager import Config
@@ -99,6 +100,7 @@ async def search(key, site, message, method):
             status = result_status[0].status
             if status != "Running":
                 break
+            await sleep(1.5)
         dict_search_results = await TorrentManager.qbittorrent.search.results(
             id=search_id, limit=TELEGRAPH_LIMIT
         )

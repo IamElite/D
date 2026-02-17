@@ -318,6 +318,7 @@ def safe_int(value, default=0):
         return default
 
 
+@new_task
 async def start_cpu_monitor():
     import bot
     while True:
