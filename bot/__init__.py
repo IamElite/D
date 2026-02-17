@@ -64,7 +64,6 @@ bot_cache = {}
 DOWNLOAD_DIR = "/usr/src/app/downloads/"
 intervals = {"status": {}, "qb": "", "jd": "", "stopAll": False}
 GLOBAL_CPU_USAGE = 0.0
-cpu_percent() # Initialize for first call
 qb_torrents = {}
 jd_downloads = {}
 user_data = {}

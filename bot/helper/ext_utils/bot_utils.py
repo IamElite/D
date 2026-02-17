@@ -321,6 +321,8 @@ def safe_int(value, default=0):
 @new_task
 async def start_cpu_monitor():
     import bot
+    await sleep(15) # Delay first measurement to skip boot spike
     while True:
-        bot.GLOBAL_CPU_USAGE = await sync_to_async(cpu_percent, interval=None)
-        await sleep(5)
+        # Measure CPU over 1 second in a separate worker thread
+        bot.GLOBAL_CPU_USAGE = await sync_to_async(cpu_percent, interval=1)
+        await sleep(15)
