@@ -45,10 +45,10 @@ async def update_qb_options(force_mode=None):
         # Performance Tuning based on Server Mode
         is_high_perf = force_mode if force_mode is not None else Config.HIGH_PERFORMANCE_MODE
         if is_high_perf:
-            # Ultra Speed Mode (High CPU/RAM)
+            # High Performance (1GB RAM / 2x CPU)
             qbit_options.update({
-                "max_connec": 500,
-                "max_connec_per_torrent": 100,
+                "max_connec": 1000,
+                "max_connec_per_torrent": 200,
                 "upload_slots_behavior": "upload_slots_behavior_fixed",
                 "upload_choking_algorithm": "upload_choking_algorithm_round_robin"
             })
@@ -74,13 +74,13 @@ async def update_aria2_options(force_mode=None):
         # Performance Tuning based on Server Mode
         is_high_perf = force_mode if force_mode is not None else Config.HIGH_PERFORMANCE_MODE
         if is_high_perf:
-            # Ultra Speed Mode (High CPU/RAM)
+            # High Performance (1GB RAM / 2x CPU)
             aria2_options.update({
                 "max-connection-per-server": "16",
-                "split": "16",
+                "split": "32",
                 "min-split-size": "10M",
                 "max-concurrent-downloads": "10",
-                "disk-cache": "32M"
+                "disk-cache": "128M"
             })
         else:
             # Eco Mode (Low Resource)

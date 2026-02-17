@@ -121,6 +121,7 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
                     except Exception:
                         await delete_message(meta)
                         return
+                    await sleep(0.5)
 
             ext_hash = tor_info.hash
             if not add_to_queue:

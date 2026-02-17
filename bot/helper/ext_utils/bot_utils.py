@@ -322,5 +322,5 @@ def safe_int(value, default=0):
 async def start_cpu_monitor():
     import bot
     while True:
-        bot.GLOBAL_CPU_USAGE = await sync_to_async(cpu_percent, interval=1)
+        bot.GLOBAL_CPU_USAGE = await sync_to_async(cpu_percent, interval=None)
         await sleep(5)
