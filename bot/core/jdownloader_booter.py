@@ -83,11 +83,18 @@ class JDownloader(MyJdApi):
                     break
             await rmtree("/JDownloader/update")
             await rmtree("/JDownloader/tmp")
-        cmd = "cpulimit -l 20 -- java -Xms256m -Xmx500m -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -Djava.awt.headless=true -jar /JDownloader/JDownloader.jar"
+        
+        stdout, _, _ = await cmd_exec(["which", "cpulimit"])
+        if stdout:
+            cmd = "cpulimit -l 20 -- java -Xms256m -Xmx500m -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -Djava.awt.headless=true -jar /JDownloader/JDownloader.jar"
+        else:
+            cmd = "java -Xms256m -Xmx500m -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -Djava.awt.headless=true -jar /JDownloader/JDownloader.jar"
+        
         self.is_connected = True
         _, __, code = await cmd_exec(cmd, shell=True)
         self.is_connected = False
         if code != -9:
+            await sleep(5)
             await self.boot()
 
 

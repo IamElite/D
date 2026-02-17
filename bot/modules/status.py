@@ -151,7 +151,7 @@ async def task_status(_, message):
         msg = f"""{response}
 
 ⌬ <b><u>Bot Stats</u></b>
-╭ <b>CPU</b> → {cpu_percent()}%
+╭ <b>CPU</b> → {cpu_percent(interval=1)}%
 ┊ <b>RAM</b> → {virtual_memory().percent}%
 ┊ <b>Free</b> → {free}
 ╰ <b>UP</b> → {currentTime}
