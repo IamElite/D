@@ -399,6 +399,28 @@ class YtDlp(TaskListener):
 
         arg_parser(input_list[1:], args)
 
+        # Build options only from current line flags
+        line_options = []
+        it = iter(input_list[1:])
+        for part in it:
+            if part in [args["link"], "-b"] or part.startswith("-b:"):
+                continue
+            if part in args:
+                 line_options.append(part)
+                 val = args[part]
+                 if not isinstance(val, (bool, int, set, list, dict)):
+                     try:
+                         next(it)
+                         line_options.append(val)
+                     except StopIteration:
+                         pass
+        
+        # Merge passed options (global) with line options
+        if self.options and isinstance(self.options, str):
+            self.options = f"{self.options} {' '.join(line_options)}"
+        elif not self.options:
+            self.options = " ".join(line_options)
+
         if Config.DISABLE_FF_MODE and args.get("-ff"):
             await send_message(self.message, "FFmpeg commands are currently disabled.")
             return

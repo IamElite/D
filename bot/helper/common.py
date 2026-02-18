@@ -60,6 +60,29 @@ from .telegram_helper.message_utils import (
 )
 from ..modules.users_settings import SUPPORTED_UPHOSTERS
 
+LOCAL_FLAGS = {
+    "-n",
+    "-m",
+    "-ff",
+    "-z",
+    "-za",
+    "-e",
+    "-s",
+    "-sv",
+    "-ss",
+    "-sst",
+    "-t",
+    "-ca",
+    "-cv",
+    "-ns",
+    "-sp",
+    "-tl",
+    "-doc",
+    "-med",
+    "-ut",
+    "-bt",
+}
+
 
 class TaskConfig:
     def __init__(self):
@@ -588,12 +611,14 @@ class TaskConfig:
             if len(self.bulk) == 0:
                 raise ValueError("Bulk Empty!")
             b_msg = input_list[:1]
-            self.options = []
+            options = []
             it = iter(input_list[1:])
             for part in it:
                 if part == "-b":
                     try:
-                        if bulk_start or bulk_end:
+                        if (bulk_start or bulk_end) and not isinstance(
+                            bulk_start, bool
+                        ):
                             next(it)
                     except StopIteration:
                         pass
@@ -606,8 +631,15 @@ class TaskConfig:
                     continue
                 if part == self.link:
                     continue
-                self.options.append(part)
-            self.options = " ".join(self.options)
+                if part in LOCAL_FLAGS:
+                    try:
+                        if part != "-ff" or it.__length_hint__() > 0:
+                            next(it)
+                    except StopIteration:
+                        pass
+                    continue
+                options.append(part)
+            self.options = " ".join(options)
             b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
             msg = " ".join(b_msg)
             if len(self.bulk) > 2:
@@ -633,7 +665,8 @@ class TaskConfig:
                 self.multi_tag,
                 self.options,
             ).new_event()
-        except Exception:
+        except Exception as e:
+            LOGGER.error(e)
             await send_message(
                 self.message,
                 "Reply to text file or to telegram message that have links seperated by new line!",
