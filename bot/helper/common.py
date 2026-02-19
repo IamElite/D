@@ -8,7 +8,9 @@ from shlex import split
 
 from aiofiles.os import listdir, makedirs, remove, path as aiopath
 from aioshutil import move, rmtree
+from natsort import natsorted
 from pyrogram.enums import ChatAction
+from pyrogram.types import InputMediaPhoto, InputMediaDocument
 
 from .. import (
     DOWNLOAD_DIR,
@@ -1092,6 +1094,10 @@ class TaskConfig:
                 LOGGER.info(f"Creating Screenshot ({self.screenshot_mode}, {orientation}) for: {dl_path}")
                 res = await ss_func(dl_path, ss_nb, orientation=orientation, sst=sst)
                 if res:
+                    if not self.is_leech:
+                        await self.send_screenshots_to_tg(res, dl_path)
+                        await rmtree(res, ignore_errors=True)
+                        return dl_path
                     new_folder = ospath.splitext(dl_path)[0]
                     if new_folder == dl_path:
                         new_folder += "_f"
@@ -1108,8 +1114,67 @@ class TaskConfig:
                 for file_ in files:
                     f_path = ospath.join(dirpath, file_)
                     if (await get_document_type(f_path))[0]:
-                        await ss_func(f_path, ss_nb, orientation=orientation, sst=sst)
+                        res = await ss_func(f_path, ss_nb, orientation=orientation, sst=sst)
+                        if res and not self.is_leech:
+                            await self.send_screenshots_to_tg(res, f_path)
+                            await rmtree(res, ignore_errors=True)
         return dl_path
+
+    async def send_screenshots_to_tg(self, dirpath, media_path):
+        try:
+            from .ext_utils.status_utils import get_readable_file_size, get_readable_time
+            from .ext_utils.media_utils import get_media_info
+            
+            duration, qual, lang, stitles = await get_media_info(media_path, True)
+            f_size = get_readable_file_size(await aiopath.getsize(media_path))
+            f_name = ospath.basename(media_path)
+            f_format = ospath.splitext(f_name)[1][1:].upper() or "Video"
+            
+            files = natsorted(await listdir(dirpath))
+            collage_files = [f for f in files if "collage" in f.lower()]
+            
+            caption = f"<b>FileName :</b> {f_name}\n"
+            caption += f"<b>FileSize :</b> {f_size}\n"
+            caption += f"<b>Resolution :</b> {qual}\n"
+            caption += f"<b>Duration :</b> {get_readable_time(duration)}\n"
+            caption += f"<b>Format :</b> {f_format}"
+            
+            chat_id = self.user_id if self.bot_pm else self.message.chat.id
+            is_doc = self.screenshot_mode == "doc"
+            
+            if collage_files:
+                photo_path = ospath.join(dirpath, collage_files[0])
+                if is_doc:
+                    await TgClient.bot.send_document(
+                        chat_id=chat_id,
+                        document=photo_path,
+                        caption=caption,
+                        reply_to_message_id=self.mid,
+                    )
+                else:
+                    await TgClient.bot.send_photo(
+                        chat_id=chat_id,
+                        photo=photo_path,
+                        caption=caption,
+                        reply_to_message_id=self.mid,
+                    )
+            else:
+                inputs = []
+                for p in files[:10]:
+                    f_path = ospath.join(dirpath, p)
+                    if is_doc:
+                        inputs.append(InputMediaDocument(f_path, caption=caption if not inputs else ""))
+                    else:
+                        inputs.append(InputMediaPhoto(f_path, caption=caption if not inputs else ""))
+                
+                if inputs:
+                    await TgClient.bot.send_media_group(
+                        chat_id=chat_id,
+                        media=inputs,
+                        reply_to_message_id=self.mid,
+                    )
+        except Exception as e:
+            LOGGER.error(f"Failed to send screenshots to TG: {e}")
 
     async def convert_media(self, dl_path, gid):
         fvext = []
