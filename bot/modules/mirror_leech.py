@@ -130,28 +130,6 @@ class Mirror(TaskListener):
         arg_parser(input_list[1:], args)
 
         self.link = args["link"]
-        
-        # Build options only from current line flags
-        line_options = []
-        it = iter(input_list[1:])
-        for part in it:
-            if part in [self.link, "-b"] or part.startswith("-b:"):
-                continue
-            if part in args: # and part in LOCAL_FLAGS
-                 line_options.append(part)
-                 val = args[part]
-                 if not isinstance(val, (bool, int, set, list)):
-                     try:
-                         next(it)
-                         line_options.append(val)
-                     except StopIteration:
-                         pass
-        
-        # Merge passed options with line options
-        if self.options:
-            self.options = f"{self.options} {' '.join(line_options)}"
-        else:
-            self.options = " ".join(line_options)
 
         if Config.DISABLE_BULK and args.get("-b", False):
             await send_message(self.message, "Bulk downloads are currently disabled.")
