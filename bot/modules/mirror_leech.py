@@ -270,6 +270,8 @@ class Mirror(TaskListener):
             await delete_links(self.message)
             return
 
+        self._set_mode_engine()
+
         try:
             await self.before_start()
             LOGGER.info(self.link)

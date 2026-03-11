@@ -135,9 +135,10 @@ class Clone(TaskListener):
             await delete_links(self.message)
             return
         
+        self._set_mode_engine()
+        
         try:
             await self.before_start()
-            self._set_mode_engine()
             await delete_links(self.message)
             await self._proceed_to_clone(sync)
         except Exception as e:
