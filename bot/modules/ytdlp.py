@@ -543,8 +543,12 @@ class YtDlp(TaskListener):
             await self.init_bulk(input_list, bulk_start, bulk_end, YtDlp)
             return
 
+        self._set_mode_engine()
+
         if len(self.bulk) != 0:
             del self.bulk[0]
+        
+        await self.run_multi(input_list, YtDlp)
 
         path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
 
@@ -552,8 +556,12 @@ class YtDlp(TaskListener):
 
         opt = opt or self.user_dict.get("YT_DLP_OPTIONS") or Config.YT_DLP_OPTIONS
 
-        if not self.link and (reply_to := self.message.reply_to_message):
-            self.link = reply_to.text.split("\n", 1)[0].strip()
+        try:
+            if not self.link and (reply_to := self.message.reply_to_message):
+                self.link = reply_to.text.split("\n", 1)[0].strip()
+        except Exception as e:
+            LOGGER.error(e)
+            reply_to = None
 
         if not is_url(self.link):
             await send_message(
@@ -576,8 +584,6 @@ class YtDlp(TaskListener):
             await self.remove_from_same_dir()
             await delete_links(self.message)
             return
-
-        self._set_mode_engine()
 
         options = {"usenetrc": True, "cookiefile": "cookies.txt"}
         if opt:
@@ -604,8 +610,6 @@ class YtDlp(TaskListener):
             await self.remove_from_same_dir()
             await delete_links(self.message)
             return
-        finally:
-            await self.run_multi(input_list, YtDlp)
 
         if not qual:
             qual = await YtSelection(self).get_quality(result)

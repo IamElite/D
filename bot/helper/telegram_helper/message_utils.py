@@ -233,6 +233,9 @@ async def get_tg_link_message(link):
         if not TgClient.user:
             raise TgLinkException("USER_SESSION_STRING required for this private link!")
 
+    if not msg:
+        raise TgLinkException("Invalid Telegram Link!")
+
     chat = msg[2]
     msg_id = msg[3]
     if "-" in msg_id:

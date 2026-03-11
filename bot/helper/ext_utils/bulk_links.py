@@ -12,9 +12,23 @@ def filter_links(links_list: list, bulk_start: int, bulk_end: int) -> list:
     return links_list
 
 
+def _clean_link(line: str) -> str:
+    line = line.strip()
+    if "://" in line:
+        for prefix in ["http", "magnet"]:
+            if prefix in line:
+                idx = line.find(prefix)
+                return line[idx:].split(" ", 1)[0].strip()
+    return line
+
+
 def get_links_from_message(text: str) -> list:
     links_list = text.split("\n")
-    return [item.strip() for item in links_list if len(item) != 0]
+    return [
+        cleaned
+        for item in links_list
+        if (cleaned := _clean_link(item)) and len(cleaned) != 0
+    ]
 
 
 async def get_links_from_file(message) -> list:
@@ -22,7 +36,9 @@ async def get_links_from_file(message) -> list:
     text_file_dir = await message.download()
     async with aiopen(text_file_dir, "r+") as f:
         lines = await f.readlines()
-        links_list.extend(line.strip() for line in lines if len(line) != 0)
+        for line in lines:
+            if cleaned := _clean_link(line):
+                links_list.append(cleaned)
     await remove(text_file_dir)
     return links_list
 

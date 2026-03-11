@@ -277,7 +277,10 @@ class Mirror(TaskListener):
             await self.init_bulk(input_list, bulk_start, bulk_end, Mirror)
             return
 
-        if len(self.bulk) != 0 and self.zip_all:
+        if len(self.bulk) != 0:
+            del self.bulk[0]
+            await self.run_multi(input_list, Mirror)
+        elif self.zip_all and len(self.bulk) != 0:
             self.multi = 0
             await self.run_multi(input_list, Mirror)
 
@@ -285,17 +288,15 @@ class Mirror(TaskListener):
 
         path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
 
-        if not self.link and (reply_to := self.message.reply_to_message):
-            if reply_to.text:
-                self.link = reply_to.text.split("\n", 1)[0].strip()
-        if is_telegram_link(self.link):
-            try:
+        try:
+            if is_telegram_link(self.link):
                 reply_to, session = await get_tg_link_message(self.link)
-            except Exception as e:
-                await send_message(self.message, f"ERROR: {e}")
-                await self.remove_from_same_dir()
-                await delete_links(self.message)
-                return
+            elif not self.link and (reply_to := self.message.reply_to_message):
+                if reply_to.text:
+                    self.link = reply_to.text.split("\n", 1)[0].strip()
+        except Exception as e:
+            LOGGER.error(e)
+            reply_to = None
 
         if isinstance(reply_to, list):
             if self.zip_all:
@@ -343,9 +344,6 @@ class Mirror(TaskListener):
             reply_to = messages[0]
             self.file_details = {"caption": reply_to.caption}
         
-        if len(self.bulk) > 0 and not self.zip_all:
-            del self.bulk[0]
-            await self.run_multi(input_list, Mirror)
 
         if reply_to and not isinstance(reply_to, list):
             file_ = (
