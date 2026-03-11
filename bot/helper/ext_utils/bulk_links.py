@@ -18,7 +18,7 @@ def _clean_link(line: str) -> str:
         for prefix in ["http", "magnet"]:
             if prefix in line:
                 idx = line.find(prefix)
-                return line[idx:].split(" ", 1)[0].strip()
+                return line[idx:].strip()
     return line
 
 
