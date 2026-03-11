@@ -14,11 +14,9 @@ def filter_links(links_list: list, bulk_start: int, bulk_end: int) -> list:
 
 def _clean_link(line: str) -> str:
     line = line.strip()
-    if "://" in line:
-        for prefix in ["http", "magnet"]:
-            if prefix in line:
-                idx = line.find(prefix)
-                return line[idx:].strip()
+    for prefix in ["http", "magnet"]:
+        if prefix in line:
+            return line[line.find(prefix):].strip()
     return line
 
 

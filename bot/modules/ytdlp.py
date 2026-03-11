@@ -511,44 +511,11 @@ class YtDlp(TaskListener):
                 bulk_end = dargs[1] or None
             is_bulk = True
 
-        if not is_bulk or self.bulk:
-            if self.multi > 0:
-                if self.folder_name:
-                    async with task_dict_lock:
-                        if self.folder_name in self.same_dir:
-                            self.same_dir[self.folder_name]["tasks"].add(self.mid)
-                            for fd_name in self.same_dir:
-                                if fd_name != self.folder_name:
-                                    self.same_dir[fd_name]["total"] -= 1
-                        elif self.same_dir:
-                            self.same_dir[self.folder_name] = {
-                                "total": self.multi,
-                                "tasks": {self.mid},
-                            }
-                            for fd_name in self.same_dir:
-                                if fd_name != self.folder_name:
-                                    self.same_dir[fd_name]["total"] -= 1
-                        else:
-                            self.same_dir = {
-                                self.folder_name: {
-                                    "total": self.multi,
-                                    "tasks": {self.mid},
-                                }
-                            }
-                elif self.same_dir:
-                    async with task_dict_lock:
-                        for fd_name in self.same_dir:
-                            self.same_dir[fd_name]["total"] -= 1
-        else:
+        if is_bulk and not self.bulk:
             await self.init_bulk(input_list, bulk_start, bulk_end, YtDlp)
             return
 
         self._set_mode_engine()
-
-        if len(self.bulk) != 0:
-            del self.bulk[0]
-        
-        await self.run_multi(input_list, YtDlp)
 
         path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
 
@@ -558,7 +525,8 @@ class YtDlp(TaskListener):
 
         try:
             if not self.link and (reply_to := self.message.reply_to_message):
-                self.link = reply_to.text.split("\n", 1)[0].strip()
+                if reply_to.text:
+                    self.link = reply_to.text.split("\n", 1)[0].strip()
         except Exception as e:
             LOGGER.error(e)
             reply_to = None
@@ -571,58 +539,57 @@ class YtDlp(TaskListener):
             await delete_links(self.message)
             return
 
-        if self.pre_determined_name and not self.name:
-            self.name = self.pre_determined_name
-
-        if "mdisk.me" in self.link:
-            self.name, self.link = await _mdisk(self.link, self.name)
-
         try:
             await self.before_start()
-        except Exception as e:
-            await send_message(self.message, e)
-            await self.remove_from_same_dir()
-            await delete_links(self.message)
-            return
-
-        options = {"usenetrc": True, "cookiefile": "cookies.txt"}
-        if opt:
-            for key, value in opt.items():
-                if key in ["postprocessors", "download_ranges"]:
-                    continue
-                if key == "format" and not self.select:
-                    if value.startswith("ba/b-"):
-                        qual = value
+            
+            options = {"usenetrc": True, "cookiefile": "cookies.txt"}
+            if opt:
+                for key, value in opt.items():
+                    if key in ["postprocessors", "download_ranges"]:
                         continue
-                    else:
-                        qual = value
-                options[key] = value
-        options["playlist_items"] = "0"
+                    if key == "format" and not self.select:
+                        if value.startswith("ba/b-"):
+                            qual = value
+                            continue
+                        else:
+                            qual = value
+                    options[key] = value
+            options["playlist_items"] = "0"
 
-        try:
+            if self.pre_determined_name and not self.name:
+                self.name = self.pre_determined_name
+
+            if "mdisk.me" in self.link:
+                self.name, self.link = await _mdisk(self.link, self.name)
+            
             if self.pre_extracted_info:
                 result = self.pre_extracted_info
             else:
                 result = await sync_to_async(extract_info, self.link, options)
-        except Exception as e:
-            msg = str(e).replace("<", " ").replace(">", " ")
-            await send_message(self.message, f"{self.tag} {msg}")
-            await self.remove_from_same_dir()
+            
+            if not qual:
+                qual = await YtSelection(self).get_quality(result)
+                if qual is None:
+                    await self.remove_from_same_dir()
+                    return
+
+            LOGGER.info(f"Downloading with YT-DLP: {self.link}")
+            playlist = "entries" in result
+
+            ydl = YoutubeDLHelper(self)
             await delete_links(self.message)
+            await ydl.add_download(path, qual, playlist, opt)
+        except Exception as e:
+            LOGGER.error(e)
+            await send_message(self.message, e)
+        finally:
+            if self.multi > 1:
+                if self.bulk:
+                    del self.bulk[0]
+                await self.run_multi(input_list, YtDlp)
+            await delete_links(self.message)
+            await self.remove_from_same_dir()
             return
-
-        if not qual:
-            qual = await YtSelection(self).get_quality(result)
-            if qual is None:
-                await self.remove_from_same_dir()
-                return
-
-        LOGGER.info(f"Downloading with YT-DLP: {self.link}")
-        playlist = "entries" in result
-
-        ydl = YoutubeDLHelper(self)
-        await delete_links(self.message)
-        await ydl.add_download(path, qual, playlist, opt)
 
 
 async def ytdl(client, message):

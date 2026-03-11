@@ -31,16 +31,18 @@ class AutoMessage:
 
 
 def _check_link(line):
-    first = line.split()[0] if line.split() else ""
-    return (
-        is_url(first)
-        or is_magnet(first)
-        or is_rclone_path(first)
-        or is_gdrive_link(first)
-        or is_mega_link(first)
-        or is_gdrive_id(first)
-        or is_telegram_link(first)
-    )
+    for word in line.split():
+        if (
+            is_url(word)
+            or is_magnet(word)
+            or is_rclone_path(word)
+            or is_gdrive_link(word)
+            or is_mega_link(word)
+            or is_gdrive_id(word)
+            or is_telegram_link(word)
+        ):
+            return True
+    return False
 
 
 async def auto_leech_handler(client, message):

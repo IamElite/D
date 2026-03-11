@@ -118,10 +118,6 @@ class Clone(TaskListener):
             await self.init_bulk(input_list, bulk_start, bulk_end, Clone)
             return
 
-        if len(self.bulk) != 0:
-            del self.bulk[0]
-            await self.run_multi(input_list, Clone)
-
         await self.get_tag(text)
 
         try:
@@ -138,18 +134,21 @@ class Clone(TaskListener):
             )
             await delete_links(self.message)
             return
-        LOGGER.info(self.link)
+        
         try:
             await self.before_start()
+            self._set_mode_engine()
+            await delete_links(self.message)
+            await self._proceed_to_clone(sync)
         except Exception as e:
+            LOGGER.error(e)
             await send_message(self.message, e)
             await delete_links(self.message)
-            return
-
-        self._set_mode_engine()
-        await delete_links(self.message)
-
-        await self._proceed_to_clone(sync)
+        finally:
+            if self.multi > 1:
+                if self.bulk:
+                    del self.bulk[0]
+                await self.run_multi(input_list, Clone)
 
     async def _proceed_to_clone(self, sync):
         if is_share_link(self.link):
