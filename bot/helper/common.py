@@ -478,7 +478,7 @@ class TaskConfig:
                 self.user_transmission = False
                 self.hybrid_leech = False
             if self.split_size:
-                if self.split_size.isdigit():
+                if isinstance(self.split_size, str) and self.split_size.isdigit():
                     self.split_size = int(self.split_size)
                 else:
                     self.split_size = get_size_bytes(self.split_size)
