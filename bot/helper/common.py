@@ -158,7 +158,7 @@ class TaskConfig:
         self.bot_pm = Config.BOT_PM or self.user_dict.get("BOT_PM")
         self.pm_msg = None
         self.file_details = {}
-        self.mode = tuple()
+        self.mode = ("Mirror", "Leech")
 
     def _set_mode_engine(self):
         self.source_url = (

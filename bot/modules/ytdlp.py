@@ -515,8 +515,6 @@ class YtDlp(TaskListener):
             await self.init_bulk(input_list, bulk_start, bulk_end, YtDlp)
             return
 
-        self._set_mode_engine()
-
         path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
 
         await self.get_tag(text)
