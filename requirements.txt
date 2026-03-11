@@ -42,4 +42,4 @@ uvicorn
 uvloop
 xattr
 yt-dlp[default,curl-cffi]
-#beautifulsoup4
+beautifulsoup4

@@ -12,6 +12,10 @@ from urllib.parse import parse_qs, urlparse, quote
 from urllib3.util.retry import Retry
 from uuid import uuid4
 from base64 import b64decode, b64encode
+import requests
+import re
+from bs4 import BeautifulSoup
+
 
 from ....core.config_manager import Config
 from ...ext_utils.exceptions import DirectDownloadLinkException
@@ -142,45 +146,32 @@ debrid_link_sites = [
 
 
 def gdflix(url):
-    """
-    Generate a direct download link for gdflix.net URLs.
-    @param url: URL from gdflix.net
-    @return: Direct download link
-    """
-    scraper = create_scraper()
+    h = {"User-Agent": "Mozilla/5.0"}
     try:
-        response = scraper.get(url)
-        html = response.text
-        
-        def get_link_by_text(keyword):
-            pattern = f'(?si)<a\\s+[^>]*href=["\'](https?://[^"\']+)["\'][^>]*>(?:(?!</a>).)*?{keyword}'
-            match = search(pattern, html)
-            if match:
-                 dlink = match.group(1)
-                 try:
-                     head = scraper.get(dlink, allow_redirects=True, stream=True)
-                     final_url = head.url
-                     if "fastcdn-dl.pages.dev" in final_url:
-                          parsed = urlparse(final_url)
-                          q = parse_qs(parsed.query)
-                          if "url" in q:
-                              return q["url"][0]
-                     return final_url
-                 except Exception:
-                     return dlink
-            return None
+        soup = BeautifulSoup(requests.get(url, headers=h, timeout=20).text, 'html.parser')
+        domain = re.search(r'https?://([^/]+)', url).group(1)
 
-        # Priority 1: Instant DL
-        if link := get_link_by_text("Instant DL"):
-            return link
+        for target in ["INSTANT DL", "DIRECT SERVER"]:
+            for a in soup.find_all("a", href=True):
+                if target in a.text.upper() and "login" not in a["href"].lower():
+                    link = (
+                        a["href"]
+                        if a["href"].startswith("http")
+                        else f"https://{domain}{a['href']}"
+                    )
+                    try:
+                        final = requests.head(
+                            link, headers=h, allow_redirects=True, timeout=10
+                        ).url
+                        if "url=" in final:
+                            final = re.search(r'url=(https?://[^\s&]+)', final).group(1)
+                        return final
+                    except:
+                        return link
+        return None
+    except:
+        return None
 
-        # Priority 2: CLOUD DOWNLOAD (Backup)
-        if link := get_link_by_text("CLOUD DOWNLOAD"):
-            return link
-                
-        raise DirectDownloadLinkException("ERROR: Download link not found (Instant DL/Cloud Download)")
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e}") from e
 
 
 def direct_link_generator(link):
@@ -1097,87 +1088,26 @@ def gdtot(url):
 
 
 def gcloud(url):
-    """
-    Generate a direct download link for gcloud.sbs URLs.
-    @param url: URL from gcloud.sbs
-    @return: Direct download link and Gofile link if found
-    """
-    session = Session()
-    try:
-        res = session.get(url, headers={"User-Agent": user_agent}, allow_redirects=True)
-        res.raise_for_status()
+    s = requests.Session()
+    h = {"User-Agent": "Mozilla/5.0"}
 
-        html = res.text
-        if csrf_match := search(r"window\.CSRF_TOKEN = '([^']+)';", html):
-            csrf_token = csrf_match.group(1)
-        else:
-            raise DirectDownloadLinkException(
-                "ERROR: CSRF token not found for gcloud.sbs"
-            )
+    r = s.get(url, headers=h)
+    csrf = re.search(r"CSRF_TOKEN\s*=\s*['\"]([^'\"]+)", r.text).group(1)
+    h.update(
+        {"X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": csrf, "Referer": r.url}
+    )
 
-        gofile_links = findall(r'https://pdlk\.site/g/[^"\']+', html)
+    token = s.get(r.url, headers=h).json()["data"]["access_token"]
+    j = s.get(f"{r.url}&get_secure_links=1&access_token={token}", headers=h).json()
 
-        headers = {
-            "User-Agent": user_agent,
-            "X-Requested-With": "XMLHttpRequest",
-            "X-CSRF-Token": csrf_token,
-            "Referer": res.url,
-        }
+    inst = f"https://gcloud.sbs/instant/{j['gphotos_id']}/{j['gp_id']}"
+    csrf2 = re.search(
+        r"CSRF_TOKEN\s*=\s*['\"]([^'\"]+)", s.get(inst, headers=h).text
+    ).group(1)
+    h["X-CSRF-Token"] = csrf2
 
-        # Step 1: Get access_token
-        step1_res = session.get(res.url, headers=headers)
-        step1_res.raise_for_status()
-        try:
-            step1_data = step1_res.json()
-        except:
-            raise DirectDownloadLinkException("ERROR: Failed to parse AJAX Step 1 response")
-            
-        if not step1_data.get("success") or "data" not in step1_data:
-             raise DirectDownloadLinkException("ERROR: AJAX Step 1 was not successful")
-             
-        access_token = step1_data["data"].get("access_token")
+    return s.get(f"{inst}?ajax=1", headers=h).json().get("download_url")
 
-        # Step 2: Get secure links (ids)
-        secure_url = f"{res.url}&get_secure_links=1&access_token={access_token}"
-        step2_res = session.get(secure_url, headers=headers)
-        step2_res.raise_for_status()
-        try:
-            step2_data = step2_res.json()
-        except:
-            raise DirectDownloadLinkException("ERROR: Failed to parse AJAX Step 2 response")
-
-        gphotos_id = step2_data.get("gphotos_id")
-        gp_id = step2_data.get("gp_id")
-        
-        if not gphotos_id or not gp_id:
-             raise DirectDownloadLinkException("ERROR: Failed to get IDs from gcloud.sbs AJAX Step 2")
-
-        # Step 3: Get final download_url
-        timestamp = int(time() * 1000)
-        instant_url = f"https://gcloud.sbs/instant/{gphotos_id}/{gp_id}"
-        ajax_url = f"{instant_url}?ajax=1&_t={timestamp}"
-
-        ajax_res = session.get(ajax_url, headers=headers)
-        ajax_res.raise_for_status()
-
-        try:
-            data = ajax_res.json()
-        except Exception:
-            raise DirectDownloadLinkException(
-                "ERROR: Failed to parse final AJAX response from gcloud.sbs"
-            )
-
-        download_url = data.get("download_url")
-
-        if not download_url:
-            raise DirectDownloadLinkException(
-                "ERROR: Direct download link not found in gcloud.sbs final AJAX response"
-            )
-
-        return download_url
-
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e}")
 
 
 
