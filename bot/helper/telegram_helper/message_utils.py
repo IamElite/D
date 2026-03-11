@@ -79,24 +79,14 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
                 disable_notification=True,
                 reply_markup=buttons,
             )
-        try:
-            return await message.reply(
-                text=text,
-                quote=True,
-                disable_web_page_preview=disable_web_page_preview,
-                disable_notification=True,
-                reply_markup=buttons,
-                **kwargs,
-            )
-        except Exception:
-            return await TgClient.bot.send_message(
-                chat_id=message.chat.id if hasattr(message, "chat") else message,
-                text=text,
-                disable_web_page_preview=disable_web_page_preview,
-                disable_notification=True,
-                reply_markup=buttons,
-                **kwargs,
-            )
+        return await message.reply(
+            text=text,
+            quote=True,
+            disable_web_page_preview=disable_web_page_preview,
+            disable_notification=True,
+            reply_markup=buttons,
+            **kwargs,
+        )
     except FloodWait as f:
         LOGGER.warning(str(f))
         if not block:
@@ -242,9 +232,6 @@ async def get_tg_link_message(link):
         )
         if not TgClient.user:
             raise TgLinkException("USER_SESSION_STRING required for this private link!")
-
-    if not msg:
-        raise TgLinkException("Invalid Telegram Link!")
 
     chat = msg[2]
     msg_id = msg[3]

@@ -245,70 +245,57 @@ class Mirror(TaskListener):
                 bulk_end = dargs[1] or 0
             is_bulk = True
 
-        if is_bulk and not self.bulk:
+        if not is_bulk:
+            if self.multi > 0:
+                if self.folder_name:
+                    async with task_dict_lock:
+                        if self.folder_name in self.same_dir:
+                            self.same_dir[self.folder_name]["tasks"].add(self.mid)
+                            for fd_name in self.same_dir:
+                                if fd_name != self.folder_name:
+                                    self.same_dir[fd_name]["total"] -= 1
+                        elif self.same_dir:
+                            self.same_dir[self.folder_name] = {
+                                "total": self.multi,
+                                "tasks": {self.mid},
+                            }
+                            for fd_name in self.same_dir:
+                                if fd_name != self.folder_name:
+                                    self.same_dir[fd_name]["total"] -= 1
+                        else:
+                            self.same_dir = {
+                                self.folder_name: {
+                                    "total": self.multi,
+                                    "tasks": {self.mid},
+                                }
+                            }
+                elif self.same_dir:
+                    async with task_dict_lock:
+                        for fd_name in self.same_dir:
+                            self.same_dir[fd_name]["total"] -= 1
+        else:
             await self.init_bulk(input_list, bulk_start, bulk_end, Mirror)
             return
+
+        if len(self.bulk) != 0 and self.zip_all:
+            self.multi = 0
+            await self.run_multi(input_list, Mirror)
 
         await self.get_tag(text)
 
         path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
 
-        try:
-            if is_telegram_link(self.link):
+        if not self.link and (reply_to := self.message.reply_to_message):
+            if reply_to.text:
+                self.link = reply_to.text.split("\n", 1)[0].strip()
+        if is_telegram_link(self.link):
+            try:
                 reply_to, session = await get_tg_link_message(self.link)
-            elif not self.link and (reply_to := self.message.reply_to_message):
-                if reply_to.text:
-                    self.link = reply_to.text.split("\n", 1)[0].strip()
-        except Exception as e:
-            LOGGER.error(e)
-            reply_to = None
-
-        if len(self.link) == 0:
-            await send_message(
-                self.message, COMMAND_USAGE["mirror"][0], COMMAND_USAGE["mirror"][1]
-            )
-            await delete_links(self.message)
-            return
-
-        self._set_mode_engine()
-
-        try:
-            await self.before_start()
-            LOGGER.info(self.link)
-            if not self.is_qbit and not self.is_jd and not is_url(self.link) and not is_magnet(self.link) and not is_mega_link(self.link) and not is_gdrive_link(self.link) and not is_rclone_path(self.link):
-                try:
-                    self.link = await sync_to_async(direct_link_generator, self.link)
-                    LOGGER.info(f"Generated link: {self.link}")
-                except DirectDownloadLinkException as e:
-                    LOGGER.error(str(e))
-                    if str(e).startswith("ERROR:"):
-                        await send_message(self.message, str(e))
-                        await delete_links(self.message)
-                        return
-                    
-            if self.is_qbit:
-                await add_qb_torrent(self, path, ratio, seed_time)
-            elif self.is_jd:
-                await add_jd_download(self, path)
-            elif is_mega_link(self.link):
-                await add_mega_download(self, f"{path}/")
-            elif is_gdrive_link(self.link):
-                await add_gd_download(self, path)
-            elif is_rclone_path(self.link):
-                await add_rclone_download(self, f"{path}/")
-            elif is_telegram_link(self.link) and not is_url(self.link):
-                await TelegramDownloadHelper(self).add_download(reply_to, f"{path}/", session)
-            else:
-                await add_aria2_download(self, path, headers, ratio, seed_time)
-        except Exception as e:
-            LOGGER.error(e)
-            await send_message(self.message, e)
-        finally:
-            if self.multi > 1:
-                if self.bulk:
-                    del self.bulk[0]
-                await self.run_multi(input_list, Mirror)
-            await delete_links(self.message)
+            except Exception as e:
+                await send_message(self.message, f"ERROR: {e}")
+                await self.remove_from_same_dir()
+                await delete_links(self.message)
+                return
 
         if isinstance(reply_to, list):
             if self.zip_all:
@@ -356,6 +343,9 @@ class Mirror(TaskListener):
             reply_to = messages[0]
             self.file_details = {"caption": reply_to.caption}
         
+        if len(self.bulk) > 0 and not self.zip_all:
+            del self.bulk[0]
+            await self.run_multi(input_list, Mirror)
 
         if reply_to and not isinstance(reply_to, list):
             file_ = (

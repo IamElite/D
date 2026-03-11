@@ -407,10 +407,10 @@ class TaskConfig:
                         self.up_dest = self.up_dest.replace("h:", "", 1)
                         self.user_transmission = TgClient.IS_PREMIUM_USER
                         self.hybrid_leech = self.user_transmission
-                    if "|" in self.up_dest:
+                    if isinstance(self.up_dest, str) and "|" in self.up_dest:
                         self.up_dest, self.chat_thread_id = list(
                             map(
-                                lambda x: int(x) if isinstance(x, str) and x.lstrip("-").isdigit() else x,
+                                lambda x: int(x) if x.lstrip("-").isdigit() else x,
                                 self.up_dest.split("|", 1),
                             )
                         )

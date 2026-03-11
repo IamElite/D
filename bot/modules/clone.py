@@ -114,19 +114,16 @@ class Clone(TaskListener):
                 bulk_end = dargs[1] or 0
             is_bulk = True
 
-        if is_bulk and not self.bulk:
+        if is_bulk:
             await self.init_bulk(input_list, bulk_start, bulk_end, Clone)
             return
 
         await self.get_tag(text)
 
-        try:
-            if not self.link and (reply_to := self.message.reply_to_message):
-                if reply_to.text:
-                    self.link = reply_to.text.split("\n", 1)[0].strip()
-        except Exception as e:
-            LOGGER.error(e)
-            reply_to = None
+        if not self.link and (reply_to := self.message.reply_to_message):
+            self.link = reply_to.text.split("\n", 1)[0].strip()
+
+        await self.run_multi(input_list, Clone)
 
         if len(self.link) == 0:
             await send_message(
@@ -134,22 +131,18 @@ class Clone(TaskListener):
             )
             await delete_links(self.message)
             return
-        
-        self._set_mode_engine()
-        
+        LOGGER.info(self.link)
         try:
             await self.before_start()
-            await delete_links(self.message)
-            await self._proceed_to_clone(sync)
         except Exception as e:
-            LOGGER.error(e)
             await send_message(self.message, e)
             await delete_links(self.message)
-        finally:
-            if self.multi > 1:
-                if self.bulk:
-                    del self.bulk[0]
-                await self.run_multi(input_list, Clone)
+            return
+
+        self._set_mode_engine()
+        await delete_links(self.message)
+
+        await self._proceed_to_clone(sync)
 
     async def _proceed_to_clone(self, sync):
         if is_share_link(self.link):
