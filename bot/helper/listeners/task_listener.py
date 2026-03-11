@@ -363,7 +363,7 @@ class TaskListener(TaskConfig):
             )
             del tg
 
-        elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] or self.up_dest.lower() == "all":
+        elif self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] or str(self.up_dest).lower() == "all":
             LOGGER.info(f"Uphoster Upload Name: {self.name} to {self.up_dest}")
             uphoster = UphosterUploader(self, up_path)
             async with task_dict_lock:
@@ -448,7 +448,7 @@ class TaskListener(TaskConfig):
                 if link and (Config.SHOW_CLOUD_LINK or self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"]):
                     btn_name = f"☁️ {self.up_dest} Link" if self.up_dest in SUPPORTED_UPHOSTERS["download"] or self.up_dest in SUPPORTED_UPHOSTERS["stream"] else "☁️ Cloud Link"
                     buttons.url_button(btn_name, link)
-                elif not link or self.up_dest.lower() != "all":
+                elif not link or str(self.up_dest).lower() != "all":
                     msg += f"\n\nPath: <code>{rclone_path or link}</code>"
                 if rclone_path and Config.RCLONE_SERVE_URL and not self.private_link:
                     remote, rpath = rclone_path.split(":", 1)
@@ -500,7 +500,7 @@ class TaskListener(TaskConfig):
             else:
                 final_sent_msg = await send_message(self.message, complete_msg, button)
 
-            if self.up_dest.lower() == "all" and final_sent_msg:
+            if str(self.up_dest).lower() == "all" and final_sent_msg:
                 await send_message(final_sent_msg, link)
 
             mirror_log_id = getattr(Config, "MIRROR_LOG_ID", None)

@@ -410,13 +410,13 @@ class TaskConfig:
                     if "|" in self.up_dest:
                         self.up_dest, self.chat_thread_id = list(
                             map(
-                                lambda x: int(x) if x.lstrip("-").isdigit() else x,
+                                lambda x: int(x) if isinstance(x, str) and x.lstrip("-").isdigit() else x,
                                 self.up_dest.split("|", 1),
                             )
                         )
-                    elif self.up_dest.lstrip("-").isdigit():
+                    elif isinstance(self.up_dest, str) and self.up_dest.lstrip("-").isdigit():
                         self.up_dest = int(self.up_dest)
-                    elif self.up_dest.lower() == "pm":
+                    elif isinstance(self.up_dest, str) and self.up_dest.lower() == "pm":
                         self.up_dest = self.user_id
 
                 if self.user_transmission:
