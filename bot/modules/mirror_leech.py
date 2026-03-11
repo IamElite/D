@@ -245,7 +245,7 @@ class Mirror(TaskListener):
                 bulk_end = dargs[1] or 0
             is_bulk = True
 
-        if not is_bulk:
+        if not is_bulk or self.bulk:
             if self.multi > 0:
                 if self.folder_name:
                     async with task_dict_lock:

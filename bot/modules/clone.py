@@ -114,16 +114,23 @@ class Clone(TaskListener):
                 bulk_end = dargs[1] or 0
             is_bulk = True
 
-        if is_bulk:
+        if is_bulk and not self.bulk:
             await self.init_bulk(input_list, bulk_start, bulk_end, Clone)
             return
 
+        if len(self.bulk) != 0:
+            del self.bulk[0]
+            await self.run_multi(input_list, Clone)
+
         await self.get_tag(text)
 
-        if not self.link and (reply_to := self.message.reply_to_message):
-            self.link = reply_to.text.split("\n", 1)[0].strip()
-
-        await self.run_multi(input_list, Clone)
+        try:
+            if not self.link and (reply_to := self.message.reply_to_message):
+                if reply_to.text:
+                    self.link = reply_to.text.split("\n", 1)[0].strip()
+        except Exception as e:
+            LOGGER.error(e)
+            reply_to = None
 
         if len(self.link) == 0:
             await send_message(
