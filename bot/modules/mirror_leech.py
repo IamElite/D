@@ -201,7 +201,7 @@ class Mirror(TaskListener):
         self.thumbnail_layout = args["-tl"]
         self.as_doc = args["-doc"]
         self.as_med = args["-med"]
-        self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
+        self.folder_name = f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
 
@@ -327,12 +327,13 @@ class Mirror(TaskListener):
                 return
 
         if (
-            not isinstance(reply_to, list)
+            not self.bulk
+            and not isinstance(reply_to, list)
             and self.multi > 1
             and reply_to
         ):
             messages = await self.client.get_messages(
-                chat_id=self.message.chat.id,
+                chat_id=reply_to.chat.id,
                 message_ids=range(reply_to.id, reply_to.id + self.multi),
             )
             if self.zip_all:
