@@ -565,11 +565,8 @@ class TaskConfig:
                     self.same_dir[fd_name]["total"] -= self.multi
             return
         if len(self.bulk) != 0:
-            link = self.bulk[0]
-            if not isinstance(link, str):
-                link = link.link
             msg = input_list[:1]
-            msg.append(f"{link} -i {self.multi - 1} {self.options}")
+            msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
             msgts = " ".join(msg)
             if self.multi > 2:
                 msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
