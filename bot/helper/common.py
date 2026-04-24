@@ -786,25 +786,20 @@ class TaskConfig:
                     user_metadata = self.user_dict.get("METADATA_KEY")
                     metadata = user_metadata or Config.METADATA_KEY
                     if metadata:
-                        meta_cmd = ["-map", "0", "-map_metadata", "0"]
+                        meta_cmd = [
+                            "-map", "0",
+                            "-map_metadata", "0",
+                            "-metadata", f"title={metadata}",
+                            "-metadata", f"author={metadata}",
+                            "-metadata:s:v", f"title={metadata}",
+                            "-metadata:s:a", f"title={metadata}",
+                            "-metadata:s:s", f"title={metadata}"
+                        ]
                         if user_metadata:
-                            meta_cmd.extend([
-                                "-metadata", f"title={metadata}",
-                                "-metadata", f"artist={metadata}",
-                                "-metadata", f"author={metadata}",
-                                "-metadata", f"comment={metadata}",
-                                "-metadata:s:v", f"title={metadata}",
-                                "-metadata:s:a", f"title={metadata}",
-                                "-metadata:s:s", f"title={metadata}"
-                            ])
-                        else:
-                            meta_cmd.extend([
-                                "-metadata", f"title={metadata}",
-                                "-metadata", f"author={metadata}",
-                                "-metadata:s:v", f"title={metadata}",
-                                "-metadata:s:a", f"title={metadata}",
-                                "-metadata:s:s", f"title={metadata}"
-                            ])
+                            if "artist" in metadata.lower():
+                                meta_cmd.extend(["-metadata", f"artist={metadata}"])
+                            if "comment" in metadata.lower():
+                                meta_cmd.extend(["-metadata", f"comment={metadata}"])
                         cmd.extend(meta_cmd)
                 index = cmd.index("-i")
                 input_file = cmd[index + 1]
@@ -943,24 +938,18 @@ class TaskConfig:
             "-map_metadata",
             "0",
         ]
+        base_cmd.extend([
+            "-metadata", f"title={metadata}",
+            "-metadata", f"author={metadata}",
+            "-metadata:s:v", f"title={metadata}",
+            "-metadata:s:a", f"title={metadata}",
+            "-metadata:s:s", f"title={metadata}",
+        ])
         if user_metadata:
-            base_cmd.extend([
-                "-metadata", f"title={metadata}",
-                "-metadata", f"artist={metadata}",
-                "-metadata", f"author={metadata}",
-                "-metadata", f"comment={metadata}",
-                "-metadata:s:v", f"title={metadata}",
-                "-metadata:s:a", f"title={metadata}",
-                "-metadata:s:s", f"title={metadata}",
-            ])
-        else:
-            base_cmd.extend([
-                "-metadata", f"title={metadata}",
-                "-metadata", f"author={metadata}",
-                "-metadata:s:v", f"title={metadata}",
-                "-metadata:s:a", f"title={metadata}",
-                "-metadata:s:s", f"title={metadata}",
-            ])
+            if "artist" in metadata.lower():
+                base_cmd.extend(["-metadata", f"artist={metadata}"])
+            if "comment" in metadata.lower():
+                base_cmd.extend(["-metadata", f"comment={metadata}"])
         
         base_cmd.append("output_file")
 
