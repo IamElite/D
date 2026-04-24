@@ -782,17 +782,30 @@ class TaskConfig:
                 else:
                     delete_files = False
 
-                if self.is_leech and Config.METADATA_KEY:
-                    metadata = Config.METADATA_KEY
-                    meta_cmd = [
-                        "-map", "0",
-                        "-map_metadata", "0",
-                        "-metadata", f"title={metadata}",
-                        "-metadata:s:v", f"title={metadata}",
-                        "-metadata:s:a", f"title={metadata}",
-                        "-metadata:s:s", f"title={metadata}"
-                    ]
-                    cmd.extend(meta_cmd)
+                if self.is_leech:
+                    user_metadata = self.user_dict.get("METADATA_KEY")
+                    metadata = user_metadata or Config.METADATA_KEY
+                    if metadata:
+                        meta_cmd = ["-map", "0", "-map_metadata", "0"]
+                        if user_metadata:
+                            meta_cmd.extend([
+                                "-metadata", f"title={metadata}",
+                                "-metadata", f"artist={metadata}",
+                                "-metadata", f"author={metadata}",
+                                "-metadata", f"comment={metadata}",
+                                "-metadata:s:v", f"title={metadata}",
+                                "-metadata:s:a", f"title={metadata}",
+                                "-metadata:s:s", f"title={metadata}"
+                            ])
+                        else:
+                            meta_cmd.extend([
+                                "-metadata", f"title={metadata}",
+                                "-metadata", f"author={metadata}",
+                                "-metadata:s:v", f"title={metadata}",
+                                "-metadata:s:a", f"title={metadata}",
+                                "-metadata:s:s", f"title={metadata}"
+                            ])
+                        cmd.extend(meta_cmd)
                 index = cmd.index("-i")
                 input_file = cmd[index + 1]
                 if input_file.strip().endswith(".video"):
@@ -908,7 +921,8 @@ class TaskConfig:
         return dl_path
 
     async def proceed_metadata(self, dl_path, gid):
-        metadata = self.user_dict.get("METADATA_KEY") or (Config.METADATA_KEY if "METADATA_KEY" not in self.user_dict else "")
+        user_metadata = self.user_dict.get("METADATA_KEY")
+        metadata = user_metadata or Config.METADATA_KEY
         if not metadata:
             return dl_path
 
@@ -928,16 +942,27 @@ class TaskConfig:
             "copy",
             "-map_metadata",
             "0",
-            "-metadata",
-            f"title={metadata}",
-            "-metadata:s:v",
-            f"title={metadata}",
-            "-metadata:s:a",
-            f"title={metadata}",
-            "-metadata:s:s",
-            f"title={metadata}",
-            "output_file",
         ]
+        if user_metadata:
+            base_cmd.extend([
+                "-metadata", f"title={metadata}",
+                "-metadata", f"artist={metadata}",
+                "-metadata", f"author={metadata}",
+                "-metadata", f"comment={metadata}",
+                "-metadata:s:v", f"title={metadata}",
+                "-metadata:s:a", f"title={metadata}",
+                "-metadata:s:s", f"title={metadata}",
+            ])
+        else:
+            base_cmd.extend([
+                "-metadata", f"title={metadata}",
+                "-metadata", f"author={metadata}",
+                "-metadata:s:v", f"title={metadata}",
+                "-metadata:s:a", f"title={metadata}",
+                "-metadata:s:s", f"title={metadata}",
+            ])
+        
+        base_cmd.append("output_file")
 
         try:
             ffmpeg = FFMpeg(self)
