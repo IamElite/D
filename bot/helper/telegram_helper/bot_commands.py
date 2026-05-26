@@ -1,5 +1,7 @@
 from ...core.config_manager import Config
 
+_ALL_SUFFIX_ALIASES = {"ra", "aa", "uaa", "asa", "rsa", "bsa", "sa", "sta", "usa"}
+
 
 class BotCommands:
     StartCommand = "start"
@@ -48,14 +50,12 @@ class BotCommands:
         "Select": ["select", "sel"],
     }
 
-    _all_suffix_aliases = {"ra", "aa", "uaa", "asa", "rsa", "bsa", "sa", "sta", "usa"}
-
     for key, cmds in commands.items():
         vars()[f"{key}Command"] = (
             [
                 (
                     f"{cmd}{Config.CMD_SUFFIX}"
-                    if not (cmd.endswith("all") or cmd in _all_suffix_aliases) and cmd != ""
+                    if not (cmd.endswith("all") or cmd in _ALL_SUFFIX_ALIASES) and cmd != ""
                     else cmd
                 )
                 for cmd in cmds
