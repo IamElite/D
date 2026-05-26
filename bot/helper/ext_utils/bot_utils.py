@@ -86,16 +86,22 @@ def create_help_buttons():
 
 
 def compare_versions(v1, v2):
-    v1, v2 = (list(map(int, v.split("-")[0][1:].split("."))) for v in (v1, v2))
-    return (
-        "New Version Update is Available! Check Now!"
-        if v1 < v2
-        else (
-            "More Updated! Kindly Contribute in Official"
-            if v1 > v2
-            else "Already up to date with latest version"
-        )
-    )
+    def parse_version(v):
+        try:
+            parts = v.lstrip("vV").split("-")[0].split(".")
+            return [int(x) for x in parts if x]
+        except Exception:
+            return [0]
+    v1_parts, v2_parts = parse_version(v1), parse_version(v2)
+    max_len = max(len(v1_parts), len(v2_parts))
+    v1_parts += [0] * (max_len - len(v1_parts))
+    v2_parts += [0] * (max_len - len(v2_parts))
+    if v1_parts < v2_parts:
+        return "New Version Update is Available! Check Now!"
+    elif v1_parts > v2_parts:
+        return "More Updated! Kindly Contribute in Official"
+    else:
+        return "Already up to date with latest version"
 
 
 def bt_selection_buttons(id_):

@@ -23,11 +23,11 @@ class BotCommands:
         "CancelTask": ["cancel", "c"],
         "CancelAll": ["cancelall", "call"],
         "ForceStart": ["forcestart", "fs"],
-        "Status": ["status", "s", "statusall"],
+        "Status": ["status", "s", "statusall", "sa"],
         "MediaInfo": ["mediainfo", "mi"],
-        "SpeedTest": ["speedtest", "stest"],
+        "SpeedTest": ["speedtest", "stest", "speedtestall", "sta"],
         "Ping": "ping",
-        "Restart": ["restart", "r", "restartall"],
+        "Restart": ["restart", "r", "restartall", "ra"],
         "RestartSessions": ["restartses", "rses"],
         "Broadcast": ["broadcast", "bc"],
         "Stats": ["stats", "st"],
@@ -39,24 +39,27 @@ class BotCommands:
         "ClearLocals": "clearlocals",
         "IMDB": "imdb",
         "Rss": "rss",
-        "Authorize": ["authorize", "a"],
-        "UnAuthorize": ["unauthorize", "ua"],
-        "AddSudo": ["addsudo", "as"],
-        "RmSudo": ["rmsudo", "rs"],
-        "BotSet": ["bsetting", "bs"],
-        "UserSet": ["usetting", "us"],
+        "Authorize": ["authorize", "a", "authorizeall", "aa"],
+        "UnAuthorize": ["unauthorize", "ua", "unauthorizeall", "uaa"],
+        "AddSudo": ["addsudo", "as", "addsudoall", "asa"],
+        "RmSudo": ["rmsudo", "rs", "rmsudoall", "rsa"],
+        "BotSet": ["bsetting", "bs", "bsettingall", "bsa"],
+        "UserSet": ["usetting", "us", "usettingsall", "usall", "usa"],
         "Select": ["select", "sel"],
     }
+
+    _all_suffix_aliases = {"ra", "aa", "uaa", "asa", "rsa", "bsa", "sa", "sta", "usa"}
 
     for key, cmds in commands.items():
         vars()[f"{key}Command"] = (
             [
                 (
                     f"{cmd}{Config.CMD_SUFFIX}"
-                    if cmd not in ["restartall", "statusall"]
+                    if not (cmd.endswith("all") or cmd in _all_suffix_aliases) and cmd != ""
                     else cmd
                 )
                 for cmd in cmds
+                if cmd != ""
             ]
             if isinstance(cmds, list)
             else f"{cmds}{Config.CMD_SUFFIX}"
