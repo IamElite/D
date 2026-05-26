@@ -1,4 +1,5 @@
 # ruff: noqa: E402
+from os import makedirs
 from uvloop import install
 
 install()
@@ -43,6 +44,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 templates = Jinja2Templates(directory="web/templates/")
+os.makedirs("thumbnails", exist_ok=True)
 app.mount("/thumbnails", StaticFiles(directory="thumbnails"), name="thumbnails")
 
 basicConfig(
