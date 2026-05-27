@@ -6,6 +6,7 @@ from asyncio import (
     wait_for,
     TimeoutError as AsyncTimeoutError,
     Event,
+    Lock,
 )
 from datetime import datetime
 from math import ceil, floor
@@ -25,13 +26,14 @@ from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
 
-from ... import LOGGER, status_dict, task_dict_lock, task_dict
-from ..mirror_leech_utils.status_utils.merge_status import MergeStatus
+from ... import LOGGER
 from ...core.config_manager import Config
 from ...core.tg_client import TgClient
 
 
 class HyperTGDownload:
+    _load_lock = Lock()
+
     def __init__(self):
         self.clients = TgClient.helper_bots
         self.work_loads = TgClient.helper_loads
@@ -39,22 +41,19 @@ class HyperTGDownload:
         self.dump_chat = None
         self.download_dir = "downloads/"
         self.directory = None
-        # Resource Scaling based on Config
-        if Config.HIGH_PERFORMANCE_MODE:
-            self.num_parts = Config.HYPER_THREADS or max(8, len(self.clients))
-            self.chunk_size = 4 * 1024 * 1024 # 4MB (High Speed)
-        else:
-            self.num_parts = 4 # Conservative threads
-            self.chunk_size = 1024 * 1024 # 1MB (Low RAM)
-            
+        self.num_parts = Config.HYPER_THREADS if Config.HYPER_THREADS else 8
+        self._per_task_limit = 8 # Default max workers per task
+        if not Config.HYPER_THREADS:
+            self.num_parts = min(self.num_parts, self._per_task_limit)
         self.cache_file_ref = {}
         self.cache_last_access = {}
         self.cache_max_size = 100
         self._processed_bytes = 0
         self.file_size = 0
-        self.chunk_size = 4 * 1024 * 1024  # 4MB chunks for high-bandwidth servers
+        self.chunk_size = 1024 * 1024
         self.file_name = ""
         self._cancel_event = Event()
+        self._session_lock = Lock()
         self.session_pool = {}
         create_task(self._clean_cache())
 
@@ -115,29 +114,6 @@ class HyperTGDownload:
             self.cache_last_access[index] = time()
         return self.cache_file_ref[index]
 
-    @property
-    def size(self):
-        return self.file_size
-        
-    @property
-    def downloaded_bytes(self):
-        return self._processed_bytes
-
-    @property
-    def download_speed(self):
-        return getattr(self, "_download_speed", 0)
-
-    @property
-    def eta(self):
-        return getattr(self, "_eta", "-")
-        
-    @property
-    def progress(self):
-        try:
-             return (self._processed_bytes / self.file_size) * 100
-        except:
-             return 0
-
     async def _clean_cache(self):
         while True:
             await sleep(15 * 60)
@@ -156,60 +132,60 @@ class HyperTGDownload:
 
     async def generate_media_session(self, client, file_id, index, max_retries=3):
         session_key = (index, file_id.dc_id)
+        async with self._session_lock:
+            if session_key in self.session_pool:
+                return self.session_pool[session_key]
 
-        if session_key in self.session_pool:
-            return self.session_pool[session_key]
-
-        retries = 0
-        while retries < max_retries:
-            try:
-                if file_id.dc_id != await client.storage.dc_id():
-                    media_session = Session(
-                        client,
-                        file_id.dc_id,
-                        await Auth(
-                            client, file_id.dc_id, await client.storage.test_mode()
-                        ).create(),
-                        await client.storage.test_mode(),
-                        is_media=True,
-                    )
-                    await media_session.start()
-
-                    for _ in range(6):
-                        exported_auth = await client.invoke(
-                            raw.functions.auth.ExportAuthorization(dc_id=file_id.dc_id)
+            retries = 0
+            while retries < max_retries:
+                try:
+                    if file_id.dc_id != await client.storage.dc_id():
+                        media_session = Session(
+                            client,
+                            file_id.dc_id,
+                            await Auth(
+                                client, file_id.dc_id, await client.storage.test_mode()
+                            ).create(),
+                            await client.storage.test_mode(),
+                            is_media=True,
                         )
+                        await media_session.start()
 
-                        try:
-                            await media_session.invoke(
-                                raw.functions.auth.ImportAuthorization(
-                                    id=exported_auth.id, bytes=exported_auth.bytes
-                                )
+                        for _ in range(6):
+                            exported_auth = await client.invoke(
+                                raw.functions.auth.ExportAuthorization(dc_id=file_id.dc_id)
                             )
-                            break
-                        except AuthBytesInvalid:
-                            await sleep(1)
+
+                            try:
+                                await media_session.invoke(
+                                    raw.functions.auth.ImportAuthorization(
+                                        id=exported_auth.id, bytes=exported_auth.bytes
+                                    )
+                                )
+                                break
+                            except AuthBytesInvalid:
+                                await sleep(1)
+                        else:
+                            await media_session.stop()
+                            raise AuthBytesInvalid
                     else:
-                        await media_session.stop()
-                        raise AuthBytesInvalid
-                else:
-                    media_session = Session(
-                        client,
-                        file_id.dc_id,
-                        await client.storage.auth_key(),
-                        await client.storage.test_mode(),
-                        is_media=True,
-                    )
-                    await media_session.start()
+                        media_session = Session(
+                            client,
+                            file_id.dc_id,
+                            await client.storage.auth_key(),
+                            await client.storage.test_mode(),
+                            is_media=True,
+                        )
+                        await media_session.start()
 
-                self.session_pool[session_key] = media_session
-                return media_session
+                    self.session_pool[session_key] = media_session
+                    return media_session
 
-            except Exception:
-                retries += 1
-                await sleep(1)
+                except Exception:
+                    retries += 1
+                    await sleep(1)
 
-        raise ValueError(f"Failed to create media session after {max_retries} attempts")
+            raise ValueError(f"Failed to create media session after {max_retries} attempts")
 
     @staticmethod
     async def get_location(file_id: FileId):
@@ -258,82 +234,99 @@ class HyperTGDownload:
         part_count: int,
         max_retries=5,
     ):
-        index = min(self.work_loads, key=self.work_loads.get)
-        client = self.clients[index]
+        async with self._load_lock:
+            index = min(self.work_loads, key=self.work_loads.get)
+            client = self.clients[index]
+            self.work_loads[index] += 1
 
-        self.work_loads[index] += 1
         current_retry = 0
 
         try:
-            while current_retry < max_retries:
-                try:
-                    if self._cancel_event.is_set():
-                        raise CancelledError("Download cancelled")
+            if self._cancel_event.is_set():
+                raise CancelledError("Download cancelled")
 
-                    file_id = await self.get_file_id(client, index)
-                    media_session, location = await gather(
-                        self.generate_media_session(client, file_id, index),
-                        self.get_location(file_id),
+            file_id = await self.get_file_id(client, index)
+            media_session, location = await gather(
+                self.generate_media_session(client, file_id, index),
+                self.get_location(file_id),
+            )
+
+            current_part = 1
+            current_offset = offset_bytes
+
+            while current_part <= part_count:
+                if self._cancel_event.is_set():
+                    raise CancelledError("Download cancelled")
+
+                try:
+                    r = await wait_for(
+                        media_session.invoke(
+                            raw.functions.upload.GetFile(
+                                location=location,
+                                offset=current_offset,
+                                limit=self.chunk_size,
+                            ),
+                        ),
+                        timeout=60,
                     )
 
-                    current_part = 1
-                    current_offset = offset_bytes
+                    if isinstance(r, raw.types.upload.File):
+                        chunk = r.bytes
 
-                    while current_part <= part_count:
-                        if self._cancel_event.is_set():
-                            raise CancelledError("Download cancelled")
+                        if not chunk:
+                            break
 
+                        if part_count == 1:
+                            yield chunk[first_part_cut:last_part_cut]
+                        elif current_part == 1:
+                            yield chunk[first_part_cut:]
+                        elif current_part == part_count:
+                            yield chunk[:last_part_cut]
+                        else:
+                            yield chunk
+
+                        current_part += 1
+                        current_offset += self.chunk_size
+                        self._processed_bytes += len(chunk)
+                    else:
+                        raise ValueError(f"Unexpected response: {r}")
+
+                except (FloodWait, AsyncTimeoutError, ConnectionError, RuntimeError) as e:
+                    if isinstance(e, FloodWait):
+                        await sleep(e.value + 1)
+                        continue
+                    
+                    if isinstance(e, (AsyncTimeoutError, ConnectionError, RuntimeError)):
+                        # If a session error occurs, remove it from pool to force reconnect on next retry
+                        session_key = (index, file_id.dc_id)
+                        async with self._session_lock:
+                            self.session_pool.pop(session_key, None)
+                        
+                        # Also clear file reference cache to ensure we get a fresh one from Telegram
+                        self.cache_file_ref.pop(index, None)
+                        
                         try:
-                            r = await wait_for(
-                                media_session.invoke(
-                                    raw.functions.upload.GetFile(
-                                        location=location,
-                                        offset=current_offset,
-                                        limit=self.chunk_size,
-                                    ),
-                                ),
-                                timeout=30,
-                            )
+                            await media_session.stop()
+                        except:
+                            pass
+                    
+                    # We re-raise to let single_part handle the retry for the entire part (prevents corruption)
+                    LOGGER.error(f"HyperDL Transport Error (Part {current_part}/{part_count}): {type(e).__name__}: {e}")
+                    raise
 
-                            if isinstance(r, raw.types.upload.File):
-                                chunk = r.bytes
+            if current_part <= part_count:
+                raise ValueError(
+                    f"Incomplete download: got {current_part-1} of {part_count} parts"
+                )
 
-                                if not chunk:
-                                    break
-
-                                if part_count == 1:
-                                    yield chunk[first_part_cut:last_part_cut]
-                                elif current_part == 1:
-                                    yield chunk[first_part_cut:]
-                                elif current_part == part_count:
-                                    yield chunk[:last_part_cut]
-                                else:
-                                    yield chunk
-
-                                current_part += 1
-                                current_offset += self.chunk_size
-                                self._processed_bytes += len(chunk)
-                            else:
-                                raise ValueError(f"Unexpected response: {r}")
-
-                        except (FloodWait, AsyncTimeoutError, ConnectionError) as e:
-                            if isinstance(e, FloodWait):
-                                await sleep(e.value + 1)
-                            else:
-                                await sleep(1)
-                            continue
-
-                    if current_part <= part_count:
-                        raise ValueError(
-                            f"Incomplete download: got {current_part-1} of {part_count} parts"
-                        )
-                    break
-
-                except (AsyncTimeoutError, ConnectionError, AttributeError):
-                    current_retry += 1
-                    if current_retry >= max_retries:
-                        raise
-                    await sleep(current_retry * 2)
+        except (AsyncTimeoutError, ConnectionError, AttributeError, RuntimeError) as e:
+            # Clear session even if error happened before entering the loop
+            if 'file_id' in locals():
+                session_key = (index, file_id.dc_id)
+                async with self._session_lock:
+                    self.session_pool.pop(session_key, None)
+                self.cache_file_ref.pop(index, None)
+            raise
 
         finally:
             self.work_loads[index] -= 1
@@ -368,8 +361,12 @@ class HyperTGDownload:
             self.directory, f"{self.file_name}.temp.{part_index:02d}"
         )
 
+        part_bytes = 0
         for attempt in range(max_retries):
             try:
+                # Subtract this part's previous contribution before retry
+                self._processed_bytes -= part_bytes
+                part_bytes = 0
                 async with aiopen(part_file_path, "wb") as f:
                     async for chunk in self.get_file(
                         offset, first_part_cut, last_part_cut, part_count
@@ -378,11 +375,10 @@ class HyperTGDownload:
                             raise CancelledError("Download cancelled")
                         await f.write(chunk)
                 return part_index, part_file_path
-            except (AsyncTimeoutError, ConnectionError):
+            except (AsyncTimeoutError, ConnectionError, RuntimeError, AttributeError):
                 if attempt == max_retries - 1:
                     raise
                 await sleep((attempt + 1) * 2)
-                self._processed_bytes = 0
 
     async def handle_download(self, progress, progress_args):
         self._cancel_event.clear()
@@ -395,32 +391,10 @@ class HyperTGDownload:
             + ".temp"
         )
 
-        # Smart part calculation: balance between parallelism and overhead
-        # Small files (<20MB): single part
-        # Medium files (20-100MB): 2-4 parts
-        # Large files (100-200MB): 4-8 parts
-        # Very large files (>200MB): 8-16 parts for max speed
-        # Smart part calculation based on HIGH_PERFORMANCE_MODE
-        if Config.HIGH_PERFORMANCE_MODE:
-             # Aggressive Strategy (Max Speed)
-            if self.file_size < 20 * 1024 * 1024:
-                num_parts = 1
-            elif self.file_size < 100 * 1024 * 1024:
-                num_parts = min(4, max(2, self.file_size // (25 * 1024 * 1024)))
-            elif self.file_size < 200 * 1024 * 1024:
-                num_parts = min(8, max(4, self.file_size // (25 * 1024 * 1024)))
-            else:
-                num_parts = min(16, max(8, self.file_size // (50 * 1024 * 1024)))
-        else:
-            # Conservative Strategy (Protect CPU/RAM)
-            if self.file_size < 50 * 1024 * 1024:
-                num_parts = 1
-            else:
-                num_parts = min(4, max(2, self.file_size // (50 * 1024 * 1024)))
-        
-        # Limit by available clients and configured HYPER_THREADS
-        num_parts = min(num_parts, self.num_parts)
-        num_parts = min(num_parts, len(self.clients)) if self.clients else num_parts
+        num_parts = min(self.num_parts, max(1, self.file_size // (10 * 1024 * 1024)))
+
+        if self.file_size < 10 * 1024 * 1024:
+            num_parts = 1
 
         part_size = self.file_size // num_parts if num_parts > 0 else self.file_size
         ranges = [
@@ -440,16 +414,12 @@ class HyperTGDownload:
 
             results = await gather(*tasks)
 
-            # Switch to Merge Status
-            async with task_dict_lock:
-                 task_dict[self._listener.mid] = MergeStatus(self._listener, self, self._listener.mid)
-
             async with aiopen(temp_file_path, "wb") as temp_file:
                 for _, part_file_path in sorted(results, key=lambda x: x[0]):
                     try:
                         async with aiopen(part_file_path, "rb") as part_file:
                             while True:
-                                chunk = await part_file.read(16 * 1024 * 1024)  # 16MB buffer for faster merge
+                                chunk = await part_file.read(8 * 1024 * 1024)
                                 if not chunk:
                                     break
                                 await temp_file.write(chunk)
@@ -483,6 +453,24 @@ class HyperTGDownload:
             for task in tasks:
                 if not task.done():
                     task.cancel()
+
+            # Ensure all tasks are finished before stopping sessions
+            if tasks:
+                await gather(*tasks, return_exceptions=True)
+            if prog_task:
+                await gather(prog_task, return_exceptions=True)
+
+            # Clean up media sessions
+            async with self._session_lock:
+                sessions = list(self.session_pool.values())
+                self.session_pool.clear()
+
+            for session in sessions:
+                try:
+                    await session.stop()
+                except Exception:
+                    pass
+            self.session_pool.clear()
 
             for i in range(len(ranges)):
                 part_path = ospath.join(
@@ -527,11 +515,15 @@ class HyperTGDownload:
     ):
         try:
             if dump_chat:
-                self.message = await TgClient.bot.copy_message(
+                copied = await TgClient.bot.copy_message(
                     chat_id=dump_chat,
                     from_chat_id=message.chat.id,
                     message_id=message.id,
                     disable_notification=True,
+                )
+                self.message = await TgClient.bot.get_messages(
+                    chat_id=dump_chat,
+                    message_ids=copied.id,
                 )
 
             self.dump_chat = dump_chat or message.chat.id

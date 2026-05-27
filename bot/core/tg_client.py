@@ -48,6 +48,7 @@ class TgClient:
         except Exception as e:
             LOGGER.error(f"Failed to start helper bot {no} from HELPER_TOKENS. {e}")
             cls.helper_bots.pop(no, None)
+            cls.helper_loads.pop(no, None)
 
     @classmethod
     async def start_helper_bots(cls):

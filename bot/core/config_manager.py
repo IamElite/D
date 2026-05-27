@@ -58,6 +58,7 @@ class Config:
     ARCHIVE_LIMIT = 0
     STORAGE_LIMIT = 0
     LEECH_DUMP_CHAT = ""
+    HYPER_DL_CHAT_ID = ""  # Dedicated dump chat for hyper dl, falls back to LEECH_DUMP_CHAT
     LINKS_LOG_ID = ""
     MIRROR_LOG_ID = ""
     CLEAN_LOG_MSG = True

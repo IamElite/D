@@ -34,7 +34,7 @@ class TelegramDownloadHelper:
         self._id = ""
         self.session = ""
         self._total_downloaded_bytes = 0
-        self._hyper_dl = len(TgClient.helper_bots) != 0 and Config.LEECH_DUMP_CHAT
+        self._hyper_dl = len(TgClient.helper_bots) != 0 and (getattr(Config, "HYPER_DL_CHAT_ID", "") or Config.LEECH_DUMP_CHAT)
         self._hyper_instance = None
 
     @property
@@ -97,7 +97,7 @@ class TelegramDownloadHelper:
                         message,
                         file_name=path,
                         progress=self._on_download_progress,
-                        dump_chat=Config.LEECH_DUMP_CHAT,
+                        dump_chat=getattr(Config, "HYPER_DL_CHAT_ID", "") or Config.LEECH_DUMP_CHAT,
                     )
                 except Exception:
                     if getattr(Config, "USER_TRANSMISSION", False):
