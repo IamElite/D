@@ -4,6 +4,8 @@ from os import path as ospath, walk
 from re import match as re_match, sub as re_sub
 from time import time
 
+from ...ext_utils.hyperul_utils import HyperTGUpload, HYPER_UL_MIN_SIZE
+
 from aioshutil import rmtree
 from natsort import natsorted
 from PIL import Image
@@ -76,6 +78,8 @@ class TelegramUploader:
         self._log_msg = None
         self._user_session = self._listener.user_transmission
         self._error = ""
+        self._hyper_ul = False
+        self._hyper_instance = None
 
     async def _upload_progress(self, current, _):
         if self._listener.is_cancelled:
@@ -86,6 +90,66 @@ class TelegramUploader:
         chunk_size = current - self._last_uploaded
         self._last_uploaded = current
         self._processed_bytes += chunk_size
+
+    async def _hyper_upload_progress(self, current, total):
+        if self._listener.is_cancelled:
+            if self._hyper_instance:
+                self._hyper_instance.cancel()
+            return
+        chunk_size = current - self._last_uploaded
+        self._last_uploaded = current
+        self._processed_bytes += chunk_size
+
+    async def _hyper_save_and_patch(self, f_size):
+        if not (self._hyper_ul and f_size >= HYPER_UL_MIN_SIZE):
+            return None, None, False
+
+        client = self._sent_msg._client
+
+        LOGGER.info(
+            f"HyperUL: Initiating parallel upload for {self._up_path} "
+            f"({f_size} bytes) via client={type(client).__name__}"
+        )
+
+        self._hyper_instance = HyperTGUpload()
+        try:
+            input_file = await self._hyper_instance.save_file(
+                client,
+                self._up_path,
+                progress=self._hyper_upload_progress,
+            )
+        except Exception as e:
+            LOGGER.warning(f"HyperUL save_file failed, falling back: {e}", exc_info=True)
+            self._hyper_instance = None
+            return None, None, False
+
+        if input_file is None:
+            LOGGER.warning("HyperUL returned None, falling back to normal upload")
+            self._hyper_instance = None
+            return None, None, False
+
+        LOGGER.info(
+            f"HyperUL: Pre-upload SUCCESS! InputFile type={type(input_file).__name__} "
+            f"id={input_file.id} parts={input_file.parts}"
+        )
+
+        original_save_file = client.save_file
+        upload_path = ospath.abspath(self._up_path)
+
+        async def _patched_save_file(path, *args, **kwargs):
+            try:
+                resolved = ospath.abspath(str(path))
+            except Exception:
+                resolved = str(path)
+            if resolved == upload_path:
+                LOGGER.info("HyperUL: Returning cached InputFile (skip re-upload)")
+                return input_file
+            LOGGER.info(f"HyperUL: Path mismatch ({resolved} != {upload_path}), using original")
+            return await original_save_file(path, *args, **kwargs)
+
+        client.save_file = _patched_save_file
+        self._hyper_instance = None
+        return original_save_file, client, True
 
     async def _user_settings(self):
         settings_map = {
@@ -106,6 +170,8 @@ class TelegramUploader:
 
         if self._thumb != "none" and not await aiopath.exists(self._thumb):
             self._thumb = None
+
+        self._hyper_ul = len(TgClient.helper_bots) != 0 and Config.HYPER_THREADS > 0
 
     async def _msg_to_reply(self):
         if self._listener.up_dest:
@@ -490,6 +556,10 @@ class TelegramUploader:
             self._thumb = None
         thumb = self._thumb
         self._is_corrupted = False
+
+        f_size = await aiopath.getsize(self._up_path) if await aiopath.exists(self._up_path) else 0
+        original_save_file, hyper_client, hyper_patched = await self._hyper_save_and_patch(f_size)
+
         try:
             is_video, is_audio, is_image = await get_document_type(self._up_path)
 
@@ -617,6 +687,9 @@ class TelegramUploader:
                 and await aiopath.exists(thumb)
             ):
                 await remove(thumb)
+
+            if hyper_patched and original_save_file and hyper_client:
+                hyper_client.save_file = original_save_file
         except (FloodWait, FloodPremiumWait) as f:
             LOGGER.warning(str(f))
             await sleep(f.value * 1.3)
@@ -626,6 +699,8 @@ class TelegramUploader:
                 and await aiopath.exists(thumb)
             ):
                 await remove(thumb)
+            if hyper_patched and original_save_file and hyper_client:
+                hyper_client.save_file = original_save_file
             return await self._upload_file(cap_mono, file, o_path)
         except Exception as err:
             if (
@@ -634,6 +709,8 @@ class TelegramUploader:
                 and await aiopath.exists(thumb)
             ):
                 await remove(thumb)
+            if hyper_patched and original_save_file and hyper_client:
+                hyper_client.save_file = original_save_file
             err_type = "RPCError: " if isinstance(err, RPCError) else ""
             LOGGER.error(f"{err_type}{err}. Path: {self._up_path}", exc_info=True)
             if isinstance(err, BadRequest) and key != "documents":
@@ -654,5 +731,7 @@ class TelegramUploader:
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
+        if self._hyper_instance:
+            self._hyper_instance.cancel()
         LOGGER.info(f"Cancelling Upload: {self._listener.name}")
         await self._listener.on_upload_error("your upload has been stopped!")

@@ -35,6 +35,7 @@ class TelegramDownloadHelper:
         self.session = ""
         self._total_downloaded_bytes = 0
         self._hyper_dl = len(TgClient.helper_bots) != 0 and Config.LEECH_DUMP_CHAT
+        self._hyper_instance = None
 
     @property
     def speed(self):
@@ -64,6 +65,8 @@ class TelegramDownloadHelper:
             if self.session == "user":
                 TgClient.user.stop_transmission()
             elif self.session == "hbots":
+                if self._hyper_instance:
+                    self._hyper_instance._cancel_event.set()
                 for hbot in TgClient.helper_bots.values():
                     hbot.stop_transmission()
             else:
@@ -72,14 +75,16 @@ class TelegramDownloadHelper:
 
     async def _on_download_error(self, error):
         async with global_lock:
-            GLOBAL_GID.pop(self._id, None)
+            if self._id in GLOBAL_GID:
+                GLOBAL_GID.pop(self._id)
         await self._listener.on_download_error(error)
 
     async def _on_download_complete(self):
         if not self._listener.zip_all:
             await self._listener.on_download_complete()
         async with global_lock:
-            GLOBAL_GID.pop(self._id, None)
+            if self._id in GLOBAL_GID:
+                GLOBAL_GID.pop(self._id)
         return
 
     async def _download(self, message, path):
@@ -87,7 +92,8 @@ class TelegramDownloadHelper:
             # TODO : Add support for user session ( Huh ??)
             if self._hyper_dl:
                 try:
-                    download = await HyperTGDownload().download_media(
+                    self._hyper_instance = HyperTGDownload()
+                    download = await self._hyper_instance.download_media(
                         message,
                         file_name=path,
                         progress=self._on_download_progress,
@@ -270,6 +276,8 @@ class TelegramDownloadHelper:
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
+        if self._hyper_instance:
+            self._hyper_instance._cancel_event.set()
         LOGGER.info(
             f"Cancelling download on user request: name: {self._listener.name} id: {self._id}"
         )

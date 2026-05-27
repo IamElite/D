@@ -31,8 +31,9 @@ UPLOAD_PATHS = {}
 CUSTOM_BOT_HEADER = "Beast"
 CUSTOM_BOT_HEADER_LINK = "https://t.me/MirrorBeast"
 
-# Hyper Tg Downloader
+# Hyper Tg Downloader (helper bots)
 HELPER_TOKENS = ""
+HYPER_THREADS = 20
 
 # MegaAPI v4.30
 MEGA_EMAIL = ""
