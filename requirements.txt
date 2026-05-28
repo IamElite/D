@@ -27,7 +27,7 @@ pillow
 psutil
 pycountry
 pymongo
-pyrotgfork @ git+https://github.com/TelegramPlayground/pyrogram.git
+pyrotgfork
 python-magic
 pytz
 qbittorrent-api
