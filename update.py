@@ -132,13 +132,25 @@ if (isinstance(UPDATE_PKGS, str) and UPDATE_PKGS.lower() == "true") or UPDATE_PK
             log_info(f"  - Removed: {pkg} {ver}")
             srun(["uv", "pip", "uninstall", pkg, "-y"], capture_output=True)
 
-    # Install from requirements
+    # Show what requirements wants
+    try:
+        with open("requirements.txt") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and not line.startswith("-"):
+                    log_info(f"  + Required: {line}")
+    except Exception:
+        pass
+
+    # Install
     result = srun("uv pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
+    # Show uv output
+    for line in (result.stdout + result.stderr).splitlines():
+        line = line.strip()
+        if line and any(k in line.lower() for k in ["installed", "already", "uninstall", "error", "success"]):
+            log_info(f"    {line}")
+
     if result.returncode == 0:
-        # Show installed versions
-        for line in result.stdout.splitlines():
-            if "Installed" in line or "already satisfied" in line.lower():
-                log_info(f"  + {line.strip()}")
         log_info("Successfully Updated all the Packages !")
     else:
         log_error(f"Package update failed: {result.stderr[:500]}")
