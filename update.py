@@ -117,5 +117,16 @@ if UPSTREAM_REPO:
 
 UPDATE_PKGS = config_file.get("UPDATE_PKGS", "True")
 if (isinstance(UPDATE_PKGS, str) and UPDATE_PKGS.lower() == "true") or UPDATE_PKGS:
-    scall("uv pip install -U -r requirements.txt", shell=True)
-    log_info("Successfully Updated all the Packages !")
+    # Remove old pyrofork to avoid conflict with pyrotgfork
+    srun("uv pip uninstall pyrofork -y", shell=True, capture_output=True)
+    result = srun("uv pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
+    if result.returncode == 0:
+        log_info("Successfully Updated all the Packages !")
+    else:
+        log_error(f"Package update failed (exit {result.returncode}): {result.stderr[:500]}")
+        # Fallback: try pip if uv fails
+        result2 = srun("pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
+        if result2.returncode == 0:
+            log_info("Successfully Updated all the Packages via pip fallback!")
+        else:
+            log_error(f"pip fallback also failed: {result2.stderr[:500]}")
