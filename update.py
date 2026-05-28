@@ -118,16 +118,36 @@ if UPSTREAM_REPO:
 UPDATE_PKGS = config_file.get("UPDATE_PKGS", "True")
 if (isinstance(UPDATE_PKGS, str) and UPDATE_PKGS.lower() == "true") or UPDATE_PKGS:
     # Remove old pyrogram forks to avoid conflicts
-    for old_pkg in ["pyrofork"]:
-        srun(["uv", "pip", "uninstall", old_pkg, "-y"], capture_output=True)
+    for old_pkg in ["pyrofork", "pyrotgfork", "kurigram"]:
+        res = srun(["uv", "pip", "show", old_pkg], capture_output=True, text=True)
+        if res.returncode == 0:
+            log_info(f"  - Removed old package: {old_pkg}")
+            srun(["uv", "pip", "uninstall", old_pkg, "-y"], capture_output=True)
+
+    # Read requirements to show what will be installed
+    req_pkgs = []
+    try:
+        with open("requirements.txt") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and not line.startswith("-"):
+                    pkg_name = line.split("==")[0].split(">=")[0].split("<=")[0].split("@")[0].strip()
+                    req_pkgs.append(pkg_name)
+    except Exception:
+        pass
+
     result = srun("uv pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
     if result.returncode == 0:
+        for pkg in req_pkgs:
+            log_info(f"  + Installed/Updated: {pkg}")
         log_info("Successfully Updated all the Packages !")
     else:
         log_error(f"Package update failed (exit {result.returncode}): {result.stderr[:500]}")
         # Fallback: try pip if uv fails
         result2 = srun("pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
         if result2.returncode == 0:
+            for pkg in req_pkgs:
+                log_info(f"  + Installed/Updated: {pkg}")
             log_info("Successfully Updated all the Packages via pip fallback!")
         else:
             log_error(f"pip fallback also failed: {result2.stderr[:500]}")
