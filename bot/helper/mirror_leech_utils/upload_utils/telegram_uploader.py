@@ -78,7 +78,7 @@ class TelegramUploader:
         self._log_msg = None
         self._user_session = self._listener.user_transmission
         self._error = ""
-        self._hyper_ul = len(TgClient.helper_bots) != 0 and Config.HYPER_THREADS > 0
+        self._hyper_ul = Config.HYPER_THREADS > 0
         self._hyper_instance = None
 
     async def _upload_progress(self, current, _):

@@ -46,7 +46,7 @@ commands = {
     ),
     "7z": (["7z", "i"], r"7-Zip ([\d.]+)"),
     "aiohttp": (["uv", "pip", "show", "aiohttp"], r"Version: ([\d.]+)"),
-    "pyrofork": (["uv", "pip", "show", "pyrofork"], r"Version: ([\d.]+)"),
+    "pyrofork": (["uv", "pip", "show", "pyrotgfork"], r"Version: ([\d.]+)"),
     "gapi": (["uv", "pip", "show", "google-api-python-client"], r"Version: ([\d.]+)"),
     "mega": (["pip", "show", "megasdk"], r"Version: ([\d.]+)"),
 }
