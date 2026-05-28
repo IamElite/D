@@ -103,8 +103,22 @@ class HyperTGDownload:
                 retries += 1
                 await sleep(1 * retries)
 
+        if client != TgClient.bot:
+            LOGGER.warning(
+                f"Helper bot failed to fetch msg {mid} from {self.dump_chat}, "
+                f"falling back to main bot"
+            )
+            try:
+                media = await TgClient.bot.get_messages(self.dump_chat, mid)
+                return FileId.decode(
+                    getattr(await self.get_media_type(media), "file_id", "")
+                )
+            except Exception as e:
+                last_error = e
+
         LOGGER.error(
-            f"Failed to get message {mid} from {self.dump_chat} with Client {client.me.username}"
+            f"Failed to get message {mid} from {self.dump_chat} "
+            f"with Client {getattr(client.me, 'username', 'unknown')}"
         )
         raise ValueError(
             f"Bot needs Admin access in Chat or message may be deleted. Error: {last_error}"
