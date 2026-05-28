@@ -117,8 +117,9 @@ if UPSTREAM_REPO:
 
 UPDATE_PKGS = config_file.get("UPDATE_PKGS", "True")
 if (isinstance(UPDATE_PKGS, str) and UPDATE_PKGS.lower() == "true") or UPDATE_PKGS:
-    # Remove old pyrofork to avoid conflict with pyrotgfork
-    srun("uv pip uninstall pyrofork -y", shell=True, capture_output=True)
+    # Remove old pyrogram forks to avoid conflicts
+    for old_pkg in ["pyrofork", "pyrotgfork"]:
+        srun(["uv", "pip", "uninstall", old_pkg, "-y"], capture_output=True)
     result = srun("uv pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
     if result.returncode == 0:
         log_info("Successfully Updated all the Packages !")

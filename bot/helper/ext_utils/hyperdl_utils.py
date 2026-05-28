@@ -54,7 +54,7 @@ class HyperTGDownload:
         self.cache_max_size = 100
         self._processed_bytes = 0
         self.file_size = 0
-        self.chunk_size = 1024 * 1024
+        self.chunk_size = 2 * 1024 * 1024  # 2MB chunks for faster throughput
         self.file_name = ""
         self._cancel_event = Event()
         self._session_lock = Lock()
