@@ -53,12 +53,25 @@ LOGGER = getLogger(__name__)
 
 class TelegramUploader:
     def __init__(self, listener, path):
-        self._listener = listener
-        self._up_path = path
-        self._start_time = 1
-        self._user_settings()
+        self._last_uploaded = 0
         self._processed_bytes = 0
-        self._thumbnail = None
+        self._listener = listener
+        self._path = path
+        self._client = None
+        self._start_time = time()
+        self._total_files = 0
+        self._thumb = self._listener.thumb or f"thumbnails/{listener.user_id}.jpg"
+        self._msgs_dict = {}
+        self._corrupted = 0
+        self._is_corrupted = False
+        self._media_dict = {"videos": {}, "documents": {}}
+        self._last_msg_in_group = False
+        self._up_path = ""
+        self._lprefix = ""
+        self._lsuffix = ""
+        self._lcaption = ""
+        self._lfont = ""
+        self._bot_pm = False
         self._media_group = False
         self._is_private = False
         self._sent_msg = None
