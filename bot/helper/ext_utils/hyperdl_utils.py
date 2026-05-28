@@ -35,8 +35,12 @@ class HyperTGDownload:
     _load_lock = Lock()
 
     def __init__(self):
-        self.clients = TgClient.helper_bots
-        self.work_loads = TgClient.helper_loads
+        if TgClient.helper_bots:
+            self.clients = TgClient.helper_bots
+            self.work_loads = TgClient.helper_loads
+        else:
+            self.clients = {0: TgClient.bot}
+            self.work_loads = {0: 0}
         self.message = None
         self.dump_chat = None
         self.download_dir = "downloads/"
