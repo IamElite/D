@@ -117,37 +117,28 @@ if UPSTREAM_REPO:
 
 UPDATE_PKGS = config_file.get("UPDATE_PKGS", "True")
 if (isinstance(UPDATE_PKGS, str) and UPDATE_PKGS.lower() == "true") or UPDATE_PKGS:
-    # Remove old pyrogram forks to avoid conflicts
-    for old_pkg in ["pyrofork", "pyrotgfork", "kurigram"]:
-        res = srun(["uv", "pip", "show", old_pkg], capture_output=True, text=True)
-        if res.returncode == 0:
-            log_info(f"  - Removed old package: {old_pkg}")
-            srun(["uv", "pip", "uninstall", old_pkg, "-y"], capture_output=True)
+    def get_pkg_version(pkg_name):
+        r = srun(["uv", "pip", "show", pkg_name], capture_output=True, text=True)
+        if r.returncode == 0:
+            for line in r.stdout.splitlines():
+                if line.startswith("Version:"):
+                    return line.split(":", 1)[1].strip()
+        return None
 
-    # Read requirements to show what will be installed
-    req_pkgs = []
-    try:
-        with open("requirements.txt") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and not line.startswith("-"):
-                    pkg_name = line.split("==")[0].split(">=")[0].split("<=")[0].split("@")[0].strip()
-                    req_pkgs.append(pkg_name)
-    except Exception:
-        pass
+    # Remove conflicting pyrogram forks
+    for pkg in ["pyrofork", "pyrotgfork", "kurigram"]:
+        ver = get_pkg_version(pkg)
+        if ver:
+            log_info(f"  - Removed: {pkg} {ver}")
+            srun(["uv", "pip", "uninstall", pkg, "-y"], capture_output=True)
 
+    # Install from requirements
     result = srun("uv pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
     if result.returncode == 0:
-        for pkg in req_pkgs:
-            log_info(f"  + Installed/Updated: {pkg}")
+        # Show installed versions
+        for line in result.stdout.splitlines():
+            if "Installed" in line or "already satisfied" in line.lower():
+                log_info(f"  + {line.strip()}")
         log_info("Successfully Updated all the Packages !")
     else:
-        log_error(f"Package update failed (exit {result.returncode}): {result.stderr[:500]}")
-        # Fallback: try pip if uv fails
-        result2 = srun("pip install -U -r requirements.txt", shell=True, capture_output=True, text=True)
-        if result2.returncode == 0:
-            for pkg in req_pkgs:
-                log_info(f"  + Installed/Updated: {pkg}")
-            log_info("Successfully Updated all the Packages via pip fallback!")
-        else:
-            log_error(f"pip fallback also failed: {result2.stderr[:500]}")
+        log_error(f"Package update failed: {result.stderr[:500]}")
