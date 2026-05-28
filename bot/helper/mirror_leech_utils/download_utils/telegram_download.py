@@ -97,7 +97,7 @@ class TelegramDownloadHelper:
                         message,
                         file_name=path,
                         progress=self._on_download_progress,
-                        dump_chat=getattr(Config, "HYPER_DL_CHAT_ID", "") or Config.LEECH_DUMP_CHAT,
+                        dump_chat=Config.LEECH_DUMP_CHAT,
                     )
                 except Exception:
                     if getattr(Config, "USER_TRANSMISSION", False):
