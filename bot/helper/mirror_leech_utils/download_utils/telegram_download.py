@@ -34,7 +34,7 @@ class TelegramDownloadHelper:
         self._id = ""
         self.session = ""
         self._total_downloaded_bytes = 0
-        self._hyper_dl = True
+        self._hyper_dl = len(TgClient.helper_bots) != 0 and Config.LEECH_DUMP_CHAT
         self._hyper_instance = None
 
     @property
