@@ -13,7 +13,8 @@ class TelegramStatus:
         self._size = self.listener.size
         self._gid = gid
         self._status = status
-        self.engine = EngineStatus().STATUS_TGRAM + (" (HyperDL)" if hyper else "")
+        hyper_label = "(HyperDL)" if status == "dl" else "(HyperUL)"
+        self.engine = EngineStatus().STATUS_TGRAM + (hyper_label if hyper else "")
 
     def processed_bytes(self):
         return get_readable_file_size(self._obj.processed_bytes)

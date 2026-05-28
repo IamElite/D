@@ -53,32 +53,19 @@ LOGGER = getLogger(__name__)
 
 class TelegramUploader:
     def __init__(self, listener, path):
-        self._last_uploaded = 0
-        self._processed_bytes = 0
         self._listener = listener
-        self._path = path
-        self._client = None
-        self._start_time = time()
-        self._total_files = 0
-        self._thumb = self._listener.thumb or f"thumbnails/{listener.user_id}.jpg"
-        self._msgs_dict = {}
-        self._corrupted = 0
-        self._is_corrupted = False
-        self._media_dict = {"videos": {}, "documents": {}}
-        self._last_msg_in_group = False
-        self._up_path = ""
-        self._lprefix = ""
-        self._lsuffix = ""
-        self._lcaption = ""
-        self._lfont = ""
-        self._bot_pm = False
+        self._up_path = path
+        self._start_time = 1
+        self._user_settings()
+        self._processed_bytes = 0
+        self._thumbnail = None
         self._media_group = False
         self._is_private = False
         self._sent_msg = None
         self._log_msg = None
         self._user_session = self._listener.user_transmission
         self._error = ""
-        self._hyper_ul = False
+        self._hyper_ul = len(TgClient.helper_bots) != 0 and Config.HYPER_THREADS > 0
         self._hyper_instance = None
 
     async def _upload_progress(self, current, _):
@@ -170,8 +157,6 @@ class TelegramUploader:
 
         if self._thumb != "none" and not await aiopath.exists(self._thumb):
             self._thumb = None
-
-        self._hyper_ul = len(TgClient.helper_bots) != 0 and Config.HYPER_THREADS > 0
 
     async def _msg_to_reply(self):
         if self._listener.up_dest:
