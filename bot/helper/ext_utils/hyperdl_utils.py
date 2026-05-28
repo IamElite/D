@@ -89,10 +89,14 @@ class HyperTGDownload:
             del self.cache_last_access[oldest]
 
     async def get_specific_file_ref(self, mid, client, max_retries=3):
-        retries = 0
-        last_error = None
+        if client != TgClient.bot:
+            media = await TgClient.bot.get_messages(self.dump_chat, mid)
+            return FileId.decode(
+                getattr(await self.get_media_type(media), "file_id", "")
+            )
 
-        while retries < max_retries:
+        last_error = None
+        for attempt in range(max_retries):
             try:
                 media = await client.get_messages(self.dump_chat, mid)
                 return FileId.decode(
@@ -100,21 +104,7 @@ class HyperTGDownload:
                 )
             except Exception as e:
                 last_error = e
-                retries += 1
-                await sleep(1 * retries)
-
-        if client != TgClient.bot:
-            LOGGER.warning(
-                f"Helper bot failed to fetch msg {mid} from {self.dump_chat}, "
-                f"falling back to main bot"
-            )
-            try:
-                media = await TgClient.bot.get_messages(self.dump_chat, mid)
-                return FileId.decode(
-                    getattr(await self.get_media_type(media), "file_id", "")
-                )
-            except Exception as e:
-                last_error = e
+                await sleep((attempt + 1) * 2)
 
         LOGGER.error(
             f"Failed to get message {mid} from {self.dump_chat} "
